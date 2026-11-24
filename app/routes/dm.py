@@ -28,6 +28,7 @@ from app.services.accounts import (
     set_active,
     set_temporary_password,
 )
+from app.services.dossiers import build_dossier
 from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError
 from app.services.sync import SyncAlreadyRunningError, latest_run, run_sync_job, start_run
 from app.templating import flash, is_htmx, render
@@ -176,8 +177,15 @@ def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -
             "linked": article_service.articles_by_ids(db, article.linked_ids or []),
             "backlinks": article_service.backlinks(db, wa_id),
             "characters": characters,
+            "dossier": build_dossier(characters[0], render_context, _dm_article_href)
+            if characters
+            else None,
         },
     )
+
+
+def _dm_article_href(article: WaArticle) -> str | None:
+    return f"/mj/articles/{article.wa_id}" if article.removed_at is None else None
 
 
 def _get_article(db: DbSession, wa_id: str) -> WaArticle:

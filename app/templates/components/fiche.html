@@ -55,6 +55,7 @@
     </details>
 
     <div class="fiche-main reveal reveal-delay-2">
+      {% set fiche_content %}
       {% if notice %}<p class="alert alert--warn">{{ notice }}</p>{% endif %}
       {% if map %}
       <section class="map-block" aria-labelledby="carte-{{ map.id }}">
@@ -83,6 +84,24 @@
       </section>
       {% endfor %}
       {% if media_admin %}{% include "dm/_media_admin.html" %}{% endif %}
+      {% endset %}
+      {% if dossier is defined and dossier %}
+      {% set prefix = "dossier-" ~ dossier.character.id %}
+      <div class="tabs" data-tabs>
+        <div class="tabs__list" role="tablist" aria-label="Dossier de {{ dossier.character.name }}">
+          {% for key, label, count in [("fiche", "Fiche", 0), ("relations", "Relations", dossier.relation_count), ("histoire", "Histoire", dossier.events | length), ("inventaire", "Inventaire", dossier.items | length)] %}
+          <button type="button" class="tabs__tab" role="tab" id="{{ prefix }}-tab-{{ key }}" aria-controls="{{ prefix }}-{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab="{{ key }}">{{ label }}{% if count %}<span class="tabs__count">{{ count }}</span>{% endif %}</button>
+          {% endfor %}
+        </div>
+        <section class="tabs__panel tabs__panel--fiche" id="{{ prefix }}-fiche" role="tabpanel" aria-labelledby="{{ prefix }}-tab-fiche" tabindex="0">
+          <h2 class="tabs__heading">Fiche</h2>
+{{ fiche_content }}
+        </section>
+        {% include "components/dossier.html" %}
+      </div>
+      {% else %}
+{{ fiche_content }}
+      {% endif %}
     </div>
   </div>
 

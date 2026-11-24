@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
+from app.config import get_settings
 from app.deps import ACCOUNT_SETUP_PATH, DbSession, OptionalUser, client_ip, log_in
 from app.models import Role, User
 from app.services.accounts import (
@@ -114,7 +115,11 @@ def login_submit(
         return _login_error(request, db, mode, login, message, 400)
     limiter.reset(ip, login)
     log_in(request, user)
-    if user.role == Role.PLAYER and user.must_change_password:
+    if (
+        user.role == Role.PLAYER
+        and user.must_change_password
+        and get_settings().player_password_change
+    ):
         return RedirectResponse(ACCOUNT_SETUP_PATH, status_code=303)
     return RedirectResponse(home_url(user), status_code=303)
 

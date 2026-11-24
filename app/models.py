@@ -169,6 +169,91 @@ class Character(Base):
     extra_links: Mapped[list["CharacterArticle"]] = relationship(
         back_populates="character", cascade="all, delete-orphan"
     )
+    profile: Mapped["CharacterProfile | None"] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True
+    )
+    events: Mapped[list["CharacterEvent"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterEvent.position",
+    )
+    relations: Mapped[list["CharacterRelation"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterRelation.position",
+    )
+    items: Mapped[list["CharacterItem"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterItem.position",
+    )
+
+
+class CharacterProfile(Base):
+    __tablename__ = "character_profiles"
+
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), primary_key=True
+    )
+    backstory: Mapped[str] = mapped_column(Text, default="", server_default="")
+    source_file: Mapped[str | None] = mapped_column(String(255))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+class CharacterEvent(Base):
+    __tablename__ = "character_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+    session: Mapped[str | None] = mapped_column(String(100))
+    title: Mapped[str] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
+
+
+class CharacterRelation(Base):
+    __tablename__ = "character_relations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+    category: Mapped[str] = mapped_column(String(40))
+    name: Mapped[str] = mapped_column(String(200))
+    role: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[str | None] = mapped_column(String(100))
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
+
+    article: Mapped[WaArticle | None] = relationship()
+
+
+class CharacterItem(Base):
+    __tablename__ = "character_items"
+    __table_args__ = (CheckConstraint("quantity >= 0", name="ck_character_items_quantity"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(200))
+    quantity: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    category: Mapped[str | None] = mapped_column(String(60))
+    equipped: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
+
+    article: Mapped[WaArticle | None] = relationship()
 
 
 class CharacterArticle(Base):

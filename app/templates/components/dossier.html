@@ -1,0 +1,104 @@
+{% from "components/icons.html" import ui %}
+{% set prefix = "dossier-" ~ dossier.character.id %}
+{% set dm_hint = "" if player_mode else " Complétez le dossier du personnage puis lancez la commande import-dossiers." %}
+
+<section class="tabs__panel" id="{{ prefix }}-relations" role="tabpanel" aria-labelledby="{{ prefix }}-tab-relations" tabindex="0">
+  <h2 class="tabs__heading">Relations</h2>
+  {% if dossier.relation_groups %}
+  {% for group in dossier.relation_groups %}
+  <section class="relation-group" aria-labelledby="{{ prefix }}-groupe-{{ group.key }}">
+    <h3 class="relation-group__title" id="{{ prefix }}-groupe-{{ group.key }}">{{ group.label }}<span>{{ group.people | length }}</span></h3>
+    <ul class="relation-list">
+      {% for person in group.people %}
+      {% set portrait = (person.article | article_media("portrait")) if person.article else none %}
+      <li>
+        <details class="relation">
+          <summary>
+            <span class="relation__avatar" aria-hidden="true">{% if portrait %}<img src="{{ portrait | media_url('thumb') }}" alt="" loading="lazy" decoding="async">{% else %}{{ person.name[:1] | upper }}{% endif %}</span>
+            <span class="relation__identity">
+              <span class="relation__name">{{ person.name }}</span>
+              {% if person.role %}<span class="relation__role">{{ person.role }}</span>{% endif %}
+            </span>
+            {% if person.status %}<span class="pill pill--muted relation__status">{{ person.status }}</span>{% endif %}
+            {{ ui("chevron", "icon relation__chevron") }}
+          </summary>
+          <div class="relation__body">
+            {% if person.html | trim %}<div class="prose">{{ person.html }}</div>{% else %}<p class="muted">Rien de plus n'est consigné pour l'instant.</p>{% endif %}
+            {% if person.href %}<a class="btn" href="{{ person.href }}">Voir la fiche</a>{% endif %}
+          </div>
+        </details>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    {{ ui("users") }}
+    <h3 class="empty-state__title">Aucune relation consignée</h3>
+    <p>Famille, amis, connaissances et ennemis apparaîtront ici.{{ dm_hint }}</p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="tabs__panel" id="{{ prefix }}-histoire" role="tabpanel" aria-labelledby="{{ prefix }}-tab-histoire" tabindex="0">
+  <h2 class="tabs__heading">Histoire</h2>
+  <section class="dossier-block" aria-labelledby="{{ prefix }}-origines">
+    <h3 class="dossier-block__title" id="{{ prefix }}-origines">Origines</h3>
+    {% if dossier.backstory | trim %}
+    <div class="prose prose--story">{{ dossier.backstory }}</div>
+    {% else %}
+    <div class="empty-state">
+      {{ ui("candle") }}
+      <h4 class="empty-state__title">Histoire encore à écrire</h4>
+      <p>Le passé de {{ dossier.character.name }} n'est pas encore consigné.{{ dm_hint }}</p>
+    </div>
+    {% endif %}
+  </section>
+  <section class="dossier-block" aria-labelledby="{{ prefix }}-seances">
+    <h3 class="dossier-block__title" id="{{ prefix }}-seances">Au fil des séances</h3>
+    {% if dossier.events %}
+    <ol class="saga">
+      {% for event in dossier.events %}
+      <li class="saga__item">
+        {% if event.session %}<span class="saga__session">{{ event.session }}</span>{% endif %}
+        <h4 class="saga__title">{{ event.title }}</h4>
+        {% if event.html | trim %}<div class="prose">{{ event.html }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="muted">Aucun événement marquant pour l'instant.</p>
+    {% endif %}
+  </section>
+</section>
+
+<section class="tabs__panel" id="{{ prefix }}-inventaire" role="tabpanel" aria-labelledby="{{ prefix }}-tab-inventaire" tabindex="0">
+  <h2 class="tabs__heading">Inventaire</h2>
+  {% if dossier.items %}
+  <ul class="inventory">
+    {% for item in dossier.items %}
+    <li class="inventory__item">
+      <div class="inventory__head">
+        <span class="inventory__name">{{ item.name }}</span>
+        {% if item.quantity != 1 %}<span class="inventory__quantity">× {{ item.quantity }}</span>{% endif %}
+      </div>
+      {% if item.category or item.equipped %}
+      <div class="chips">
+        {% if item.category %}<span class="pill pill--muted">{{ item.category }}</span>{% endif %}
+        {% if item.equipped %}<span class="pill pill--ok">Équipé</span>{% endif %}
+      </div>
+      {% endif %}
+      {% if item.html | trim %}<div class="prose">{{ item.html }}</div>{% endif %}
+      {% if item.href %}<a class="inventory__link" href="{{ item.href }}">Voir la fiche</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty-state">
+    {{ ui("scroll") }}
+    <h3 class="empty-state__title">Besace vide</h3>
+    <p>Les objets portés par {{ dossier.character.name }} apparaîtront ici.{{ dm_hint }}</p>
+  </div>
+  {% endif %}
+</section>

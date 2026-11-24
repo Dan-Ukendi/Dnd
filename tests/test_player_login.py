@@ -1,7 +1,9 @@
+import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models import Role, User
 from app.security import verify_password
 from app.services.accounts import set_temporary_password
@@ -9,6 +11,14 @@ from tests.factories import csrf_token, login, make_article, make_character, mak
 
 TEMPORARY = "0000"
 NEW_PASSWORD = "un-nouveau-secret-solide"
+
+
+@pytest.fixture(autouse=True)
+def password_change_enabled(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
+    enabled = "password_change_disabled" not in request.keywords
+    monkeypatch.setattr(get_settings(), "player_password_change", enabled)
 
 
 def temporary_player(db: Session, login_name: str) -> User:
@@ -138,3 +148,17 @@ def test_player_cannot_reset_passwords(client: TestClient, db: Session) -> None:
     assert response.status_code == 404
     db.refresh(victim)
     assert not victim.must_change_password
+
+
+@pytest.mark.password_change_disabled
+def test_temporary_password_is_enough_while_changes_are_disabled(
+    client: TestClient, db: Session
+) -> None:
+    temporary_player(db, "keator")
+    response = player_login(client, "keator", TEMPORARY)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/joueur"
+    home = client.get("/joueur")
+    assert home.status_code == 200
+    assert 'href="/joueur/mot-de-passe"' not in home.text
+    assert client.get("/joueur/mot-de-passe").status_code == 404

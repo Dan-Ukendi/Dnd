@@ -48,7 +48,8 @@ tests/                 pytest suite
 | `WA_AUTH_TOKEN` | for sync | World Anvil user token (`x-auth-token`). |
 | `WA_WORLD_ID` | for sync | Id of the world to synchronise. |
 | `APP_ENV` | no | `production` (default: secure cookies, HSTS) or `development` (plain HTTP on localhost). |
-| `PLAYER_INITIAL_PASSWORD` | no | Temporary password given to new or reset player accounts (default `0000`). Players must replace it at their first login. |
+| `PLAYER_PASSWORD_CHANGE` | no | `false` (default): players sign in with the temporary password and the password page is hidden. `true`: a temporary password must be replaced at first login. |
+| `PLAYER_INITIAL_PASSWORD` | no | Temporary password given to new or reset player accounts (default `0000`). Players must replace it at their first login when `PLAYER_PASSWORD_CHANGE` is on. |
 
 `postgres://` and `postgresql://` URLs are accepted and converted to the psycopg driver automatically.
 Copy `.env.example` to `.env` for local work; `.env` is ignored by git.
@@ -74,9 +75,62 @@ Open http://localhost:8000 and sign in with the DM account.
 The landing page asks for a role. **Maître du jeu** opens the DM form (login and password).
 **Joueur** lists the active player accounts that have a password; a player picks their name and types
 their password. Accounts created by `import-characters`, or reset from the DM's *Joueurs* page with
-*Mot de passe provisoire*, use `PLAYER_INITIAL_PASSWORD`: after signing in with it, the player is sent
-to *Choisissez votre mot de passe* and cannot open anything else until they choose their own (at least
+*Mot de passe provisoire*, use `PLAYER_INITIAL_PASSWORD`. While `PLAYER_PASSWORD_CHANGE` is off (the
+default) that password is all players need. When it is on, a player who signs in with it is sent to
+*Choisissez votre mot de passe* and cannot open anything else until they choose their own (at least
 10 characters). Invitation links still work as an alternative.
+
+## Character dossiers
+
+Each played character's fiche has four tabs: **Fiche** (the World Anvil article), **Relations**,
+**Histoire** (backstory, then the important events session after session) and **Inventaire**. Only the
+DM and the character's own player see the last three tabs; another player who was shared the article
+only sees the Fiche.
+
+Dossiers are written as one TOML file per character (keep them out of git, e.g. in
+`source/dossiers/`) and imported with:
+
+```bash
+python -m app.cli import-dossiers source/dossiers
+```
+
+Re-importing a file replaces that character's whole dossier. Text fields accept plain paragraphs
+(separated by a blank line) and the same BBCode as World Anvil (`[b]`, `[i]`, `[ul]`…).
+
+```toml
+character = "Khaetar Voss"            # character name, or the title of its main article
+
+[history]
+backstory = """
+Né orphelin dans le Khaanat...
+
+Un vieux prêtre lui révèle que son sang vient de Zariel.
+"""
+
+[[history.events]]                    # in chronological order
+session = "Séance 1"                  # optional
+title = "Dispute pour l'amulette"
+text = "Au marché noir de Khar Zakh..."
+
+[[relations]]
+category = "famille"                  # famille, amis, allies, connaissances, rivaux, ennemis, autres
+name = "Mère inconnue"                # any other category is accepted and listed after these
+role = "Mère"                         # optional
+status = "Disparue"                   # optional
+article = "Kratéros"                  # optional: links the World Anvil fiche (or article_id = "...")
+text = "Ce qu'il sait d'elle..."
+
+[[inventory]]
+name = "Pot en fer"
+quantity = 1                          # optional, default 1
+category = "Équipement"               # optional
+equipped = false                      # optional
+article = "Le Gage d'Arès"            # optional
+text = "Description..."
+```
+
+A relation or an item linked to an article shows a "Voir la fiche" link (and the portrait, for
+relations) only when the reader can open that article.
 
 ## Useful commands
 

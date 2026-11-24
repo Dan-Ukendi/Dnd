@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse
 
 from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
+from app.config import get_settings
 from app.presentation import (
     article_image,
     article_media,
@@ -118,7 +119,8 @@ templates.env.globals.update(
         "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
         "ADVENTURE_KEY": ADVENTURE_KEY,
         "section_types": section_types,
-        "ASSET_VERSION": "4",
+        "ASSET_VERSION": "6",
+        "player_password_change_enabled": lambda: get_settings().player_password_change,
     }
 )
 

@@ -20,6 +20,7 @@ ignore = ["S101", "RUF001", "RUF003", "B008"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = ["password_change_disabled: run with the player password change feature off"]
 filterwarnings = [
     "error::DeprecationWarning:app.*",
     "ignore:Using `httpx` with `starlette.testclient` is deprecated",

@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import get_db
 from app.models import Role, User
 
@@ -64,7 +65,11 @@ class PasswordChangeRequiredError(Exception):
 def require_player(request: Request, user: Annotated[User, Depends(require_user)]) -> User:
     if user.role != Role.PLAYER:
         raise HTTPException(status_code=404)
-    if user.must_change_password and request.url.path != ACCOUNT_SETUP_PATH:
+    if (
+        get_settings().player_password_change
+        and user.must_change_password
+        and request.url.path != ACCOUNT_SETUP_PATH
+    ):
         raise PasswordChangeRequiredError
     return user
 

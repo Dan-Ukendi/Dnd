@@ -10,6 +10,7 @@ from app.config import get_settings
 from app.db import get_engine, get_session_factory, wait_for_database
 from app.models import Role, SyncStatus
 from app.services.accounts import AccountError, create_user
+from app.services.dossiers import DossierError, import_dossier, load_dossier_file
 from app.services.imports import (
     DEFAULT_MANIFEST,
     ImportLine,
@@ -121,6 +122,32 @@ def cmd_import_characters(args: argparse.Namespace) -> int:
         return _print_report(import_characters(db, manifest))
 
 
+def cmd_import_dossiers(args: argparse.Namespace) -> int:
+    folder = Path(args.folder)
+    files = sorted(folder.glob("*.toml")) if folder.is_dir() else []
+    if not files:
+        logger.error("No .toml dossier found in %s", folder)
+        return 1
+    lines: list[ImportLine] = []
+    with get_session_factory()() as db:
+        for path in files:
+            try:
+                character = import_dossier(db, load_dossier_file(path), path.name)
+            except DossierError as exc:
+                db.rollback()
+                lines.append(ImportLine("failed", path.name, str(exc)))
+                continue
+            lines.append(
+                ImportLine(
+                    "imported",
+                    path.name,
+                    f"-> {character.name}: {len(character.events)} events, "
+                    f"{len(character.relations)} relations, {len(character.items)} items",
+                )
+            )
+    return _print_report(lines)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -151,6 +178,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     players.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
     players.set_defaults(handler=cmd_import_characters)
+
+    dossiers = commands.add_parser(
+        "import-dossiers", help="Import character backstories, relations and inventories"
+    )
+    dossiers.add_argument("folder", help="Folder containing one .toml file per character")
+    dossiers.set_defaults(handler=cmd_import_dossiers)
     return parser
 
 
