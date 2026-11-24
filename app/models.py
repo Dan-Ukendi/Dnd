@@ -10,9 +10,11 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     MetaData,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR
@@ -41,6 +43,12 @@ class SyncStatus(StrEnum):
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class MediaRole(StrEnum):
+    PORTRAIT = "portrait"
+    MAP = "map"
+    SHEET = "sheet"
 
 
 SEARCH_VECTOR_SQL = (
@@ -120,6 +128,10 @@ class WaArticle(Base):
         TSVECTOR, Computed(SEARCH_VECTOR_SQL, persisted=True)
     )
 
+    media: Mapped[list["MediaAsset"]] = relationship(
+        lazy="selectin", order_by="MediaAsset.id", viewonly=True
+    )
+
     @property
     def is_available(self) -> bool:
         return self.removed_at is None
@@ -190,3 +202,52 @@ class SyncRun(Base):
     unchanged_count: Mapped[int] = mapped_column(Integer, default=0)
     removed_count: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text)
+
+
+class MediaAsset(Base):
+    __tablename__ = "media_assets"
+    __table_args__ = (
+        CheckConstraint("role IN ('portrait', 'map', 'sheet')", name="ck_media_assets_role"),
+        UniqueConstraint("wa_article_id", "role", name="uq_media_assets_article_role"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(10))
+    banner_section: Mapped[str | None] = mapped_column(String(30), unique=True)
+    title: Mapped[str] = mapped_column(String(300))
+    original_filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(100))
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    size: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+    @property
+    def version(self) -> str:
+        return self.sha256[:12]
+
+
+class MediaVariant(Base):
+    __tablename__ = "media_variants"
+    __table_args__ = (CheckConstraint("name IN ('full', 'thumb')", name="ck_media_variants_name"),)
+
+    asset_id: Mapped[int] = mapped_column(
+        ForeignKey("media_assets.id", ondelete="CASCADE"), primary_key=True
+    )
+    name: Mapped[str] = mapped_column(String(10), primary_key=True)
+    content_type: Mapped[str] = mapped_column(String(100))
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+    gzip_data: Mapped[bytes | None] = mapped_column(LargeBinary)
+    size: Mapped[int] = mapped_column(Integer)
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    etag: Mapped[str] = mapped_column(String(64))
