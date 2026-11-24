@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#6b2a1a">
+  <meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false}'>
+  <title>{% block title %}Compagnon de campagne{% endblock %} · Compagnon de campagne</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <link rel="stylesheet" href="/static/app.css?v=1">
+  <script src="/static/vendor/htmx.min.js?v=2.0.4" defer></script>
+  <script src="/static/app.js?v=1" defer></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'>
+  <header class="topbar">
+    <a class="brand" href="/">Compagnon de campagne</a>
+    {% if current_user %}
+    <nav class="nav" aria-label="Navigation principale">
+      {% if current_user.is_dm %}
+      <a href="/mj">Tableau de bord</a>
+      <a href="/mj/articles">Articles</a>
+      <a href="/mj/joueurs">Joueurs</a>
+      <a href="/mj/personnages">Personnages</a>
+      {% else %}
+      <a href="/joueur">Mon personnage</a>
+      <a href="/joueur/articles">Mes articles</a>
+      {% endif %}
+      <form method="post" action="/deconnexion" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="link-button">Déconnexion</button>
+      </form>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="container">
+    {% set flash_message = pop_flash() %}
+    {% if flash_message %}
+    <div class="alert alert-{{ flash_message.kind }}" role="status">{{ flash_message.message }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

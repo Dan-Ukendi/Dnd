@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Activer mon compte{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Bienvenue, {{ invited.display_name }}</h1>
+  <p>Choisissez votre mot de passe pour activer votre compte. Votre identifiant de connexion est <strong>{{ invited.login }}</strong>.</p>
+  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/invitation/{{ token }}" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="text" name="username" value="{{ invited.login }}" autocomplete="username" hidden readonly>
+    <label>Mot de passe (10 caractères minimum)
+      <input type="password" name="password" autocomplete="new-password" required minlength="10" maxlength="256">
+    </label>
+    <label>Confirmez le mot de passe
+      <input type="password" name="password_confirmation" autocomplete="new-password" required minlength="10" maxlength="256">
+    </label>
+    <button type="submit" class="button primary">Activer mon compte</button>
+  </form>
+</section>
+{% endblock %}

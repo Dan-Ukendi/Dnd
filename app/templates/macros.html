@@ -1,0 +1,17 @@
+{% macro csrf_field() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{%- endmacro %}
+
+{% macro type_badge(article) -%}
+<span class="badge">{{ article.template_type | template_label }}</span>
+{%- endmacro %}
+
+{% macro visibility_badge(article) -%}
+{% if article.removed_at %}
+<span class="badge badge-danger">Supprimé de World Anvil</span>
+{% elif article.player_visible %}
+<span class="badge badge-ok">Visible si partagé</span>
+{% else %}
+<span class="badge badge-warn" title="{{ article.visibility_reason or '' }}">Invisible pour les joueurs</span>
+{% endif %}
+{%- endmacro %}
