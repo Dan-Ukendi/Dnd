@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.config import get_settings
 from app.deps import CurrentDm, DbSession
 from app.models import Character, Role, SyncStatus, User, WaArticle
+from app.sections import section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
 from app.services.access import dm_render_context
@@ -57,7 +58,11 @@ def dashboard(request: Request, db: DbSession, dm: CurrentDm) -> Response:
         ),
         "characters": db.scalar(select(func.count()).select_from(Character)),
     }
-    return render(request, "dm/dashboard.html", {"stats": stats, **_sync_context(request, db)})
+    return render(
+        request,
+        "dm/dashboard.html",
+        {"stats": stats, "section_counts": section_counts(db), **_sync_context(request, db)},
+    )
 
 
 @router.post("/synchroniser")

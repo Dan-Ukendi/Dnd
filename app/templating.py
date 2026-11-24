@@ -7,6 +7,16 @@ from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse
 
+from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
+from app.presentation import (
+    article_image,
+    article_tagline,
+    fiche_body,
+    group_by_section,
+    in_section,
+    section_types,
+)
+from app.sections import SECTIONS, SECTIONS_BY_KEY, section_of
 from app.security import get_csrf_token
 
 APP_DIR = Path(__file__).resolve().parent
@@ -70,8 +80,29 @@ def _context(request: Request) -> dict[str, Any]:
 
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR, context_processors=[_context])
-templates.env.filters["template_label"] = template_label
-templates.env.filters["datetime_fr"] = format_datetime
+templates.env.filters.update(
+    {
+        "template_label": template_label,
+        "datetime_fr": format_datetime,
+        "tagline": article_tagline,
+        "fiche_body": fiche_body,
+        "article_image": article_image,
+        "in_section": in_section,
+        "group_by_section": group_by_section,
+        "section_of": section_of,
+    }
+)
+templates.env.globals.update(
+    {
+        "APP_TITLE": APP_TITLE,
+        "APP_TAGLINE": APP_TAGLINE,
+        "THEME_COLOR": THEME_COLOR,
+        "SECTIONS": SECTIONS,
+        "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
+        "section_types": section_types,
+        "ASSET_VERSION": "2",
+    }
+)
 
 
 def render(

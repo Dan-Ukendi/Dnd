@@ -1,4 +1,5 @@
 import logging
+import mimetypes
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -9,6 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
 from app.config import get_settings
 from app.db import get_engine, ping
 from app.deps import NotAuthenticatedError
@@ -17,6 +19,30 @@ from app.security import LoginRateLimiter, csrf_protect
 from app.templating import STATIC_DIR, is_htmx, render
 
 logger = logging.getLogger(__name__)
+mimetypes.add_type("font/woff2", ".woff2")
+
+MANIFEST = {
+    "name": APP_TITLE,
+    "short_name": APP_TITLE,
+    "description": APP_TAGLINE,
+    "lang": "fr",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": THEME_COLOR,
+    "theme_color": THEME_COLOR,
+    "icons": [
+        {"src": "/static/icons/icon.svg", "sizes": "any", "type": "image/svg+xml"},
+        {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        {
+            "src": "/static/icons/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable",
+        },
+    ],
+}
 
 CONTENT_SECURITY_POLICY = "; ".join(
     [
@@ -41,7 +67,10 @@ ERROR_MESSAGES = {
         "Action refusée",
         "Votre session a peut-être expiré. Rechargez la page puis réessayez.",
     ),
-    404: ("Page introuvable", "Cette page n'existe pas ou n'est pas accessible."),
+    404: (
+        "Page introuvable",
+        "Cette page s'est perdue dans les archives, ou elle ne vous est pas ouverte.",
+    ),
     405: ("Action impossible", "Cette action n'est pas disponible ici."),
     429: ("Trop de tentatives", "Patientez quelques minutes avant de réessayer."),
     503: (
@@ -147,10 +176,8 @@ def create_app() -> FastAPI:
         )
 
     @app.get("/manifest.webmanifest", include_in_schema=False)
-    def manifest() -> FileResponse:
-        return FileResponse(
-            STATIC_DIR / "manifest.webmanifest", media_type="application/manifest+json"
-        )
+    def manifest() -> JSONResponse:
+        return JSONResponse(MANIFEST, media_type="application/manifest+json")
 
     @app.exception_handler(NotAuthenticatedError)
     async def not_authenticated(request: Request, exc: NotAuthenticatedError) -> Response:

@@ -12,6 +12,7 @@ TAG_PATTERN = r"\[(/?)([A-Za-z][A-Za-z0-9]*)((?:[:|=][^\[\]\n]*)?)\]"
 TOKEN_RE = re.compile(f"{MENTION_PATTERN}|{TAG_PATTERN}")
 LIST_MARKER_RE = re.compile(r"^\s*[-*•]\s+")
 IMAGE_ID_RE = re.compile(r"^\s*(\d+)")
+_TAG_ONLY_RE = re.compile(r"<[^>]+>")
 
 HEADINGS = {"h": "h2", "h1": "h2", "h2": "h3", "h3": "h4", "h4": "h5", "h5": "h6", "h6": "h6"}
 INLINE = {
@@ -302,7 +303,8 @@ class _Renderer:
             return f'<div class="gm-only">{self.block(node.children)}</div>'
         if name in HEADINGS:
             tag = HEADINGS[name]
-            return f"<{tag}>{_with_breaks(self.inline(node.children))}</{tag}>"
+            content = _with_breaks(self.inline(node.children))
+            return f"<{tag}>{content}</{tag}>" if _TAG_ONLY_RE.sub("", content).strip() else ""
         if name in INLINE:
             tag = INLINE[name]
             return f"<{tag}>{self.inline(node.children)}</{tag}>"
