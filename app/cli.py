@@ -1,0 +1,111 @@
+import argparse
+import getpass
+import logging
+import sys
+
+from sqlalchemy.exc import OperationalError
+
+from app.config import get_settings
+from app.db import get_engine, get_session_factory, wait_for_database
+from app.models import Role, SyncStatus
+from app.services.accounts import AccountError, create_user
+from app.services.sync import SyncAlreadyRunningError, sync_world
+from app.worldanvil.client import WorldAnvilClient, WorldAnvilError
+
+logger = logging.getLogger("app.cli")
+
+
+def cmd_wait_db(args: argparse.Namespace) -> int:
+    try:
+        wait_for_database(get_engine(), attempts=args.attempts)
+    except OperationalError:
+        logger.error("Database is still unreachable")
+        return 1
+    logger.info("Database is reachable")
+    return 0
+
+
+def cmd_sync(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    if not settings.world_anvil_configured:
+        logger.error("WA_APPLICATION_KEY, WA_AUTH_TOKEN and WA_WORLD_ID must be set")
+        return 1
+    try:
+        client = WorldAnvilClient.from_settings(settings)
+    except WorldAnvilError as exc:
+        logger.error("%s", exc)
+        return 1
+    with client, get_session_factory()() as db:
+        try:
+            run = sync_world(db, client, settings.wa_world_id, full=args.full, trigger="cli")
+        except SyncAlreadyRunningError:
+            logger.error("A synchronisation is already running")
+            return 1
+    if run.status != SyncStatus.SUCCESS:
+        logger.error("Synchronisation failed: %s", run.error)
+        return 1
+    print(
+        f"Synchronisation succeeded: {run.created_count} created, {run.updated_count} updated, "
+        f"{run.unchanged_count} unchanged, {run.removed_count} removed"
+    )
+    return 0
+
+
+def _read_password(from_stdin: bool) -> str:
+    if from_stdin:
+        return sys.stdin.readline().rstrip("\r\n")
+    password = getpass.getpass("Password: ")
+    if password != getpass.getpass("Confirm password: "):
+        raise AccountError("password_mismatch")
+    return password
+
+
+def cmd_create_dm(args: argparse.Namespace) -> int:
+    try:
+        password = _read_password(args.password_stdin)
+        with get_session_factory()() as db:
+            user = create_user(
+                db,
+                display_name=args.name,
+                login=args.login,
+                role=Role.DM,
+                password=password,
+            )
+    except AccountError as exc:
+        logger.error("Could not create the DM account: %s", exc.code)
+        return 1
+    print(f"DM account '{user.login}' created")
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="python -m app.cli")
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    wait = commands.add_parser("wait-db", help="Wait until the database accepts connections")
+    wait.add_argument("--attempts", type=int, default=8)
+    wait.set_defaults(handler=cmd_wait_db)
+
+    sync = commands.add_parser("sync", help="Synchronise World Anvil articles")
+    sync.add_argument("--full", action="store_true", help="Refetch every article")
+    sync.set_defaults(handler=cmd_sync)
+
+    create_dm = commands.add_parser("create-dm", help="Create a DM account")
+    create_dm.add_argument("--login", required=True)
+    create_dm.add_argument("--name", required=True)
+    create_dm.add_argument(
+        "--password-stdin", action="store_true", help="Read the password from standard input"
+    )
+    create_dm.set_defaults(handler=cmd_create_dm)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    args = build_parser().parse_args(argv)
+    return int(args.handler(args))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
