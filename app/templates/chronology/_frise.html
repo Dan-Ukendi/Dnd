@@ -1,0 +1,72 @@
+{% from "components/icons.html" import ui %}
+{% set selected_id = detail.id if detail is defined else None %}
+{% set tip_flip = frise.width - 220 %}
+<section class="frise reveal reveal-delay-2" aria-label="Frise chronologique" data-frise>
+  <div class="frise__controls">
+    <ul class="frise__jumps" aria-label="Aller à une ère">
+      {% for band in frise.bands %}
+      <li><a class="frise__jump" href="#bande-{{ band.era.slug }}" data-frise-jump="bande-{{ band.era.slug }}" data-color="{{ band.era.color }}">{{ band.era.name }}</a></li>
+      {% endfor %}
+    </ul>
+    <div class="frise__arrows">
+      <button type="button" class="btn frise__arrow" data-frise-scroll="-1" aria-label="Remonter le temps">{{ ui("back") }}</button>
+      <button type="button" class="btn frise__arrow" data-frise-scroll="1" aria-label="Avancer dans le temps">{{ ui("chevron") }}</button>
+    </div>
+  </div>
+  <div class="frise__viewport" tabindex="0" role="region" aria-label="Frise : défilement horizontal" data-frise-viewport>
+    <div class="frise__track" data-w="{{ frise.width | round(1) }}" data-ranges="{{ frise.range_lanes }}" data-lanes="{{ frise.point_lanes }}">
+      {% for band in frise.bands %}
+      <section class="frise__band{% if filters.era and filters.era != band.era.slug %} is-dimmed{% endif %}" id="bande-{{ band.era.slug }}" data-x="{{ band.x | round(1) }}" data-w="{{ band.width | round(1) }}" data-color="{{ band.era.color }}" aria-label="{{ band.era.name }}">
+        <header class="frise__band-head">
+          <h3 class="frise__band-name">{{ band.era.name }}</h3>
+          <p class="frise__band-range">{{ band.era.range_label }}</p>
+          <p class="frise__band-subtitle">{{ band.era.subtitle }}</p>
+        </header>
+      </section>
+      {% endfor %}
+      <div class="frise__axis" aria-hidden="true"></div>
+      {% for tick in frise.ticks %}
+      <div class="frise__tick" data-x="{{ tick.x | round(1) }}" aria-hidden="true"><span>{{ year_label(tick.year) }}</span></div>
+      {% endfor %}
+      {% for mark in frise.milestones %}
+      <div class="frise__milestone{% if mark.milestone.current %} frise__milestone--now{% endif %}{% if mark.x > tip_flip %} is-end{% endif %}" data-x="{{ mark.x | round(1) }}" aria-hidden="true">
+        <span class="frise__milestone-label">{{ mark.milestone.label }}</span>
+        <span class="frise__milestone-caption">{{ mark.milestone.caption }}</span>
+      </div>
+      {% endfor %}
+      <ol class="frise__layer frise__layer--ranges" aria-label="Périodes">
+        {% for marker in frise.ranges %}
+        {% set view = marker.first %}
+        <li>
+          <a class="frise__range importance--{{ marker.importance }}{% if dm and marker.pending %} is-pending{% endif %}{% if view.id == selected_id %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}{% if marker.width < 150 %} is-narrow{% endif %}"
+            href="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-get="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-target="#chrono-panel" hx-push-url="true"
+            data-x="{{ marker.x | round(1) }}" data-w="{{ marker.width | round(1) }}" data-lane="{{ marker.lane }}" data-color="{{ view.era.color }}" data-frise-marker>
+            <span class="frise__tip"><span class="frise__tip-years">{{ span_label(view.event.start_year, view.event.end_year) }}</span>{{ view.event.title }}{% if dm and marker.pending %}<span class="frise__tip-pending">à valider</span>{% endif %}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ol>
+      <ol class="frise__layer frise__layer--points" aria-label="Événements">
+        {% for marker in frise.points %}
+        {% set view = marker.first %}
+        <li>
+          {% if marker.kind == "cluster" %}
+          <a class="frise__cluster importance--{{ marker.importance }}{% if year is defined and year == marker.year %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}"
+            href="{{ base }}?{{ filters.query(annee=marker.year) }}" hx-get="{{ base }}?{{ filters.query(annee=marker.year) }}" hx-target="#chrono-panel" hx-push-url="true"
+            data-x="{{ marker.x | round(1) }}" data-lane="{{ marker.lane }}" data-color="{{ view.era.color }}" data-frise-marker>
+            <span class="frise__count">{{ marker.events | length }}</span>
+            <span class="frise__tip"><span class="frise__tip-years">{{ year_label(marker.year) }}</span>{{ marker.events | length }} événements</span>
+          </a>
+          {% else %}
+          <a class="frise__point importance--{{ marker.importance }}{% if dm and marker.pending %} is-pending{% endif %}{% if view.id == selected_id %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}"
+            href="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-get="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-target="#chrono-panel" hx-push-url="true"
+            data-x="{{ marker.x | round(1) }}" data-lane="{{ marker.lane }}" data-color="{{ view.era.color }}" data-frise-marker>
+            <span class="frise__tip"><span class="frise__tip-years">{{ year_label(view.event.start_year) }}</span>{{ view.event.title }}{% if dm and marker.pending %}<span class="frise__tip-pending">à valider</span>{% endif %}</span>
+          </a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+</section>

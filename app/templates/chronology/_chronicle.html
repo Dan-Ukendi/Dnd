@@ -1,0 +1,37 @@
+{% from "components/ui.html" import empty_state %}
+{% if sessions %}
+<div class="chronicle reveal reveal-delay-2">
+  {% for group in sessions %}
+  <section class="chronicle-session" aria-labelledby="seance-{{ group.session or 'autre' }}">
+    <header class="chronicle-session__head">
+      <h2 class="chronicle-session__title" id="seance-{{ group.session or 'autre' }}">{% if group.session %}Séance {{ group.session }}{% else %}Séance à préciser{% endif %}</h2>
+      <p class="chronicle-session__count">{{ group.count }} événement{{ "s" if group.count != 1 }}</p>
+    </header>
+    {% for day, items in group.days %}
+    <div class="chronicle-day">
+      <h3 class="chronicle-day__title"><span class="chronicle-day__seal" aria-hidden="true">{{ day or "—" }}</span>{% if day %}Jour {{ day[1:] }}{% else %}Jour non précisé{% endif %}</h3>
+      <ol class="saga">
+        {% for view in items %}
+        <li class="saga__item{% if dm and view.event.status == 'a_valider' %} is-pending{% endif %}">
+          {% if view.event.place %}<p class="saga__session">{{ view.event.place }}</p>{% endif %}
+          <h4 class="saga__title"><a href="{{ base }}/evenements/{{ view.id }}">{{ view.event.title }}</a></h4>
+          {% if view.event.summary %}<div class="prose"><p>{{ view.event.summary }}</p></div>{% endif %}
+          {% if dm %}
+          <p class="chronicle__meta">
+            <span class="pill {{ 'pill--ok' if view.event.visibility == 'joueurs' else 'pill--muted' }}">{{ VISIBILITY_LABELS[view.event.visibility] }}</span>
+            {% if view.event.status == "a_valider" %}<span class="chrono-pending">à valider</span>{% endif %}
+          </p>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</div>
+{% elif dm %}
+{{ empty_state("Aucune chronique", "Aucun événement n'est encore marqué comme chronique de la campagne. Marquez-en un depuis sa fiche, ou ajoutez la ligne Chronique sur World Anvil.", "compass") }}
+{% else %}
+{{ empty_state("La chronique attend ses premières pages", "Les hauts faits de votre compagnie apparaîtront ici lorsque votre MJ les aura consignés.", "compass") }}
+{% endif %}

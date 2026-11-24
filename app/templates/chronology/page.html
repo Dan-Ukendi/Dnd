@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import breadcrumb, page_head, empty_state %}
+{% block title %}Chronologie{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{% if dm %}
+{{ breadcrumb([("Accueil", "/mj"), ("Lore", "/mj/articles?section=lore"), ("Chronologie", "")]) }}
+{% else %}
+{{ breadcrumb([("Mon personnage", "/joueur"), ("Chronologie", "")]) }}
+{% endif %}
+{{ page_head("Chronologie", eyebrow="Lore", lead="Né en Italie en l'An 0, l'Empire d'Ébène achève la Conquête en 345 et règne sept cent quarante-neuf ans, jusqu'à la Révolte des Échos. Depuis, les Tumultes.") }}
+
+<div class="chrono-bar reveal reveal-delay-1">
+  <nav class="chrono-tabs" aria-label="Vues de la chronologie">
+    <a href="{{ base }}{% if filters.active %}?{{ filters.query() }}{% endif %}" {% if tab == "histoire" %}aria-current="page"{% endif %}>{{ ui("hourglass") }}Histoire<span class="chrono-tabs__long"> du monde</span></a>
+    <a href="{{ base }}?vue=chronique" {% if tab == "chronique" %}aria-current="page"{% endif %}>{{ ui("compass") }}Chronique<span class="chrono-tabs__long"> de la campagne</span></a>
+  </nav>
+  {% if dm %}<a class="btn chrono-bar__eras" href="{{ base }}/eres">{{ ui("key") }}Ères</a>{% endif %}
+</div>
+
+{% if not total %}
+{% if dm %}
+{{ empty_state("Chronologie vide", "Aucun événement n'est encore chargé. Lancez python -m app.cli load-timeline ou synchronisez World Anvil.", "hourglass") }}
+{% else %}
+{{ empty_state("Les annales sont encore scellées", "Votre MJ n'a encore révélé aucun pan de l'histoire du monde. Les chroniques s'ouvriront au fil de vos découvertes.", "hourglass") }}
+{% endif %}
+{% elif tab == "chronique" %}
+{% include "chronology/_chronicle.html" %}
+{% else %}
+{% include "chronology/_filters.html" %}
+<div class="chrono-layout">
+  <div class="chrono-main">
+    {% if shown %}
+    {% include "chronology/_frise.html" %}
+    {% include "chronology/_list.html" %}
+    {% else %}
+    {{ empty_state("Rien dans les annales", "Aucun événement ne correspond à ces filtres. Élargissez la recherche ou retirez un filtre.", "search") }}
+    {% endif %}
+  </div>
+  <aside id="chrono-panel" class="chrono-panel{% if not (detail is defined or year is defined) %} chrono-panel--idle{% endif %}" aria-label="Détail de la chronologie" aria-live="polite">
+    {% include "chronology/_panel.html" %}
+  </aside>
+</div>
+{% endif %}
+{% endblock %}

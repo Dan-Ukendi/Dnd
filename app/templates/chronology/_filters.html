@@ -1,0 +1,46 @@
+{% from "components/icons.html" import ui %}
+<details class="chrono-filters reveal reveal-delay-1" data-filters-panel{% if filters.active %} data-active open{% endif %}>
+  <summary>{{ ui("filter") }}Filtres{% if filters.active %}<span class="chrono-filters__badge">actifs</span>{% endif %} {{ ui("chevron") }}</summary>
+  <form method="get" action="{{ base }}" class="chrono-filters__form" role="search">
+    <div class="search-field chrono-filters__search">
+      {{ ui("search") }}
+      <label class="visually-hidden" for="chrono-q">Rechercher dans la chronologie</label>
+      <input id="chrono-q" type="search" name="q" value="{{ filters.q }}" placeholder="Un nom, un lieu, un mot…" maxlength="100" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="chrono-ere">Ère</label>
+      <select id="chrono-ere" name="ere">
+        <option value="">Toutes les ères</option>
+        {% for era in eras %}<option value="{{ era.slug }}" {% if filters.era == era.slug %}selected{% endif %}>{{ era.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="chrono-importance">Importance</label>
+      <select id="chrono-importance" name="importance">
+        <option value="">Toutes</option>
+        {% for value, label in IMPORTANCE_LABELS.items() %}<option value="{{ value }}" {% if filters.importance == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    {% if dm %}
+    <div class="field">
+      <label for="chrono-origine">Origine</label>
+      <select id="chrono-origine" name="origine">
+        <option value="">Toutes</option>
+        {% for value, label in ORIGIN_LABELS.items() %}<option value="{{ value }}" {% if filters.origin == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="chrono-statut">Statut</label>
+      <select id="chrono-statut" name="statut">
+        <option value="">Tous</option>
+        {% for value, label in STATUS_LABELS.items() %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="chrono-filters__actions">
+      <button type="submit" class="btn btn--primary">Filtrer</button>
+      {% if filters.active %}<a class="btn" href="{{ base }}">Effacer</a>{% endif %}
+    </div>
+  </form>
+</details>
+<p class="result-count">{{ shown | length }} événement{{ "s" if shown | length != 1 }}{% if filters.active %} sur {{ total }}{% endif %}{% if filters.q %} pour « {{ filters.q }} »{% endif %}</p>

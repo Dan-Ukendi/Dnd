@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import breadcrumb %}
+{% block title %}{{ detail.event.title }}{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{% if dm %}
+{{ breadcrumb([("Accueil", "/mj"), ("Chronologie", base), (detail.event.title, "")]) }}
+{% else %}
+{{ breadcrumb([("Mon personnage", "/joueur"), ("Chronologie", base), (detail.event.title, "")]) }}
+{% endif %}
+<div class="chrono-page panel reveal">
+  {% set standalone = True %}
+  {% include "chronology/_detail.html" %}
+</div>
+<p class="chrono-page__back"><a class="btn" href="{{ base }}?evenement={{ detail.id }}">Voir sur la frise</a></p>
+{% endblock %}

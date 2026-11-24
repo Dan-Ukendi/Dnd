@@ -110,3 +110,15 @@
 </figure>
 {{ media_viewer("visionneuse-" ~ asset.id, asset) }}
 {%- endmacro %}
+
+{% macro chronology_entry(href) -%}
+<a class="chrono-entry reveal reveal-delay-1" href="{{ href }}">
+  <span class="chrono-entry__icon" aria-hidden="true">{{ ui("hourglass") }}</span>
+  <span class="chrono-entry__body">
+    <span class="chrono-entry__eyebrow">Lore</span>
+    <span class="chrono-entry__title">Chronologie du monde</span>
+    <span class="chrono-entry__text">Des Aubes Anciennes aux Tumultes : l'Empire d'Ébène, de l'An 0 à sa chute en 749, et la chronique de la campagne.</span>
+  </span>
+  <span class="chrono-entry__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+</a>
+{%- endmacro %}

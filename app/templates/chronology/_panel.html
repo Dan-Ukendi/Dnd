@@ -1,0 +1,44 @@
+{% from "components/icons.html" import ui %}
+{% if detail is defined %}
+{% set standalone = False %}
+{% include "chronology/_detail.html" %}
+{% elif year is defined %}
+<section class="chrono-year" aria-labelledby="annee-titre">
+  <p class="eyebrow">Une même année</p>
+  <h2 class="chrono-detail__title" id="annee-titre" tabindex="-1">{{ year_label(year) }}</h2>
+  {% if year_events %}
+  <p class="muted">{{ year_events | length }} événements datés de cette année.</p>
+  <ol class="chrono-year__list">
+    {% for view in year_events %}
+    <li>
+      <a href="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-get="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-target="#chrono-panel" hx-push-url="true" class="chrono-year__item importance--{{ view.event.importance }}{% if dm and view.event.status == 'a_valider' %} is-pending{% endif %}">
+        <span class="chrono-year__mark" aria-hidden="true"></span>
+        <span class="chrono-year__title">{{ view.event.title }}</span>
+        {% if view.event.chronicle and view.event.day %}<span class="chrono-year__day">{{ view.event.day }}</span>{% endif %}
+      </a>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="muted">Aucun événement ne correspond à cette année avec les filtres choisis.</p>
+  {% endif %}
+</section>
+{% else %}
+<section class="chrono-intro" aria-labelledby="legende-titre">
+  <h2 class="chrono-intro__title" id="legende-titre">Lire la frise</h2>
+  <p class="muted">Choisissez un événement sur la frise pour en lire le récit. Chaque ère garde une largeur lisible ; à l'intérieur, les années restent à l'échelle.</p>
+  <ul class="legend">
+    <li><span class="legend__mark legend__mark--majeur" aria-hidden="true"></span>Événement majeur</li>
+    <li><span class="legend__mark legend__mark--notable" aria-hidden="true"></span>Événement notable</li>
+    <li><span class="legend__mark legend__mark--mineur" aria-hidden="true"></span>Événement mineur</li>
+    <li><span class="legend__mark legend__mark--range" aria-hidden="true"></span>Période (début et fin)</li>
+    <li><span class="legend__mark legend__mark--cluster" aria-hidden="true">3</span>Plusieurs événements la même année</li>
+    {% if dm %}<li><span class="legend__mark legend__mark--pending" aria-hidden="true"></span>À valider</li>{% endif %}
+  </ul>
+  <ul class="chrono-intro__eras">
+    {% for era in eras %}
+    <li data-color="{{ era.color }}"><span class="chrono-intro__era-name">{{ era.name }}</span><span class="chrono-intro__era-range">{{ era.range_label }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}

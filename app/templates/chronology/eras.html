@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import breadcrumb, page_head %}
+{% block title %}Ères de la chronologie{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{{ breadcrumb([("Accueil", "/mj"), ("Chronologie", "/mj/chronologie"), ("Ères", "")]) }}
+{{ page_head("Les ères", eyebrow="Chronologie", lead="Le nom, le sous-titre et la couleur de chaque ère. Les bornes suivent le calendrier impérial et ne se modifient pas ici.") }}
+<ul class="era-settings stagger">
+  {% for era in eras %}
+  <li class="era-setting panel" data-color="{{ era.color }}">
+    <div class="era-setting__head">
+      <span class="era-setting__swatch" aria-hidden="true"></span>
+      <div>
+        <h2 class="era-setting__name">{{ era.name }}</h2>
+        <p class="era-setting__range">{{ era.range_label }}{% if era.customized %} · personnalisée{% endif %}</p>
+      </div>
+    </div>
+    <form method="post" action="/mj/chronologie/eres/{{ era.slug }}" class="form era-setting__form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="ere-nom-{{ era.slug }}">Nom</label>
+        <input id="ere-nom-{{ era.slug }}" type="text" name="name" value="{{ era.name }}" maxlength="100" required>
+      </div>
+      <div class="field">
+        <label for="ere-sous-titre-{{ era.slug }}">Sous-titre</label>
+        <input id="ere-sous-titre-{{ era.slug }}" type="text" name="subtitle" value="{{ era.subtitle }}" maxlength="300">
+      </div>
+      <div class="field era-setting__color">
+        <label for="ere-couleur-{{ era.slug }}">Couleur</label>
+        <input id="ere-couleur-{{ era.slug }}" type="color" name="color" value="{{ era.color | lower }}">
+        <span class="field__hint">Par défaut : {{ era.default.color }}</span>
+      </div>
+      <div class="row">
+        <button type="submit" class="btn btn--primary">Enregistrer</button>
+      </div>
+    </form>
+    {% if era.customized %}
+    <form method="post" action="/mj/chronologie/eres/{{ era.slug }}/reinitialiser" class="era-setting__reset" data-confirm="Rétablir le nom, le sous-titre et la couleur par défaut de cette ère ?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">Rétablir les valeurs par défaut</button>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

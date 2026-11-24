@@ -1,0 +1,180 @@
+{% from "components/icons.html" import ui %}
+{% set event = detail.event %}
+<article class="chrono-detail{% if dm and event.status == 'a_valider' %} is-pending{% endif %}" data-color="{{ detail.era.color }}" aria-labelledby="evenement-titre">
+  <p class="eyebrow chrono-detail__era">{{ detail.era.name }}</p>
+  <h2 class="chrono-detail__title" id="evenement-titre" tabindex="-1">{{ event.title }}</h2>
+  <p class="chrono-detail__years">{{ span_label(event.start_year, event.end_year) }}{% if event.is_range %}<span> · {{ duration_label(event.start_year, event.end_year) }}</span>{% endif %}</p>
+  <div class="chrono-detail__pills">
+    <span class="pill">{{ IMPORTANCE_LABELS[event.importance] }}</span>
+    {% if dm %}
+    <span class="pill {{ 'pill--ok' if event.visibility == 'joueurs' else 'pill--muted' }}">{{ VISIBILITY_LABELS[event.visibility] }}</span>
+    {% if event.status == "a_valider" %}<span class="chrono-pending">à valider</span>{% endif %}
+    {% endif %}
+  </div>
+  {% if event.place %}<p class="chrono-detail__place">{{ ui("map") }}<span>{{ event.place }}</span></p>{% endif %}
+  {% if event.summary %}
+  <div class="prose chrono-detail__summary">
+    {% for paragraph in event.summary.split("\n\n") %}<p>{{ paragraph }}</p>{% endfor %}
+  </div>
+  {% endif %}
+  <dl class="facts chrono-detail__facts">
+    <div><dt>Ère</dt><dd>{{ detail.era.name }}</dd></div>
+    <div><dt>Importance</dt><dd>{{ IMPORTANCE_LABELS[event.importance] }}</dd></div>
+    {% if dm %}
+    <div><dt>Statut</dt><dd>{{ STATUS_LABELS[event.status] }}</dd></div>
+    <div><dt>Origine</dt><dd>{{ ORIGIN_LABELS[event.origin] }}</dd></div>
+    <div><dt>Code</dt><dd>{{ event.code }}</dd></div>
+    {% endif %}
+    {% if event.chronicle %}
+    <div><dt>Chronique</dt><dd>{% if event.session %}Séance {{ event.session }}{% else %}Séance à préciser{% endif %}{% if event.day %}, jour {{ event.day }}{% endif %}</dd></div>
+    {% endif %}
+  </dl>
+
+  {% if linked %}
+  <section class="chrono-detail__block" aria-labelledby="evenements-lies">
+    <h3 class="chrono-detail__subtitle" id="evenements-lies">Événements liés</h3>
+    <ul class="chrono-links">
+      {% for item in linked %}
+      {% set href = (base ~ "/evenements/" ~ item.view.id) if standalone else (base ~ "?" ~ filters.query(evenement=item.view.id)) %}
+      <li>
+        <a class="chrono-links__item importance--{{ item.view.event.importance }}" href="{{ href }}"{% if not standalone %} hx-get="{{ href }}" hx-target="#chrono-panel" hx-push-url="true"{% endif %}>
+          <span class="chrono-links__years">{{ year_label(item.view.event.start_year) }}</span>
+          <span class="chrono-links__title">{{ item.view.event.title }}</span>
+        </a>
+        {% if dm and item.origin == "mj" %}
+        <form method="post" action="{{ base }}/evenements/{{ event.id }}/liens/{{ item.view.id }}/supprimer" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="retour" value="{{ current_url }}">
+          <button type="submit" class="chrono-links__remove" aria-label="Retirer le lien vers {{ item.view.event.title }}">{{ ui("close") }}</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if fiches %}
+  <section class="chrono-detail__block" aria-labelledby="fiches-liees-evenement">
+    <h3 class="chrono-detail__subtitle" id="fiches-liees-evenement">Fiches liées</h3>
+    <ul class="chrono-links">
+      {% for item in fiches %}
+      <li>
+        {% if item.href %}<a class="chrono-links__item chrono-links__item--fiche" href="{{ item.href }}">{{ ui("scroll") }}<span class="chrono-links__title">{{ item.fiche.title }}</span></a>
+        {% else %}<span class="chrono-links__item chrono-links__item--fiche">{{ ui("scroll") }}<span class="chrono-links__title">{{ item.fiche.title }}</span></span>{% endif %}
+        {% if dm %}
+        <form method="post" action="{{ base }}/evenements/{{ event.id }}/fiches/{{ item.fiche.id }}/supprimer" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="retour" value="{{ current_url }}">
+          <button type="submit" class="chrono-links__remove" aria-label="Retirer la fiche {{ item.fiche.title }}">{{ ui("close") }}</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if not standalone %}
+  <p class="chrono-detail__permalink"><a href="{{ base }}/evenements/{{ event.id }}">Ouvrir la page de l'événement</a></p>
+  {% endif %}
+
+  {% if dm %}
+  <section class="chrono-admin" aria-labelledby="gestion-evenement">
+    <h3 class="chrono-admin__title" id="gestion-evenement">Gestion du MJ</h3>
+    {% if edit_url %}
+    <a class="chrono-admin__wa" href="{{ edit_url }}" target="_blank" rel="noopener noreferrer">{{ ui("external") }}Modifier sur World Anvil</a>
+    <p class="field__hint">Titre, dates, lieu, résumé et importance se modifient sur World Anvil, puis Synchroniser.</p>
+    {% endif %}
+    <div class="chrono-admin__actions">
+      <form method="post" action="{{ base }}/evenements/{{ event.id }}/statut" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="{{ current_url }}">
+        {% if event.status == "a_valider" %}
+        <input type="hidden" name="status" value="etabli">
+        <button type="submit" class="btn btn--primary">Valider</button>
+        {% else %}
+        <input type="hidden" name="status" value="a_valider">
+        <button type="submit" class="btn">Remettre à valider</button>
+        {% endif %}
+      </form>
+      <form method="post" action="{{ base }}/evenements/{{ event.id }}/visibilite" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="{{ current_url }}">
+        {% if event.visibility == "mj" %}
+        <input type="hidden" name="visibility" value="joueurs">
+        <button type="submit" class="btn">Révéler aux joueurs</button>
+        {% else %}
+        <input type="hidden" name="visibility" value="mj">
+        <button type="submit" class="btn btn--danger">Masquer</button>
+        {% endif %}
+      </form>
+    </div>
+
+    <details class="chrono-admin__section">
+      <summary>Chronique et ordre {{ ui("chevron") }}</summary>
+      <form method="post" action="{{ base }}/evenements/{{ event.id }}/chronique" class="form chrono-admin__form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="{{ current_url }}">
+        <label class="checkbox"><input type="checkbox" name="chronicle" value="1" {% if event.chronicle %}checked{% endif %}> Chronique de la campagne</label>
+        <div class="chrono-admin__grid">
+          <div class="field">
+            <label for="chrono-session-{{ event.id }}">Séance</label>
+            <input id="chrono-session-{{ event.id }}" type="number" name="session" min="1" max="999" inputmode="numeric" value="{{ event.session or '' }}">
+          </div>
+          <div class="field">
+            <label for="chrono-day-{{ event.id }}">Jour</label>
+            <select id="chrono-day-{{ event.id }}" name="day">
+              <option value="">—</option>
+              {% for day in ("J1", "J2") %}<option value="{{ day }}" {% if event.day == day %}selected{% endif %}>{{ day }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="chrono-order-{{ event.id }}">Ordre</label>
+            <input id="chrono-order-{{ event.id }}" type="number" name="order" step="1" inputmode="numeric" value="{{ event.sort_order }}" required>
+          </div>
+        </div>
+        <p class="field__hint">L'ordre départage les événements d'une même année et d'un même jour.</p>
+        <button type="submit" class="btn btn--primary">Enregistrer</button>
+      </form>
+    </details>
+
+    <details class="chrono-admin__section">
+      <summary>Lier un événement {{ ui("chevron") }}</summary>
+      <form method="post" action="{{ base }}/evenements/{{ event.id }}/liens" class="form chrono-admin__form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="{{ current_url }}">
+        <div class="field">
+          <label for="chrono-link-{{ event.id }}">Événement</label>
+          <select id="chrono-link-{{ event.id }}" name="target_id" required>
+            <option value="">Choisir…</option>
+            {% for option in link_options %}<option value="{{ option.id }}">{{ year_label(option.event.start_year) }} · {{ option.event.title }}</option>{% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">{{ ui("link") }}Lier</button>
+      </form>
+      <p class="field__hint">Les liens « Lié à » venus de World Anvil se modifient sur World Anvil.</p>
+    </details>
+
+    <details class="chrono-admin__section">
+      <summary>Lier une fiche {{ ui("chevron") }}</summary>
+      <form method="post" action="{{ base }}/evenements/{{ event.id }}/fiches" class="form chrono-admin__form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="{{ current_url }}">
+        <div class="field">
+          <label for="chrono-fiche-{{ event.id }}">Fiche World Anvil</label>
+          <select id="chrono-fiche-{{ event.id }}" name="article_id">
+            <option value="">Aucune (titre libre ci-dessous)</option>
+            {% for article in fiche_options %}<option value="{{ article.wa_id }}">{{ article.title }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="chrono-fiche-titre-{{ event.id }}">Ou titre libre</label>
+          <input id="chrono-fiche-titre-{{ event.id }}" type="text" name="title" maxlength="300" autocomplete="off">
+        </div>
+        <button type="submit" class="btn">{{ ui("scroll") }}Lier la fiche</button>
+      </form>
+    </details>
+  </section>
+  {% endif %}
+</article>

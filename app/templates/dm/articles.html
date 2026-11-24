@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/icons.html" import ui %}
-{% from "components/ui.html" import page_head, breadcrumb, skeleton_cards, map_banner %}
+{% from "components/ui.html" import page_head, breadcrumb, skeleton_cards, map_banner, chronology_entry %}
 {% set section_key = request.query_params.get("section", "") %}
 {% set section = SECTIONS_BY_KEY.get(section_key) %}
 {% block title %}{{ section.label if section else "Archives" }}{% endblock %}
@@ -13,6 +13,7 @@
 {{ page_head("Toutes les archives", eyebrow="Archives", lead="Chaque fiche synchronisée depuis World Anvil, toutes sections confondues.") }}
 {% endif %}
 {% if banner %}{{ map_banner(banner) }}{% endif %}
+{% if section and section.key == "lore" %}{{ chronology_entry("/mj/chronologie") }}{% endif %}
 
 <form method="get" action="/mj/articles" class="toolbar reveal reveal-delay-1" role="search"
   hx-get="/mj/articles" hx-target="#article-results" hx-swap="outerHTML" hx-push-url="true"
