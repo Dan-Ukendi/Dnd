@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: campaign-companion
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: >-
+      python -m app.cli wait-db
+      && alembic upgrade head
+      && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      - key: WA_APPLICATION_KEY
+        sync: false
+      - key: WA_AUTH_TOKEN
+        sync: false
+      - key: WA_WORLD_ID
+        sync: false
