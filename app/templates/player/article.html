@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "macros.html" import type_badge %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<p><a href="/joueur/articles">← Mes articles</a></p>
+<article class="card">
+  <h1>{{ article.title }}</h1>
+  <div class="badges">{{ type_badge(article) }}</div>
+  <div class="prose">{{ content_html }}</div>
+</article>
+{% if linked %}
+<section class="card">
+  <h2>Voir aussi</h2>
+  <ul>{% for item in linked %}<li><a href="/joueur/articles/{{ item.wa_id }}">{{ item.title }}</a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

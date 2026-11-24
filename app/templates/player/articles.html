@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "macros.html" import type_badge %}
+{% block title %}Mes articles{% endblock %}
+{% block content %}
+<h1>Mes articles</h1>
+{% if articles %}
+<ul class="list">
+  {% for article in articles %}
+  <li class="list-item">
+    <a class="list-title" href="/joueur/articles/{{ article.wa_id }}">{{ article.title }}</a>
+    <div class="badges">{{ type_badge(article) }}</div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>Aucun article n'a encore été partagé avec vous.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Mon personnage{% endblock %}
+{% block content %}
+{% if not sheets %}
+<section class="card">
+  <h1>Mon personnage</h1>
+  <p>Aucun personnage ne vous est encore attribué. Votre MJ s'en occupera bientôt.</p>
+</section>
+{% endif %}
+{% for sheet in sheets %}
+<article class="card">
+  <h1>{{ sheet.character.name }}</h1>
+  {% if sheet.content_html %}
+  <div class="prose">{{ sheet.content_html }}</div>
+  {% else %}
+  <p class="muted">Le contenu de ce personnage n'est pas encore disponible.</p>
+  {% endif %}
+</article>
+{% endfor %}
+{% if shared_count %}
+<p><a class="button" href="/joueur/articles">Voir mes articles ({{ shared_count }})</a></p>
+{% endif %}
+{% endblock %}
