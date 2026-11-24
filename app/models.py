@@ -324,6 +324,9 @@ class SyncRun(Base):
     updated_count: Mapped[int] = mapped_column(Integer, default=0)
     unchanged_count: Mapped[int] = mapped_column(Integer, default=0)
     removed_count: Mapped[int] = mapped_column(Integer, default=0)
+    events_created: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    events_updated: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    events_removed: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     error: Mapped[str | None] = mapped_column(Text)
 
 
@@ -374,3 +377,101 @@ class MediaVariant(Base):
     width: Mapped[int | None] = mapped_column(Integer)
     height: Mapped[int | None] = mapped_column(Integer)
     etag: Mapped[str] = mapped_column(String(64))
+
+
+class TimelineEvent(Base):
+    __tablename__ = "timeline_events"
+    __table_args__ = (
+        CheckConstraint(
+            "end_year IS NULL OR end_year >= start_year", name="ck_timeline_events_years"
+        ),
+        CheckConstraint(
+            "importance IN ('majeur', 'notable', 'mineur')", name="ck_timeline_events_importance"
+        ),
+        CheckConstraint("origin IN ('canon', 'ajout')", name="ck_timeline_events_origin"),
+        CheckConstraint("status IN ('etabli', 'a_valider')", name="ck_timeline_events_status"),
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_timeline_events_visibility"),
+        CheckConstraint("day IS NULL OR day IN ('J1', 'J2')", name="ck_timeline_events_day"),
+        CheckConstraint("session IS NULL OR session >= 1", name="ck_timeline_events_session"),
+        Index("ix_timeline_events_start_year_sort_order", "start_year", "sort_order"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True)
+    title: Mapped[str] = mapped_column(String(300))
+    summary: Mapped[str] = mapped_column(Text, default="", server_default="")
+    start_year: Mapped[int] = mapped_column(Integer)
+    end_year: Mapped[int | None] = mapped_column(Integer)
+    place: Mapped[str | None] = mapped_column(String(300))
+    importance: Mapped[str] = mapped_column(String(10))
+    origin: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(10), default="a_valider", server_default="a_valider")
+    visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
+    chronicle: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    session: Mapped[int | None] = mapped_column(Integer)
+    day: Mapped[str | None] = mapped_column(String(2))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    wa_history_id: Mapped[str | None] = mapped_column(String(36), unique=True)
+    wa_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    modified_by_dm: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @property
+    def is_range(self) -> bool:
+        return self.end_year is not None and self.end_year != self.start_year
+
+
+class TimelineEventLink(Base):
+    __tablename__ = "timeline_event_links"
+    __table_args__ = (
+        CheckConstraint("source_id <> target_id", name="ck_timeline_event_links_distinct"),
+        CheckConstraint("origin IN ('wa', 'mj')", name="ck_timeline_event_links_origin"),
+    )
+
+    source_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_events.id", ondelete="CASCADE"), primary_key=True
+    )
+    target_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_events.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    origin: Mapped[str] = mapped_column(String(3))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+
+class TimelineEventFiche(Base):
+    __tablename__ = "timeline_event_fiches"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("timeline_events.id", ondelete="CASCADE"), index=True
+    )
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+    title: Mapped[str] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+    article: Mapped[WaArticle | None] = relationship()
+
+
+class TimelineEra(Base):
+    __tablename__ = "timeline_eras"
+
+    slug: Mapped[str] = mapped_column(String(30), primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(100))
+    subtitle: Mapped[str | None] = mapped_column(String(300))
+    color: Mapped[str | None] = mapped_column(String(7))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )

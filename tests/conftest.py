@@ -28,6 +28,10 @@ from app.config import get_settings  # noqa: E402
 from app.db import get_engine, get_session_factory, reset_engine  # noqa: E402
 
 TABLES = (
+    "timeline_event_fiches",
+    "timeline_event_links",
+    "timeline_events",
+    "timeline_eras",
     "character_actions",
     "character_items",
     "character_relations",

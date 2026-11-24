@@ -5,6 +5,8 @@ from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 WA_DEFAULT_BASE_URL = "https://www.worldanvil.com/api/external/boromir"
+WA_TIMELINE_TITLE = "Chronologie de Valhar Molaris"
+WA_HISTORY_EDIT_URL = "https://www.worldanvil.com/world/timeline/history/{history_id}/edit"
 
 
 def normalize_database_url(url: str) -> str:
@@ -23,6 +25,7 @@ class Settings(BaseSettings):
     wa_application_key: SecretStr = SecretStr("")
     wa_auth_token: SecretStr = SecretStr("")
     wa_world_id: str = ""
+    wa_timeline_id: str = ""
     app_env: Literal["production", "development", "test"] = "production"
     wa_base_url: str = WA_DEFAULT_BASE_URL
     wa_user_agent: str = "Campaign Companion (self-hosted, 1.0.0)"
