@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.branding import PARTY_DESCRIPTION, PARTY_NAME
 from app.models import WaArticle
 
 
@@ -14,10 +15,13 @@ class Section:
     description: str
 
 
+ADVENTURE_KEY = "aventure"
+
 SECTIONS: tuple[Section, ...] = (
+    Section(ADVENTURE_KEY, PARTY_NAME, PARTY_DESCRIPTION),
     Section("monde", "Monde", "Les cités, régions et lieux remarquables du monde."),
     Section("personnage", "Personnage", "Les personnages joués et ceux qui croisent leur route."),
-    Section("lore", "Lore", "L'histoire, les mythes, les artefacts et le récit de la campagne."),
+    Section("lore", "Lore", "L'histoire, les mythes, les artefacts et les légendes du monde."),
     Section(
         "organisation",
         "Organisation",
@@ -36,6 +40,8 @@ TEMPLATE_SECTIONS: dict[str, str] = {
     "profession": "organisation",
     "rank": "organisation",
     "formation": "organisation",
+    "report": ADVENTURE_KEY,
+    "plot": ADVENTURE_KEY,
 }
 
 ARTICLE_SECTION_OVERRIDES: dict[str, str] = {

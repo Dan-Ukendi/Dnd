@@ -125,6 +125,18 @@ def section_types(
     ]
 
 
+def _natural_key(article: WaArticle) -> list[tuple[int, int | str]]:
+    return [
+        (0, int(part)) if part.isdigit() else (1, part)
+        for part in re.split(r"(\d+)", _normalize(article.title))
+        if part
+    ]
+
+
+def natural_order(articles: Iterable[WaArticle]) -> list[WaArticle]:
+    return sorted(articles, key=_natural_key)
+
+
 def group_by_section(articles: Iterable[WaArticle]) -> list[tuple[str, list[WaArticle]]]:
     groups: dict[str, list[WaArticle]] = {key: [] for key in SECTIONS_BY_KEY}
     for article in articles:

@@ -8,7 +8,7 @@
 <nav class="hub stagger" aria-label="Sections des archives">
   {% for section in SECTIONS %}
   {% set count = section_counts.get(section.key, 0) %}
-  <a class="hub-card" href="/mj/articles?section={{ section.key }}" data-section="{{ section.key }}">
+  <a class="hub-card{% if section.key == ADVENTURE_KEY %} hub-card--wide{% endif %}" href="/mj/articles?section={{ section.key }}" data-section="{{ section.key }}">
     <span class="hub-card__icon">{{ section_icon(section.key) }}</span>
     <h2 class="hub-card__title">{{ section.label }}</h2>
     <p class="hub-card__desc">{{ section.description }}</p>

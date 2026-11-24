@@ -1,3 +1,5 @@
 APP_TITLE = "Valhar Molaris"
 APP_TAGLINE = "Archives de l'ancien Empire d'Ébène"
 THEME_COLOR = "#0E0D0C"
+PARTY_NAME = "Aventure"
+PARTY_DESCRIPTION = "Le journal de la compagnie : comptes rendus de session et fil de l'aventure."

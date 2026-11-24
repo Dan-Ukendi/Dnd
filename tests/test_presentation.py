@@ -1,5 +1,11 @@
 from app.models import WaArticle
-from app.presentation import article_image, article_tagline, fiche_body, in_section
+from app.presentation import (
+    article_image,
+    article_tagline,
+    fiche_body,
+    in_section,
+    natural_order,
+)
 from app.sections import ARTICLE_SECTION_OVERRIDES, section_key
 
 
@@ -19,6 +25,8 @@ def test_sections_follow_template_types_and_overrides() -> None:
     assert section_key("x", "organization") == "organisation"
     assert section_key("x", "item") == "lore"
     assert section_key("x", None) == "lore"
+    assert section_key("x", "report") == "aventure"
+    assert section_key("x", "plot") == "aventure"
     override_id, override_section = next(iter(ARTICLE_SECTION_OVERRIDES.items()))
     assert section_key(override_id, "organization") == override_section
 
@@ -69,3 +77,12 @@ def test_player_images_require_public_state() -> None:
     assert article_image(private, False) == url
     assert article_image(foreign, False) is None
     assert article_image(default, False) is None
+
+
+def test_sessions_are_listed_in_natural_order() -> None:
+    sessions = [article(f"Session {number} : titre", "", "report") for number in (10, 2, 1)]
+    assert [item.title for item in natural_order(sessions)] == [
+        "Session 1 : titre",
+        "Session 2 : titre",
+        "Session 10 : titre",
+    ]

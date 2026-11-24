@@ -14,9 +14,10 @@ from app.presentation import (
     fiche_body,
     group_by_section,
     in_section,
+    natural_order,
     section_types,
 )
-from app.sections import SECTIONS, SECTIONS_BY_KEY, section_of
+from app.sections import ADVENTURE_KEY, SECTIONS, SECTIONS_BY_KEY, section_of
 from app.security import get_csrf_token
 
 APP_DIR = Path(__file__).resolve().parent
@@ -89,6 +90,7 @@ templates.env.filters.update(
         "article_image": article_image,
         "in_section": in_section,
         "group_by_section": group_by_section,
+        "natural_order": natural_order,
         "section_of": section_of,
     }
 )
@@ -99,6 +101,7 @@ templates.env.globals.update(
         "THEME_COLOR": THEME_COLOR,
         "SECTIONS": SECTIONS,
         "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
+        "ADVENTURE_KEY": ADVENTURE_KEY,
         "section_types": section_types,
         "ASSET_VERSION": "2",
     }

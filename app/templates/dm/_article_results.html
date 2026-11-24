@@ -1,6 +1,7 @@
 {% from "components/ui.html" import card, empty_state %}
 {% set results_section = request.query_params.get("section", "") %}
 {% set visible_articles = articles | in_section(results_section) %}
+{% if not q %}{% set visible_articles = visible_articles | natural_order %}{% endif %}
 <section id="article-results" class="results" aria-live="polite">
   <p class="result-count">{{ visible_articles | length }} fiche{{ "s" if visible_articles | length != 1 }}{% if q %} pour « {{ q }} »{% endif %}</p>
   {% if visible_articles %}

@@ -1832,3 +1832,18 @@ a.ledger-list__title:hover {
 .screen__emblem .emblem__gems {
   display: none;
 }
+
+.hub-card--wide {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 48rem) {
+  .hub-card--wide {
+    min-height: 0;
+    padding-block: clamp(1.75rem, 3vw, 2.25rem);
+  }
+
+  .hub-card--wide .hub-card__title {
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+  }
+}

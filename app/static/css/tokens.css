@@ -29,6 +29,8 @@
   --section-lore-text: #e3c47a;
   --section-organisation: #4a5a8a;
   --section-organisation-text: #b0bce4;
+  --section-aventure: #a8673a;
+  --section-aventure-text: #e7ae84;
 
   --success: #9cc79a;
   --success-wash: rgba(110, 160, 110, 0.14);
@@ -92,4 +94,9 @@
 [data-section="organisation"] {
   --accent: var(--section-organisation);
   --accent-text: var(--section-organisation-text);
+}
+
+[data-section="aventure"] {
+  --accent: var(--section-aventure);
+  --accent-text: var(--section-aventure-text);
 }

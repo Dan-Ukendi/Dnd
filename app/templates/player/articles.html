@@ -1,22 +1,32 @@
 {% extends "base.html" %}
 {% from "components/ui.html" import page_head, card, empty_state, breadcrumb %}
-{% block title %}Mes fiches{% endblock %}
+{% set section_key = request.query_params.get("section", "") %}
+{% set section = SECTIONS_BY_KEY.get(section_key) %}
+{% block title %}{{ section.label if section else "Mes fiches" }}{% endblock %}
+{% block main_attrs %}{% if section %}data-section="{{ section.key }}"{% endif %}{% endblock %}
 {% block content %}
+{% if section %}
+{{ breadcrumb([("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles"), (section.label, "")]) }}
+{{ page_head(section.label, eyebrow="Archives partagées", lead=section.description) }}
+{% else %}
 {{ breadcrumb([("Mon personnage", "/joueur"), ("Mes fiches", "")]) }}
 {{ page_head("Mes fiches", eyebrow="Archives partagées", lead="Les pages des archives que votre MJ a choisi de vous confier.") }}
-{% set groups = articles | group_by_section %}
+{% endif %}
+{% set groups = (articles | in_section(section_key)) | group_by_section %}
 {% if groups %}
 {% for key, items in groups %}
-{% set section = SECTIONS_BY_KEY[key] %}
+{% set group_section = SECTIONS_BY_KEY[key] %}
 <section class="section-group" data-section="{{ key }}" aria-labelledby="groupe-{{ key }}">
-  <h2 class="section-group__title" id="groupe-{{ key }}">{{ section.label }}<span>{{ items | length }}</span></h2>
-  <ul class="card-grid stagger">
-    {% for article in items %}
+  {% if not section %}<h2 class="section-group__title" id="groupe-{{ key }}">{{ group_section.label }}<span>{{ items | length }}</span></h2>{% endif %}
+  <ul class="card-grid stagger" {% if section %}aria-label="{{ group_section.label }}"{% endif %}>
+    {% for article in items | natural_order %}
     <li>{{ card(article, "/joueur/articles/" ~ article.wa_id, True) }}</li>
     {% endfor %}
   </ul>
 </section>
 {% endfor %}
+{% elif section and section.key == ADVENTURE_KEY %}
+{{ empty_state("Le journal est encore vierge", "Aucun compte rendu de session n'a encore été partagé avec vous.", "compass") }}
 {% else %}
 {{ empty_state("Aucune fiche partagée", "Votre MJ n'a encore partagé aucune page avec vous.", "scroll") }}
 {% endif %}
