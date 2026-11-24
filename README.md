@@ -10,6 +10,9 @@ It pulls the world's articles through the Boromir API, caches them in Postgres a
   them. Nothing else is reachable; anything not shared answers with a plain 404.
 - **Hosted media**: portraits, maps and character-sheet PDFs stored in Postgres and attached to
   articles, served with the same access rules as the articles themselves.
+- **Chronologie** (`/mj/chronologie`, `/joueur/chronologie`): the world's history as a frise of eras
+  and the campaign chronicle, read from a World Anvil timeline; players only see the events the DM
+  revealed.
 
 The interface is in French, rendered server-side with Jinja2 and HTMX, mobile-first, and installable as
 a PWA.
@@ -24,7 +27,10 @@ app/
   config.py            settings from environment variables
   db.py                engine (Neon-friendly pooling), sessions, wait-for-database
   models.py            users, invitations, characters, character_articles, wa_articles, wa_images,
-                       sync_runs, media_assets, media_variants
+                       sync_runs, media_assets, media_variants, timeline_events, timeline_event_links,
+                       timeline_event_fiches, timeline_eras
+  chronology.py        imperial calendar, eras and year display
+  data/                timeline_events.json, the chronology seed dataset
   security.py          password hashing, CSRF, login rate limiting
   deps.py              current user and role checks
   worldanvil/          Boromir client, BBCode to HTML converter, player visibility rules
@@ -47,6 +53,7 @@ tests/                 pytest suite
 | `WA_APPLICATION_KEY` | for sync | World Anvil application key (`x-application-key`). |
 | `WA_AUTH_TOKEN` | for sync | World Anvil user token (`x-auth-token`). |
 | `WA_WORLD_ID` | for sync | Id of the world to synchronise. |
+| `WA_TIMELINE_ID` | no | Id of the World Anvil timeline holding the chronology. By default the timeline titled "Chronologie de Valhar Molaris" is used. |
 | `APP_ENV` | no | `production` (default: secure cookies, HSTS) or `development` (plain HTTP on localhost). |
 | `PLAYER_PASSWORD_CHANGE` | no | `false` (default): players sign in with the temporary password and the password page is hidden. `true`: a temporary password must be replaced at first login. |
 | `PLAYER_INITIAL_PASSWORD` | no | Temporary password given to new or reset player accounts (default `0000`). Players must replace it at their first login when `PLAYER_PASSWORD_CHANGE` is on. |
@@ -64,6 +71,7 @@ uv pip install --python .venv -r requirements-dev.txt
 cp .env.example .env            # then fill in the values, with APP_ENV=development
 alembic upgrade head
 python -m app.cli create-dm --login maitre --name "Maître du jeu"
+python -m app.cli load-timeline
 python -m app.cli sync
 uvicorn app.main:app --reload
 ```
@@ -180,6 +188,43 @@ python -m app.cli import-dossiers source/dossiers --replace-relations
 A relation or an item linked to an article shows a "Voir la fiche" link (and the portrait, for
 relations) only when the reader can open that article.
 
+## Chronology
+
+The *Chronologie* page (Lore section, and the *Chronologie* link of both navigations) has two tabs:
+
+- **Histoire du monde**: a frise of the five eras (Aubes Anciennes, Siècles Oubliés, Ascension,
+  Grand Midi, Tumultes). Each era keeps a readable width whatever its length; inside an era, events
+  are placed at scale. Periods are bars, single years are diamonds sized by importance, several
+  events of the same year are grouped in a numbered seal, and An 0, An 345, An 749 and today
+  (An 987) are marked. Filters (era, importance, text; origin and status for the DM) live in the
+  URL. On phones the frise becomes a list grouped by era.
+- **Chronique de la campagne**: the events flagged as chronicle, by session and day (J1, J2).
+
+The calendar (current year, founding, end of the Conquest, end of the Empire), the eras and their
+default names, subtitles and colours are defined in `app/chronology.py`.
+
+**Where the data lives.** Titles, dates, places, summaries, importance, origin and "Lié à" links are
+written on World Anvil, in the private timeline "Chronologie de Valhar Molaris" (one history per
+event; its content ends with a `Code :` line such as `E-014`). The app only reads World Anvil:
+every sync (*Synchroniser* or `python -m app.cli sync`) refreshes these fields, matching events by
+history id then by code, adds new histories as hidden and *à valider*, and hides events removed
+from the timeline. Everything else belongs to the app and is never overwritten by a sync: status
+(*établi* / *à valider*), visibility (MJ only / revealed to players), chronicle flag, session, day,
+order, links added in the app and linked fiches. The DM manages them from each event's panel, and
+edits the era names, subtitles and colours from *Chronologie › Ères*.
+
+**Seed.** `python -m app.cli load-timeline` inserts the events of `app/data/timeline_events.json`
+that do not exist yet (by code). It updates an existing event only while it has never been synced
+nor edited in the app, so it can run at every start (Render runs it after the migrations). On
+Neon, run it once like `create-dm` if the service has not restarted since the upgrade:
+
+```bash
+DATABASE_URL=... DATABASE_URL_UNPOOLED=... SECRET_KEY=... python -m app.cli load-timeline
+```
+
+Players see an event only after the DM chose *Révéler aux joueurs*; any other event answers with the
+usual 404, and never appears in lists, searches, filters, year groups or linked events.
+
 ## Useful commands
 
 | Command | Purpose |
@@ -187,6 +232,7 @@ relations) only when the reader can open that article.
 | `python -m app.cli sync` | Incremental sync: only articles whose World Anvil `updateDate` changed are fetched. |
 | `python -m app.cli sync --full` | Refetch every article. |
 | `python -m app.cli create-dm --login LOGIN --name NAME` | Create a DM account (prompts for the password; `--password-stdin` reads it from stdin). |
+| `python -m app.cli load-timeline` | Insert the chronology events of `app/data/timeline_events.json` that are not in the database yet (idempotent). |
 | `python -m app.cli wait-db` | Wait until the database accepts connections (used at start-up while Neon wakes up). |
 | `python -m app.cli import-media FOLDER [--manifest PATH]` | Import the portraits, maps and PDFs listed in the manifest (see below). |
 | `python -m app.cli import-characters [--manifest PATH]` | Create the player accounts and characters listed in the manifest. |
@@ -260,7 +306,7 @@ TEST_DATABASE_URL=postgresql://postgres:testpw@localhost:55432/campaign_test pyt
    with `/health` as health check. Fill in the variables marked `sync: false` when prompted;
    `SECRET_KEY` is generated by Render.
 3. Every start runs `python -m app.cli wait-db`, then `alembic upgrade head` over the direct connection,
-   then Uvicorn with proxy headers enabled so secure cookies and invitation links use `https`.
+   then `python -m app.cli load-timeline`, then Uvicorn with proxy headers enabled so secure cookies and invitation links use `https`.
 4. Create the DM account once. The free plan has no shell, so run the command locally with the Neon
    URLs in the environment:
    ```bash
