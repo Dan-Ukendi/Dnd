@@ -95,6 +95,16 @@ function selectTab(container, tab, focus) {
       panel.hidden = !active;
     }
   });
+  const list = tab.parentElement;
+  if (list) {
+    const tabBox = tab.getBoundingClientRect();
+    const listBox = list.getBoundingClientRect();
+    if (tabBox.left < listBox.left) {
+      list.scrollLeft -= listBox.left - tabBox.left + 16;
+    } else if (tabBox.right > listBox.right) {
+      list.scrollLeft += tabBox.right - listBox.right + 24;
+    }
+  }
   if (focus) {
     tab.focus();
   }
@@ -127,5 +137,15 @@ document.querySelectorAll("[data-tabs]").forEach((container) => {
     const next = tabs[(moves[event.key] + tabs.length) % tabs.length];
     selectTab(container, next, true);
     history.replaceState(null, "", `#${next.dataset.tab}`);
+  });
+});
+
+window.addEventListener("hashchange", () => {
+  const key = window.location.hash.slice(1);
+  document.querySelectorAll("[data-tabs]").forEach((container) => {
+    const tab = container.querySelector(`[role="tab"][data-tab="${CSS.escape(key)}"]`);
+    if (tab) {
+      selectTab(container, tab, false);
+    }
   });
 });

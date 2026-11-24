@@ -12,7 +12,7 @@ from app.cli import main as cli_main
 from app.models import Character, CharacterArticle, CharacterRelation, Role, WaArticle
 from app.services.access import dm_render_context
 from app.services.dossiers import DossierError, build_dossier, import_dossier
-from tests.factories import login, make_article, make_character, make_user
+from tests.factories import csrf_token, login, make_article, make_character, make_user
 
 DOSSIER: dict[str, Any] = {
     "character": "Khaetar Voss",
@@ -194,3 +194,94 @@ def test_cli_imports_a_folder(tmp_path: Path, db: Session, table: Table) -> None
     character = db.get(Character, table.keator.id)
     assert character.profile.backstory.strip() == "Né orphelin."
     assert [item.quantity for item in character.items] == [2]
+
+
+COMBAT: dict[str, Any] = {
+    "character": "Khaetar Voss",
+    "combat": {
+        "armor_class": 11,
+        "hit_points": 24,
+        "speed": "9 m",
+        "spell_save_dc": 13,
+        "resources": [
+            {"name": "Emplacements de pacte (niv. 2)", "uses": 2, "recharge": "Repos court"}
+        ],
+    },
+    "actions": [
+        {
+            "type": "reaction",
+            "name": "Représailles infernales",
+            "save": "DEX 13",
+            "uses": "1 / repos long",
+        },
+        {
+            "type": "action",
+            "name": "Trait de feu",
+            "hit": "+5",
+            "damage": "1d10 feu",
+            "range": "36 m",
+        },
+        {"type": "Action bonus", "name": "Arme de pacte"},
+        {"type": "passif", "name": "Bénédiction du Ténébreux", "text": "6 PV temporaires."},
+        {"type": "action", "name": "Suggestion", "save": "SAG 13", "concentration": True},
+    ],
+}
+
+
+def test_combat_actions_are_grouped_by_action_type(db: Session, table: Table) -> None:
+    character = import_dossier(db, copy.deepcopy(COMBAT))
+    dossier = build_dossier(character, dm_render_context(db), lambda article: None)
+    assert [group.label for group in dossier.action_groups] == [
+        "Action",
+        "Action bonus",
+        "Réaction",
+        "Sans action",
+    ]
+    assert [action.name for action in dossier.action_groups[0].actions] == [
+        "Trait de feu",
+        "Suggestion",
+    ]
+    assert dossier.action_groups[0].actions[1].concentration
+    assert dossier.action_count == 5
+    assert [(stat.label, stat.value) for stat in dossier.combat_stats] == [
+        ("Classe d'armure", "11"),
+        ("Points de vie", "24"),
+        ("Vitesse", "9 m"),
+        ("DD des sorts", "13"),
+    ]
+    assert dossier.resources[0].uses == "2"
+
+
+@pytest.mark.parametrize(
+    "actions",
+    [
+        [{"type": "minute", "name": "Rituel"}],
+        [{"type": "action"}],
+        [{"type": "action", "name": "Sort", "concentration": "oui"}],
+        [{"type": "action", "name": "Sort", "hit": ["+5"]}],
+    ],
+)
+def test_invalid_actions_are_rejected(
+    db: Session, table: Table, actions: list[dict[str, Any]]
+) -> None:
+    with pytest.raises(DossierError):
+        import_dossier(db, {**copy.deepcopy(COMBAT), "actions": actions})
+
+
+def test_actions_tab_is_shown_to_owner_and_dm_only(
+    client: TestClient, other_client: TestClient, db: Session, table: Table
+) -> None:
+    import_dossier(db, copy.deepcopy(COMBAT))
+    db.add(CharacterArticle(character_id=table.zilvra.id, article_id=table.khaetar.wa_id))
+    db.commit()
+    login(client, "keator")
+    page = client.get("/joueur").text
+    assert ">Actions<" in page
+    assert "Trait de feu" in page
+    assert "Emplacements de pacte (niv. 2)" in page
+    login(other_client, "zilvra")
+    shared = other_client.get(f"/joueur/articles/{table.khaetar.wa_id}").text
+    assert "Trait de feu" not in shared
+    client.post("/deconnexion", data={"csrf_token": csrf_token(client, "/joueur")})
+    login(client, "maitre")
+    assert "Représailles infernales" in client.get(f"/mj/articles/{table.khaetar.wa_id}").text

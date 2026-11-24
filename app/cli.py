@@ -142,7 +142,8 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
                     "imported",
                     path.name,
                     f"-> {character.name}: {len(character.events)} events, "
-                    f"{len(character.relations)} relations, {len(character.items)} items",
+                    f"{len(character.relations)} relations, {len(character.items)} items, "
+                    f"{len(character.actions)} actions",
                 )
             )
     return _print_report(lines)

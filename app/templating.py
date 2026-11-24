@@ -119,7 +119,7 @@ templates.env.globals.update(
         "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
         "ADVENTURE_KEY": ADVENTURE_KEY,
         "section_types": section_types,
-        "ASSET_VERSION": "6",
+        "ASSET_VERSION": "7",
         "player_password_change_enabled": lambda: get_settings().player_password_change,
     }
 )

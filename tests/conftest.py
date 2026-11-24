@@ -28,6 +28,7 @@ from app.config import get_settings  # noqa: E402
 from app.db import get_engine, get_session_factory, reset_engine  # noqa: E402
 
 TABLES = (
+    "character_actions",
     "character_items",
     "character_relations",
     "character_events",

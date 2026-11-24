@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     Character,
+    CharacterAction,
     CharacterEvent,
     CharacterItem,
     CharacterProfile,
@@ -50,6 +51,33 @@ CATEGORY_ALIASES = {
     "autre": "autres",
 }
 CATEGORY_LABELS = dict(RELATION_CATEGORIES)
+ACTION_KINDS: tuple[tuple[str, str], ...] = (
+    ("action", "Action"),
+    ("bonus", "Action bonus"),
+    ("reaction", "Réaction"),
+    ("free", "Sans action"),
+)
+ACTION_ALIASES = {
+    "action": "action",
+    "bonus": "bonus",
+    "action-bonus": "bonus",
+    "bonus-action": "bonus",
+    "reaction": "reaction",
+    "free": "free",
+    "gratuit": "free",
+    "gratuite": "free",
+    "passif": "free",
+    "passive": "free",
+    "sans-action": "free",
+}
+COMBAT_FIELDS: tuple[tuple[str, str], ...] = (
+    ("armor_class", "Classe d'armure"),
+    ("hit_points", "Points de vie"),
+    ("speed", "Vitesse"),
+    ("initiative", "Initiative"),
+    ("spell_save_dc", "DD des sorts"),
+    ("spell_attack", "Attaque des sorts"),
+)
 MAX_TEXT_LENGTH = 50_000
 
 
@@ -99,11 +127,51 @@ class Dossier:
     events: list[EventView] = field(default_factory=list)
     relation_groups: list[RelationGroup] = field(default_factory=list)
     items: list[ItemView] = field(default_factory=list)
+    combat_stats: list["CombatStat"] = field(default_factory=list)
+    resources: list["ResourceView"] = field(default_factory=list)
+    action_groups: list["ActionGroup"] = field(default_factory=list)
     source_file: str | None = None
 
     @property
     def relation_count(self) -> int:
         return sum(len(group.people) for group in self.relation_groups)
+
+    @property
+    def action_count(self) -> int:
+        return sum(len(group.actions) for group in self.action_groups)
+
+
+@dataclass(frozen=True)
+class CombatStat:
+    label: str
+    value: str
+
+
+@dataclass(frozen=True)
+class ResourceView:
+    name: str
+    uses: str | None
+    recharge: str | None
+
+
+@dataclass(frozen=True)
+class ActionView:
+    name: str
+    category: str | None
+    hit: str | None
+    damage: str | None
+    save: str | None
+    range: str | None
+    uses: str | None
+    concentration: bool
+    html: Markup
+
+
+@dataclass(frozen=True)
+class ActionGroup:
+    key: str
+    label: str
+    actions: list[ActionView]
 
 
 def _slug(value: str) -> str:
@@ -162,6 +230,65 @@ def _linked_article(db: Session, entry: dict[str, Any]) -> str | None:
         return find_article(db, wa_id=wa_id, title=title).wa_id
     except LookupError as exc:
         raise DossierError(str(exc)) from exc
+
+
+def normalize_action_kind(value: str) -> str:
+    kind = ACTION_ALIASES.get(_slug(value))
+    if kind is None:
+        raise DossierError(f"unknown action type '{value}' (action, bonus, reaction or free)")
+    return kind
+
+
+def _short(entry: dict[str, Any], key: str, limit: int) -> str | None:
+    value = entry.get(key)
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        raise DossierError(f"'{key}' must be text or a number")
+    value = str(value).strip()
+    if len(value) > limit:
+        raise DossierError(f"'{key}' is too long")
+    return value or None
+
+
+def _combat(data: dict[str, Any]) -> dict[str, Any]:
+    combat = data.get("combat", {})
+    if not isinstance(combat, dict):
+        raise DossierError("'combat' must be a table")
+    stats = {key: _short(combat, key, 40) for key, _ in COMBAT_FIELDS}
+    resources = [
+        {
+            "name": _text(entry, "name", required=True),
+            "uses": _short(entry, "uses", 40),
+            "recharge": _short(entry, "recharge", 60),
+        }
+        for entry in _entries(combat, "resources")
+    ]
+    return {"stats": {key: value for key, value in stats.items() if value}, "resources": resources}
+
+
+def _actions(data: dict[str, Any]) -> list[CharacterAction]:
+    actions = []
+    for index, entry in enumerate(_entries(data, "actions")):
+        concentration = entry.get("concentration", False)
+        if not isinstance(concentration, bool):
+            raise DossierError("'concentration' must be true or false")
+        actions.append(
+            CharacterAction(
+                position=index,
+                kind=normalize_action_kind(_text(entry, "type", required=True, limit=40)),
+                name=_text(entry, "name", required=True),
+                category=_short(entry, "category", 100),
+                hit=_short(entry, "hit", 60),
+                damage=_short(entry, "damage", 200),
+                save=_short(entry, "save", 60),
+                range=_short(entry, "range", 100),
+                uses=_short(entry, "uses", 100),
+                concentration=concentration,
+                text=_text(entry, "text", limit=MAX_TEXT_LENGTH),
+            )
+        )
+    return actions
 
 
 def find_character(db: Session, name: str) -> Character:
@@ -230,14 +357,19 @@ def import_dossier(db: Session, data: dict[str, Any], source_file: str | None = 
             )
         )
 
+    combat = _combat(data)
+    actions = _actions(data)
+
     if character.profile is None:
         character.profile = CharacterProfile(character_id=character.id)
     character.profile.backstory = backstory
+    character.profile.combat = combat
     character.profile.source_file = source_file
     character.profile.updated_at = utcnow()
     character.events = events
     character.relations = relations
     character.items = items
+    character.actions = actions
     db.commit()
     return character
 
@@ -288,8 +420,39 @@ def build_dossier(
         )
         for item in character.items
     ]
+    combat = (profile.combat if profile else None) or {}
+    stats = combat.get("stats", {})
+    combat_stats = [
+        CombatStat(label, str(stats[key])) for key, label in COMBAT_FIELDS if stats.get(key)
+    ]
+    resources = [
+        ResourceView(entry["name"], entry.get("uses"), entry.get("recharge"))
+        for entry in combat.get("resources", [])
+        if isinstance(entry, dict) and entry.get("name")
+    ]
+    by_kind: dict[str, list[ActionView]] = {}
+    for action in character.actions:
+        by_kind.setdefault(action.kind, []).append(
+            ActionView(
+                action.name,
+                action.category,
+                action.hit,
+                action.damage,
+                action.save,
+                action.range,
+                action.uses,
+                action.concentration,
+                render_bbcode(action.text, context),
+            )
+        )
+    action_groups = [
+        ActionGroup(key, label, by_kind[key]) for key, label in ACTION_KINDS if key in by_kind
+    ]
     return Dossier(
         character=character,
+        combat_stats=combat_stats,
+        resources=resources,
+        action_groups=action_groups,
         backstory=render_bbcode(profile.backstory if profile else "", context),
         events=events,
         relation_groups=groups,

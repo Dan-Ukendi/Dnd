@@ -1,9 +1,9 @@
-const CACHE = "valhar-static-v6";
+const CACHE = "valhar-static-v7";
 const PRECACHE = [
-  "/static/css/fonts.css?v=6",
-  "/static/css/tokens.css?v=6",
-  "/static/css/app.css?v=6",
-  "/static/app.js?v=6",
+  "/static/css/fonts.css?v=7",
+  "/static/css/tokens.css?v=7",
+  "/static/css/app.css?v=7",
+  "/static/app.js?v=7",
   "/static/vendor/htmx.min.js?v=2.0.4",
   "/static/fonts/cinzel-latin-wght-normal.woff2",
   "/static/fonts/eb-garamond-latin-wght-normal.woff2",

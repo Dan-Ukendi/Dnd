@@ -82,9 +82,10 @@ default) that password is all players need. When it is on, a player who signs in
 
 ## Character dossiers
 
-Each played character's fiche has four tabs: **Fiche** (the World Anvil article), **Relations**,
-**Histoire** (backstory, then the important events session after session) and **Inventaire**. Only the
-DM and the character's own player see the last three tabs; another player who was shared the article
+Each played character's fiche has five tabs: **Fiche** (the World Anvil article), **Actions** (what the
+character can do on their combat turn), **Relations**, **Histoire** (backstory, then the important
+events session after session) and **Inventaire**. Only the DM and the character's own player see the
+last four tabs; another player who was shared the article
 only sees the Fiche.
 
 Dossiers are written as one TOML file per character (keep them out of git, e.g. in
@@ -119,6 +120,31 @@ role = "Mère"                         # optional
 status = "Disparue"                   # optional
 article = "Kratéros"                  # optional: links the World Anvil fiche (or article_id = "...")
 text = "Ce qu'il sait d'elle..."
+
+[combat]                              # summary strip of the Actions tab (all optional)
+armor_class = 11
+hit_points = 24
+speed = "9 m"
+initiative = "+1"
+spell_save_dc = 13
+spell_attack = "+5"
+
+[[combat.resources]]                  # spell slots, uses per rest...
+name = "Emplacements de magie de pacte (niveau 2)"
+uses = 2
+recharge = "Repos court ou long"
+
+[[actions]]
+type = "action"                       # action, bonus, reaction or free
+name = "Trait de feu (Fire Bolt)"
+category = "Sort mineur"              # optional
+hit = "+5"                            # optional
+damage = "1d10 feu"                   # optional, shown as "Effet"
+save = "DEX 13"                       # optional
+range = "36 m"                        # optional
+uses = "À volonté"                    # optional
+concentration = false                 # optional
+text = "Un objet inflammable touché prend feu."
 
 [[inventory]]
 name = "Pot en fer"

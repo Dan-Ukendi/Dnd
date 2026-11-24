@@ -187,6 +187,11 @@ class Character(Base):
         passive_deletes=True,
         order_by="CharacterItem.position",
     )
+    actions: Mapped[list["CharacterAction"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterAction.position",
+    )
 
 
 class CharacterProfile(Base):
@@ -196,6 +201,7 @@ class CharacterProfile(Base):
         ForeignKey("characters.id", ondelete="CASCADE"), primary_key=True
     )
     backstory: Mapped[str] = mapped_column(Text, default="", server_default="")
+    combat: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     source_file: Mapped[str | None] = mapped_column(String(255))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
@@ -254,6 +260,31 @@ class CharacterItem(Base):
     text: Mapped[str] = mapped_column(Text, default="", server_default="")
 
     article: Mapped[WaArticle | None] = relationship()
+
+
+class CharacterAction(Base):
+    __tablename__ = "character_actions"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('action', 'bonus', 'reaction', 'free')", name="ck_character_actions_kind"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+    kind: Mapped[str] = mapped_column(String(10))
+    name: Mapped[str] = mapped_column(String(200))
+    category: Mapped[str | None] = mapped_column(String(100))
+    hit: Mapped[str | None] = mapped_column(String(60))
+    damage: Mapped[str | None] = mapped_column(String(200))
+    save: Mapped[str | None] = mapped_column(String(60))
+    range: Mapped[str | None] = mapped_column(String(100))
+    uses: Mapped[str | None] = mapped_column(String(100))
+    concentration: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
 
 
 class CharacterArticle(Base):

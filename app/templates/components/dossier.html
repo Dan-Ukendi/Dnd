@@ -2,6 +2,62 @@
 {% set prefix = "dossier-" ~ dossier.character.id %}
 {% set dm_hint = "" if player_mode else " Complétez le dossier du personnage puis lancez la commande import-dossiers." %}
 
+<section class="tabs__panel" id="{{ prefix }}-actions" role="tabpanel" aria-labelledby="{{ prefix }}-tab-actions" tabindex="0">
+  <h2 class="tabs__heading">Actions</h2>
+  {% if dossier.combat_stats %}
+  <dl class="combat-strip">
+    {% for stat in dossier.combat_stats %}
+    <div class="combat-strip__stat"><dt>{{ stat.label }}</dt><dd>{{ stat.value }}</dd></div>
+    {% endfor %}
+  </dl>
+  {% endif %}
+  {% if dossier.resources %}
+  <ul class="resources" aria-label="Ressources">
+    {% for resource in dossier.resources %}
+    <li class="resource">
+      {% if resource.uses %}<span class="resource__uses">{{ resource.uses }}</span>{% endif %}
+      <span class="resource__name">{{ resource.name }}</span>
+      {% if resource.recharge %}<span class="resource__recharge">{{ resource.recharge }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if dossier.action_groups %}
+  {% for group in dossier.action_groups %}
+  <section class="action-group action-group--{{ group.key }}" aria-labelledby="{{ prefix }}-actions-{{ group.key }}">
+    <h3 class="relation-group__title" id="{{ prefix }}-actions-{{ group.key }}">{{ group.label }}<span>{{ group.actions | length }}</span></h3>
+    <ul class="action-list">
+      {% for action in group.actions %}
+      <li class="action-card">
+        <div class="action-card__head">
+          <span class="action-card__name">{{ action.name }}</span>
+          {% if action.category %}<span class="pill pill--muted">{{ action.category }}</span>{% endif %}
+          {% if action.concentration %}<span class="pill pill--warn">Concentration</span>{% endif %}
+        </div>
+        {% if action.hit or action.damage or action.save or action.range or action.uses %}
+        <dl class="action-card__stats">
+          {% if action.hit %}<div><dt>Toucher</dt><dd>{{ action.hit }}</dd></div>{% endif %}
+          {% if action.damage %}<div><dt>Effet</dt><dd>{{ action.damage }}</dd></div>{% endif %}
+          {% if action.save %}<div><dt>Sauvegarde</dt><dd>{{ action.save }}</dd></div>{% endif %}
+          {% if action.range %}<div><dt>Portée</dt><dd>{{ action.range }}</dd></div>{% endif %}
+          {% if action.uses %}<div><dt>Utilisation</dt><dd>{{ action.uses }}</dd></div>{% endif %}
+        </dl>
+        {% endif %}
+        {% if action.html | trim %}<div class="prose">{{ action.html }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    {{ ui("candle") }}
+    <h3 class="empty-state__title">Aucune action consignée</h3>
+    <p>Armes, sorts et capacités utilisables en combat apparaîtront ici.{{ dm_hint }}</p>
+  </div>
+  {% endif %}
+</section>
+
 <section class="tabs__panel" id="{{ prefix }}-relations" role="tabpanel" aria-labelledby="{{ prefix }}-tab-relations" tabindex="0">
   <h2 class="tabs__heading">Relations</h2>
   {% if dossier.relation_groups %}
