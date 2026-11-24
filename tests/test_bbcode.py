@@ -208,3 +208,68 @@ def test_empty_content(player: RenderContext) -> None:
     assert render_bbcode(None, player) == ""
     assert render_bbcode("", player) == ""
     assert to_plain_text(None) == ""
+
+
+def test_tables_render_with_header_and_scroll_wrapper(player: RenderContext) -> None:
+    html = render_bbcode(
+        "[table]\n[tr][th]Nom[/th][th]Toucher[/th][/tr]\n"
+        "[tr][td][b]Trait de feu[/b][/td][td]+5[/td][/tr]\n"
+        "[tr][th]Total[/th][td]2[/td][/tr]\n[/table]",
+        player,
+    )
+    assert html.startswith('<div class="table-scroll"><table>')
+    assert '<thead><tr><th scope="col">Nom</th><th scope="col">Toucher</th></tr></thead>' in html
+    assert "<td><strong>Trait de feu</strong></td><td>+5</td>" in html
+    assert '<th scope="row">Total</th><td>2</td>' in html
+    assert html.endswith("</tbody></table></div>")
+
+
+def test_tables_close_unterminated_cells(player: RenderContext) -> None:
+    html = render_bbcode("[table][tr][td]a[td]b[tr][td]c[/table]", player)
+    assert "<tbody><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></tbody>" in html
+
+
+def test_tables_are_sanitised(player: RenderContext, dm: RenderContext) -> None:
+    source = (
+        "[table][tr][td]<script>alert(1)</script>[/td][td][foo]x[/foo][/td]"
+        f"[td]@[Lieu](location:{UNKNOWN})[/td][td][secret]caché[/secret][/td][/tr][/table]"
+    )
+    html = render_bbcode(source, player)
+    assert "<script" not in html
+    assert "&lt;script&gt;" in html
+    assert "[foo]x[/foo]" in html
+    assert "<a" not in html
+    assert "caché" not in html
+    assert "caché" in render_bbcode(source, dm)
+
+
+def test_cell_tags_outside_tables_render_as_text_content(player: RenderContext) -> None:
+    html = render_bbcode("[p]avant [td]cellule[/td] après[/p]", player)
+    assert html == "<p>avant cellule après</p>"
+
+
+def test_ability_table_becomes_stat_block(player: RenderContext) -> None:
+    rows = "".join(
+        f"[tr][td]{name}[/td][td]10[/td][td]+0[/td][/tr]"
+        for name in ("Force", "Dextérité", "Constitution", "Intelligence", "Sagesse", "Charisme")
+    )
+    html = render_bbcode(
+        f"[table][tr][th]Caractéristique[/th][th]Valeur[/th][th]Mod.[/th][/tr]{rows}[/table]",
+        player,
+    )
+    assert '<table class="stat-block">' in html
+    assert '<td data-label="Caractéristique">Force</td><td data-label="Valeur">10</td>' in html
+    horizontal = render_bbcode(
+        "[table][tr][th]FOR[/th][th]DEX[/th][th]CON[/th][th]INT[/th][th]SAG[/th][th]CHA[/th][/tr]"
+        "[tr][td]8[/td][td]14[/td][td]12[/td][td]10[/td][td]13[/td][td]16[/td][/tr][/table]",
+        player,
+    )
+    assert '<table class="stat-row">' in horizontal
+    plain = render_bbcode("[table][tr][th]A[/th][/tr][tr][td]1[/td][/tr][/table]", player)
+    assert "class=" not in plain.replace('class="table-scroll"', "")
+
+
+def test_table_plain_text_separates_cells() -> None:
+    assert to_plain_text(
+        "[table][tr][th]A[/th][th]B[/th][/tr][tr][td]1[/td][td]2[/td][/tr][/table]"
+    ) == ("A B \n1 2")

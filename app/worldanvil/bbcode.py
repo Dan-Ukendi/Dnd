@@ -29,7 +29,13 @@ INLINE = {
 }
 BLOCKS = {"p": "p", "quote": "blockquote", "center": "div", "code": "pre", "aloud": "blockquote"}
 LISTS = {"ul": "ul", "ol": "ol"}
-CONTAINERS = set(HEADINGS) | set(INLINE) | set(BLOCKS) | set(LISTS) | {"li", "url"}
+CELLS = {"th", "td"}
+TABLE_PARTS = {"table", "tr"} | CELLS
+CONTAINERS = set(HEADINGS) | set(INLINE) | set(BLOCKS) | set(LISTS) | TABLE_PARTS | {"li", "url"}
+ABILITY_HEADERS = (
+    frozenset({"for", "dex", "con", "int", "sag", "cha"}),
+    frozenset({"str", "dex", "con", "int", "wis", "cha"}),
+)
 VOIDS = {"br", "hr", "img"}
 RESTRICTED_PREFIXES = (
     "secret",
@@ -66,12 +72,21 @@ ALLOWED_TAGS = {
     "img",
     "div",
     "span",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
 }
 ALLOWED_ATTRIBUTES = {
     "a": {"href", "class", "target"},
     "img": {"src", "alt", "loading", "class"},
     "div": {"class"},
     "span": {"class"},
+    "table": {"class"},
+    "th": {"scope"},
+    "td": {"data-label"},
 }
 IMAGE_HOSTS = frozenset(
     {
@@ -144,6 +159,22 @@ class Element:
 Node = Text | Mention | Void | Element
 
 
+def _close_table_parts(stack: list[Element], name: str) -> None:
+    if name == "table":
+        return
+    closes = TABLE_PARTS - {"table"} if name == "tr" else CELLS
+    boundary = {"table"} if name == "tr" else {"tr", "table"}
+    found: int | None = None
+    for index in range(len(stack) - 1, 0, -1):
+        current = stack[index].name
+        if current in boundary:
+            break
+        if current in closes:
+            found = index
+    if found is not None:
+        del stack[found:]
+
+
 def parse(source: str) -> Element:
     source = source.replace("[*]", "\n- ")
     root = Element("")
@@ -180,6 +211,8 @@ def parse(source: str) -> Element:
         ):
             stack[-1].children.append(Void(name, arg, raw))
             continue
+        if name in TABLE_PARTS:
+            _close_table_parts(stack, name)
         if name in CONTAINERS or restricted:
             element = Element(name, arg, raw)
             stack[-1].children.append(element)
@@ -197,7 +230,7 @@ def _is_block(node: Node) -> bool:
             node.name in HEADINGS
             or node.name in BLOCKS
             or node.name in LISTS
-            or node.name == "li"
+            or node.name in {"li", "table"}
             or is_restricted_tag(node.name)
         )
     if isinstance(node, Void):
@@ -326,7 +359,69 @@ class _Renderer:
             return f"<li>{_with_breaks(self.inline(node.children))}</li>"
         if name == "url":
             return self.link(node)
+        if name == "table":
+            return self.table(node)
         return self.inline(node.children)
+
+    def table(self, node: Element) -> str:
+        rows = [row for row in self.rows(node.children) if row]
+        if not rows:
+            return ""
+        header: list[tuple[str, str]] | None = None
+        if len(rows) > 1 and all(tag == "th" for tag, _ in rows[0]):
+            header, rows = rows[0], rows[1:]
+        kind = _ability_table_kind(header, rows)
+        labels = [_cell_text(content) for _, content in header] if header else []
+        parts = [f'<table class="{kind}">' if kind else "<table>"]
+        if header:
+            cells = "".join(f'<th scope="col">{content}</th>' for _, content in header)
+            parts.append(f"<thead><tr>{cells}</tr></thead>")
+        parts.append("<tbody>")
+        for row in rows:
+            cells = []
+            for index, (tag, content) in enumerate(row):
+                if tag == "th":
+                    cells.append(f'<th scope="row">{content}</th>')
+                elif kind == "stat-block" and index < len(labels):
+                    cells.append(f'<td data-label="{_escape(labels[index])}">{content}</td>')
+                else:
+                    cells.append(f"<td>{content}</td>")
+            parts.append(f"<tr>{''.join(cells)}</tr>")
+        parts.append("</tbody></table>")
+        return f'<div class="table-scroll">{"".join(parts)}</div>'
+
+    def rows(self, children: list[Node]) -> list[list[tuple[str, str]]]:
+        rows: list[list[tuple[str, str]]] = []
+        stray: list[Node] = []
+        for child in [*children, None]:
+            if child is None or (isinstance(child, Element) and child.name == "tr"):
+                if stray:
+                    rows.append([("td", self.cell(stray))])
+                    stray = []
+                if child is not None:
+                    rows.append(self.cells(child.children))
+            elif not _is_blank(child):
+                stray.append(child)
+        return rows
+
+    def cells(self, children: list[Node]) -> list[tuple[str, str]]:
+        cells: list[tuple[str, str]] = []
+        stray: list[Node] = []
+        for child in [*children, None]:
+            if child is None or (isinstance(child, Element) and child.name in CELLS):
+                if stray:
+                    cells.append(("td", self.cell(stray)))
+                    stray = []
+                if child is not None:
+                    cells.append((child.name, self.cell(child.children)))
+            elif not _is_blank(child):
+                stray.append(child)
+        return cells
+
+    def cell(self, children: list[Node]) -> str:
+        if any(_is_block(child) for child in children):
+            return self.block(children)
+        return _with_breaks(self.inline(children))
 
     def list_items(self, children: list[Node]) -> list[str]:
         items: list[list[Node]] = []
@@ -373,6 +468,35 @@ class _Renderer:
         return label
 
 
+def _is_blank(node: Node) -> bool:
+    return isinstance(node, Text) and not node.value.strip()
+
+
+def _cell_text(content: str) -> str:
+    return html.unescape(_TAG_ONLY_RE.sub("", content)).strip()
+
+
+def _ability_labels(values: list[str]) -> frozenset[str]:
+    return frozenset(value.casefold()[:3] for value in values)
+
+
+def _ability_table_kind(
+    header: list[tuple[str, str]] | None, rows: list[list[tuple[str, str]]]
+) -> str:
+    if header is None:
+        return ""
+    if len(header) == 6 and _ability_labels([_cell_text(c) for _, c in header]) in ABILITY_HEADERS:
+        return "stat-row"
+    if (
+        len(rows) == 6
+        and len(header) >= 2
+        and all(len(row) == len(header) for row in rows)
+        and _ability_labels([_cell_text(row[0][1]) for row in rows]) in ABILITY_HEADERS
+    ):
+        return "stat-block"
+    return ""
+
+
 def _is_allowed_image_url(url: str) -> bool:
     parts = urlsplit(url)
     return parts.scheme == "https" and (parts.hostname or "").lower() in IMAGE_HOSTS
@@ -412,8 +536,10 @@ def to_plain_text(source: str | None) -> str:
                     parts.append("\n")
             else:
                 walk(node.children)
-                if _is_block(node):
+                if _is_block(node) or node.name == "tr":
                     parts.append("\n")
+                elif node.name in CELLS:
+                    parts.append(" ")
 
     walk(parse(source).children)
     text = "".join(parts)
