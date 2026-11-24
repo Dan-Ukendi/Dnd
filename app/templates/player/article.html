@@ -5,6 +5,7 @@
 {% set crumbs = [("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles"), (article.title, "")] %}
 {% set pills = [] %}
 {% set facts = [("Section", section.label), ("Type", article.template_type | template_label)] %}
+{% if dossier and dossier.aliases %}{% set _ = facts.append(("Alias", dossier.aliases | join(", "))) %}{% endif %}
 {% set gm_sections = [] %}
 {% set related = [] %}
 {% for item in linked %}{% set _ = related.append((item, "/joueur/articles/" ~ item.wa_id)) %}{% endfor %}

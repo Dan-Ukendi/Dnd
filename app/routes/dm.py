@@ -15,10 +15,20 @@ from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.deps import CurrentDm, DbSession
-from app.models import Character, MediaAsset, MediaRole, Role, SyncStatus, User, WaArticle
+from app.models import (
+    Character,
+    CharacterRelation,
+    MediaAsset,
+    MediaRole,
+    Role,
+    SyncStatus,
+    User,
+    WaArticle,
+)
 from app.sections import section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
+from app.services import dossiers as dossier_service
 from app.services import media as media_service
 from app.services.access import dm_render_context
 from app.services.accounts import (
@@ -64,6 +74,15 @@ MEDIA_REMOVED_MESSAGES = {
     MediaRole.PORTRAIT: "Portrait retiré.",
     MediaRole.MAP: "Carte retirée.",
     MediaRole.SHEET: "Fiche de personnage (PDF) retirée.",
+}
+RELATION_ERROR_MESSAGES = {
+    "name": "Le nom est obligatoire (200 caractères au plus).",
+    "category": "La catégorie est obligatoire (40 caractères au plus).",
+    "role": "Le lien est trop long (200 caractères au plus).",
+    "status": "Le statut est trop long (100 caractères au plus).",
+    "article": "Aucune fiche World Anvil disponible ne porte exactement ce titre.",
+    "text": "La description est trop longue.",
+    "gm_notes": "Les notes du MJ sont trop longues.",
 }
 CHARACTER_ERROR_MESSAGES = {
     "invalid_name": "Le nom du personnage est obligatoire.",
@@ -177,9 +196,11 @@ def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -
             "linked": article_service.articles_by_ids(db, article.linked_ids or []),
             "backlinks": article_service.backlinks(db, wa_id),
             "characters": characters,
-            "dossier": build_dossier(characters[0], render_context, _dm_article_href)
+            "dossier": build_dossier(characters[0], render_context, _dm_article_href, dm=True)
             if characters
             else None,
+            "relation_categories": dossier_service.RELATION_CATEGORIES,
+            "relation_articles": article_service.all_available_articles(db) if characters else [],
         },
     )
 
@@ -482,3 +503,105 @@ def delete_character(request: Request, character_id: int, db: DbSession, dm: Cur
     character_service.delete_character(db, character)
     flash(request, f"Personnage « {name} » supprimé.")
     return RedirectResponse("/mj/personnages", status_code=303)
+
+
+def _dossier_url(character: Character) -> str:
+    if character.main_article_id is None:
+        return f"/mj/personnages/{character.id}"
+    return f"/mj/articles/{character.main_article_id}#relations"
+
+
+def _get_relation(db: DbSession, character: Character, relation_id: int) -> CharacterRelation:
+    relation = db.get(CharacterRelation, relation_id)
+    if relation is None or relation.character_id != character.id:
+        raise HTTPException(status_code=404)
+    return relation
+
+
+def _relation_entry(
+    name: str, category: str, role: str, status: str, article: str, text: str, gm_notes: str
+) -> dict[str, str]:
+    return {
+        "name": name,
+        "category": category,
+        "role": role,
+        "status": status,
+        "article": article,
+        "text": text,
+        "gm_notes": gm_notes,
+    }
+
+
+def _relation_error(request: Request, db: DbSession, exc: dossier_service.DossierError) -> None:
+    db.rollback()
+    message = RELATION_ERROR_MESSAGES.get(exc.field or "", "Relation non enregistrée.")
+    flash(request, f"Relation non enregistrée : {message[:1].lower()}{message[1:]}", "error")
+
+
+RelationName = Annotated[str, Form(max_length=300)]
+RelationShort = Annotated[str, Form(max_length=300)]
+RelationText = Annotated[str, Form(max_length=60_000)]
+
+
+@router.post("/personnages/{character_id}/relations")
+def add_relation(
+    request: Request,
+    character_id: int,
+    db: DbSession,
+    dm: CurrentDm,
+    name: RelationName = "",
+    category: RelationShort = "",
+    role: RelationShort = "",
+    status: RelationShort = "",
+    article: Annotated[str, Form(max_length=600)] = "",
+    text: RelationText = "",
+    gm_notes: RelationText = "",
+) -> Response:
+    character = _get_character(db, character_id)
+    entry = _relation_entry(name, category, role, status, article, text, gm_notes)
+    try:
+        relation = dossier_service.add_relation(db, character, entry)
+    except dossier_service.DossierError as exc:
+        _relation_error(request, db, exc)
+    else:
+        flash(request, f"Relation « {relation.name} » ajoutée.")
+    return RedirectResponse(_dossier_url(character), status_code=303)
+
+
+@router.post("/personnages/{character_id}/relations/{relation_id}")
+def update_relation(
+    request: Request,
+    character_id: int,
+    relation_id: int,
+    db: DbSession,
+    dm: CurrentDm,
+    name: RelationName = "",
+    category: RelationShort = "",
+    role: RelationShort = "",
+    status: RelationShort = "",
+    article: Annotated[str, Form(max_length=600)] = "",
+    text: RelationText = "",
+    gm_notes: RelationText = "",
+) -> Response:
+    character = _get_character(db, character_id)
+    relation = _get_relation(db, character, relation_id)
+    entry = _relation_entry(name, category, role, status, article, text, gm_notes)
+    try:
+        dossier_service.update_relation(db, character, relation, entry)
+    except dossier_service.DossierError as exc:
+        _relation_error(request, db, exc)
+    else:
+        flash(request, f"Relation « {relation.name} » enregistrée.")
+    return RedirectResponse(_dossier_url(character), status_code=303)
+
+
+@router.post("/personnages/{character_id}/relations/{relation_id}/supprimer")
+def delete_relation(
+    request: Request, character_id: int, relation_id: int, db: DbSession, dm: CurrentDm
+) -> Response:
+    character = _get_character(db, character_id)
+    relation = _get_relation(db, character, relation_id)
+    name = relation.name
+    dossier_service.delete_relation(db, character, relation)
+    flash(request, f"Relation « {name} » supprimée.")
+    return RedirectResponse(_dossier_url(character), status_code=303)

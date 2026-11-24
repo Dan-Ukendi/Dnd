@@ -202,6 +202,8 @@ class CharacterProfile(Base):
     )
     backstory: Mapped[str] = mapped_column(Text, default="", server_default="")
     combat: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    aliases: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
+    relations_edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     source_file: Mapped[str | None] = mapped_column(String(255))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
@@ -237,6 +239,7 @@ class CharacterRelation(Base):
         ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
     )
     text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
 
     article: Mapped[WaArticle | None] = relationship()
 
@@ -258,6 +261,7 @@ class CharacterItem(Base):
         ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
     )
     text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
 
     article: Mapped[WaArticle | None] = relationship()
 

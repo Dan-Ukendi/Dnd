@@ -28,6 +28,7 @@
 {% set played %}{% for character in characters %}<a href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endset %}
 {% set _ = facts.append(("Personnage joué", played)) %}
 {% endif %}
+{% if dossier and dossier.aliases %}{% set _ = facts.append(("Alias", dossier.aliases | join(", "))) %}{% endif %}
 {% if article.url and article.url.startswith("https://") %}
 {% set source %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Ouvrir sur World Anvil</a>{% endset %}
 {% set _ = facts.append(("Source", source)) %}

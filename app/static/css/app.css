@@ -1126,7 +1126,8 @@ p {
 input[type="text"],
 input[type="password"],
 input[type="search"],
-select {
+select,
+textarea {
   width: 100%;
   min-height: 3rem;
   padding: 0.6rem 0.9rem;
@@ -1159,21 +1160,37 @@ input::placeholder {
 }
 
 input:hover,
-select:hover {
+select:hover,
+textarea:hover {
   border-color: var(--gold-line);
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--gold);
   outline: none;
   box-shadow: 0 0 0 3px rgba(201, 162, 75, 0.2);
 }
 
 input:focus-visible,
-select:focus-visible {
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--gold-bright);
   outline-offset: 2px;
+}
+
+textarea {
+  min-height: 7rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.field__hint {
+  color: var(--parchment-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: none;
 }
 
 .btn {
@@ -3047,6 +3064,86 @@ input[type="file"]:focus-visible {
 
 .relation__body .prose {
   font-size: 1.05rem;
+}
+
+.dossier-note {
+  margin: 0 0 1.5rem;
+  color: var(--parchment-faint);
+  font-size: 1rem;
+  font-style: italic;
+}
+
+.gm-note {
+  justify-self: stretch;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(122, 31, 36, 0.55);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(122, 31, 36, 0.16), rgba(122, 31, 36, 0.05));
+}
+
+.gm-note__label {
+  margin: 0 0 0.35rem;
+  color: var(--ares-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-small);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.relation-edit {
+  justify-self: stretch;
+}
+
+.relation-edit > summary {
+  list-style: none;
+}
+
+.relation-edit > summary::-webkit-details-marker {
+  display: none;
+}
+
+.relation-edit[open] > summary {
+  margin-bottom: 1rem;
+}
+
+.relation-edit--new {
+  margin-top: 1.75rem;
+}
+
+.relation-form {
+  padding: 1.1rem;
+  border: 1px solid var(--gold-hair);
+  border-radius: var(--radius);
+  background: rgba(14, 13, 12, 0.45);
+}
+
+.relation-form__grid {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.field--gm label {
+  color: var(--ares-text);
+}
+
+.field--gm textarea {
+  border-color: rgba(122, 31, 36, 0.55);
+}
+
+.relation-edit__delete {
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 40rem) {
+  .relation-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .relation-form__wide {
+    grid-column: 1 / -1;
+  }
 }
 
 .saga {

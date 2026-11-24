@@ -10,7 +10,12 @@ from app.config import get_settings
 from app.db import get_engine, get_session_factory, wait_for_database
 from app.models import Role, SyncStatus
 from app.services.accounts import AccountError, create_user
-from app.services.dossiers import DossierError, import_dossier, load_dossier_file
+from app.services.dossiers import (
+    DossierError,
+    import_dossier,
+    load_dossier_file,
+    relations_locked,
+)
 from app.services.imports import (
     DEFAULT_MANIFEST,
     ImportLine,
@@ -132,7 +137,12 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
     with get_session_factory()() as db:
         for path in files:
             try:
-                character = import_dossier(db, load_dossier_file(path), path.name)
+                character = import_dossier(
+                    db,
+                    load_dossier_file(path),
+                    path.name,
+                    replace_relations=args.replace_relations,
+                )
             except DossierError as exc:
                 db.rollback()
                 lines.append(ImportLine("failed", path.name, str(exc)))
@@ -146,6 +156,12 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
                     f"{len(character.actions)} actions",
                 )
             )
+            if relations_locked(character):
+                logger.warning(
+                    "%s: relations were edited in the app and were kept; "
+                    "use --replace-relations to overwrite them with the file",
+                    path.name,
+                )
     return _print_report(lines)
 
 
@@ -184,6 +200,11 @@ def build_parser() -> argparse.ArgumentParser:
         "import-dossiers", help="Import character backstories, relations and inventories"
     )
     dossiers.add_argument("folder", help="Folder containing one .toml file per character")
+    dossiers.add_argument(
+        "--replace-relations",
+        action="store_true",
+        help="Also replace relations that the DM edited in the app",
+    )
     dossiers.set_defaults(handler=cmd_import_dossiers)
     return parser
 

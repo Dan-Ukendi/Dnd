@@ -95,11 +95,13 @@ Dossiers are written as one TOML file per character (keep them out of git, e.g. 
 python -m app.cli import-dossiers source/dossiers
 ```
 
-Re-importing a file replaces that character's whole dossier. Text fields accept plain paragraphs
-(separated by a blank line) and the same BBCode as World Anvil (`[b]`, `[i]`, `[ul]`…).
+Re-importing a file replaces that character's whole dossier, except relations edited in the app
+(see below). Text fields accept plain paragraphs (separated by a blank line) and the same BBCode as
+World Anvil (`[b]`, `[i]`, `[ul]`…).
 
 ```toml
 character = "Khaetar Voss"            # character name, or the title of its main article
+aliases = ["Le Cornu", { name = "Maelys", note = "faux nom" }]   # optional, shown as "Alias"
 
 [history]
 backstory = """
@@ -113,13 +115,16 @@ session = "Séance 1"                  # optional
 title = "Dispute pour l'amulette"
 text = "Au marché noir de Khar Zakh..."
 
+# category: famille, fideles, amis, allies, connaissances, rivaux, ennemis or autres; any other
+# category ("Couvent de Lolth") is accepted as written and listed after these
 [[relations]]
-category = "famille"                  # famille, amis, allies, connaissances, rivaux, ennemis, autres
-name = "Mère inconnue"                # any other category is accepted and listed after these
+category = "famille"
+name = "Mère inconnue"
 role = "Mère"                         # optional
 status = "Disparue"                   # optional
 article = "Kratéros"                  # optional: links the World Anvil fiche (or article_id = "...")
 text = "Ce qu'il sait d'elle..."
+gm_notes = "Ce que le joueur ignore"  # optional, shown to the DM only
 
 [combat]                              # summary strip of the Actions tab (all optional)
 armor_class = 11
@@ -153,6 +158,23 @@ category = "Équipement"               # optional
 equipped = false                      # optional
 article = "Le Gage d'Arès"            # optional
 text = "Description..."
+gm_notes = "Ce que le joueur ignore"  # optional, shown to the DM only
+```
+
+`gm_notes` and the aliases follow the dossier rules: the aliases are shown to the DM and the
+character's player, `gm_notes` only to the DM (they are never part of a player's page).
+
+### Editing relations in the app
+
+On the DM view of a character's fiche, the Relations tab lets the DM edit, add and delete
+relations (name, category, link, status, linked World Anvil fiche, text and GM notes). The first
+change made there hands the relations over to the app: a later `import-dossiers` still updates
+everything else from the file (history, inventory, actions, aliases) but keeps the relations as
+edited in the app, and the command prints a warning for that file. To go back to the file's
+relations, overwriting the app edits:
+
+```bash
+python -m app.cli import-dossiers source/dossiers --replace-relations
 ```
 
 A relation or an item linked to an article shows a "Voir la fiche" link (and the portrait, for

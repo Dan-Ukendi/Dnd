@@ -12,7 +12,14 @@ from app.cli import main as cli_main
 from app.models import Character, CharacterArticle, CharacterRelation, Role, WaArticle
 from app.services.access import dm_render_context
 from app.services.dossiers import DossierError, build_dossier, import_dossier
-from tests.factories import csrf_token, login, make_article, make_character, make_user
+from tests.factories import (
+    csrf_token,
+    login,
+    make_article,
+    make_character,
+    make_user,
+    post_form,
+)
 
 DOSSIER: dict[str, Any] = {
     "character": "Khaetar Voss",
@@ -72,7 +79,7 @@ def test_import_creates_the_dossier(db: Session, table: Table) -> None:
     assert [relation.category for relation in character.relations] == [
         "ennemis",
         "famille",
-        "mentors",
+        "Mentors",
         "connaissances",
     ]
     assert character.relations[3].wa_article_id == table.krateros.wa_id
@@ -285,3 +292,294 @@ def test_actions_tab_is_shown_to_owner_and_dm_only(
     client.post("/deconnexion", data={"csrf_token": csrf_token(client, "/joueur")})
     login(client, "maitre")
     assert "Représailles infernales" in client.get(f"/mj/articles/{table.khaetar.wa_id}").text
+
+
+SECRETS: dict[str, Any] = {
+    "character": "Khaetar Voss",
+    "aliases": [{"name": "Maelys", "note": "faux nom"}, "Le Cornu"],
+    "relations": [
+        {
+            "category": "Fidèles",
+            "name": "Jhorvyn",
+            "role": "Intendant",
+            "text": "Vieux et discret.",
+            "gm_notes": "Vend ses secrets à Shaelith.",
+        },
+        {"category": "Couvent de Lolth", "name": "Mhyriss", "role": "Grande prêtresse"},
+        {"category": "famille", "name": "Orzhan Veldrynn", "role": "Père"},
+    ],
+    "inventory": [{"name": "Amulette", "gm_notes": "Murmure la nuit."}],
+}
+
+
+def test_unknown_categories_keep_their_spelling(db: Session, table: Table) -> None:
+    character = import_dossier(db, copy.deepcopy(SECRETS))
+    assert [relation.category for relation in character.relations] == [
+        "fideles",
+        "Couvent de Lolth",
+        "famille",
+    ]
+    dossier = build_dossier(character, dm_render_context(db), lambda article: None)
+    assert [group.label for group in dossier.relation_groups] == [
+        "Famille",
+        "Fidèles",
+        "Couvent de Lolth",
+    ]
+
+
+@pytest.mark.parametrize(
+    "aliases",
+    ["Maelys", [3], [{"note": "faux nom"}], [{"name": "Maelys", "note": ["faux"]}]],
+)
+def test_invalid_aliases_are_rejected(db: Session, table: Table, aliases: Any) -> None:
+    with pytest.raises(DossierError):
+        import_dossier(db, {**copy.deepcopy(SECRETS), "aliases": aliases})
+
+
+def test_aliases_are_shown_to_the_dm_and_the_owner_only(
+    client: TestClient, other_client: TestClient, db: Session, table: Table
+) -> None:
+    import_dossier(db, copy.deepcopy(SECRETS))
+    db.add(CharacterArticle(character_id=table.zilvra.id, article_id=table.khaetar.wa_id))
+    db.commit()
+    login(client, "keator")
+    assert "Maelys (faux nom), Le Cornu" in client.get("/joueur").text
+    assert "Maelys (faux nom)" in client.get(f"/joueur/articles/{table.khaetar.wa_id}").text
+    login(other_client, "zilvra")
+    assert "Maelys" not in other_client.get(f"/joueur/articles/{table.khaetar.wa_id}").text
+    client.post("/deconnexion", data={"csrf_token": csrf_token(client, "/joueur")})
+    login(client, "maitre")
+    assert "Maelys (faux nom)" in client.get(f"/mj/articles/{table.khaetar.wa_id}").text
+
+
+def test_gm_notes_never_reach_players(
+    client: TestClient, other_client: TestClient, db: Session, table: Table
+) -> None:
+    import_dossier(db, copy.deepcopy(SECRETS))
+    db.add(CharacterArticle(character_id=table.zilvra.id, article_id=table.khaetar.wa_id))
+    db.commit()
+    login(client, "keator")
+    for path in ("/joueur", f"/joueur/articles/{table.khaetar.wa_id}"):
+        page = client.get(path).text
+        assert "Vieux et discret." in page
+        assert "Vend ses secrets" not in page
+        assert "Murmure la nuit." not in page
+        assert "Notes du MJ" not in page
+    login(other_client, "zilvra")
+    shared = other_client.get(f"/joueur/articles/{table.khaetar.wa_id}").text
+    assert "Vend ses secrets" not in shared
+    assert (
+        build_dossier(
+            db.get(Character, table.keator.id), dm_render_context(db), lambda article: None
+        )
+        .relation_groups[1]
+        .people[0]
+        .gm_html
+        is None
+    )
+
+
+def test_dm_sees_gm_notes_and_edit_forms(client: TestClient, db: Session, table: Table) -> None:
+    import_dossier(db, copy.deepcopy(SECRETS))
+    login(client, "maitre")
+    page = client.get(f"/mj/articles/{table.khaetar.wa_id}").text
+    assert "Notes du MJ" in page
+    assert "Vend ses secrets à Shaelith." in page
+    assert "Murmure la nuit." in page
+    assert f'action="/mj/personnages/{table.keator.id}/relations"' in page
+    assert ">Backstory<" in page
+
+
+def test_players_get_no_edit_forms(client: TestClient, db: Session, table: Table) -> None:
+    import_dossier(db, copy.deepcopy(SECRETS))
+    login(client, "keator")
+    for path in ("/joueur", f"/joueur/articles/{table.khaetar.wa_id}"):
+        page = client.get(path).text
+        assert "/relations" not in page
+        assert "gm_notes" not in page
+        assert "Ajouter une relation" not in page
+
+
+def _relation_form(**values: str) -> dict[str, str]:
+    return {
+        "name": "Jhorvyn",
+        "category": "Fidèles",
+        "role": "Intendant",
+        "status": "",
+        "article": "",
+        "text": "",
+        "gm_notes": "",
+        **values,
+    }
+
+
+def test_dm_edits_a_relation(client: TestClient, db: Session, table: Table) -> None:
+    character = import_dossier(db, copy.deepcopy(SECRETS))
+    relation_id = character.relations[0].id
+    login(client, "maitre")
+    response = post_form(
+        client,
+        f"/mj/personnages/{table.keator.id}/relations/{relation_id}",
+        _relation_form(
+            name="Jhorvyn l'Intendant",
+            category="Amis",
+            status="En poste",
+            article="Kratéros",
+            text="Ligne un.\r\n\r\nLigne deux.",
+            gm_notes="Doute de Zilvra.",
+        ),
+        f"/mj/articles/{table.khaetar.wa_id}",
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/mj/articles/{table.khaetar.wa_id}#relations"
+    db.expire_all()
+    relation = db.get(CharacterRelation, relation_id)
+    assert relation.name == "Jhorvyn l'Intendant"
+    assert relation.category == "amis"
+    assert relation.status == "En poste"
+    assert relation.wa_article_id == table.krateros.wa_id
+    assert relation.text == "Ligne un.\n\nLigne deux."
+    assert relation.gm_notes == "Doute de Zilvra."
+    assert db.get(Character, table.keator.id).profile.relations_edited_at is not None
+    page = client.get(f"/mj/articles/{table.khaetar.wa_id}").text
+    assert "Relations modifiées dans l'application" in page
+
+
+def test_dm_adds_and_deletes_relations(client: TestClient, db: Session, table: Table) -> None:
+    login(client, "maitre")
+    page = f"/mj/articles/{table.khaetar.wa_id}"
+    response = post_form(
+        client,
+        f"/mj/personnages/{table.keator.id}/relations",
+        _relation_form(name="Tazhira", category="Rivaux", role="Rivale"),
+        page,
+    )
+    assert response.status_code == 303
+    db.expire_all()
+    character = db.get(Character, table.keator.id)
+    assert [(item.name, item.category, item.position) for item in character.relations] == [
+        ("Tazhira", "rivaux", 0)
+    ]
+    assert character.profile.relations_edited_at is not None
+    relation_id = character.relations[0].id
+    response = post_form(
+        client, f"/mj/personnages/{table.keator.id}/relations/{relation_id}/supprimer", {}, page
+    )
+    assert response.status_code == 303
+    assert db.scalar(select(func.count()).select_from(CharacterRelation)) == 0
+
+
+@pytest.mark.parametrize(
+    ("values", "message"),
+    [
+        ({"name": " "}, "le nom est obligatoire"),
+        ({"category": ""}, "la catégorie est obligatoire"),
+        ({"article": "Fiche inconnue"}, "aucune fiche World Anvil"),
+        ({"category": "x" * 41}, "la catégorie est obligatoire"),
+    ],
+)
+def test_invalid_relation_edits_are_refused(
+    client: TestClient, db: Session, table: Table, values: dict[str, str], message: str
+) -> None:
+    character = import_dossier(db, copy.deepcopy(SECRETS))
+    relation_id = character.relations[0].id
+    login(client, "maitre")
+    page = f"/mj/articles/{table.khaetar.wa_id}"
+    post_form(
+        client,
+        f"/mj/personnages/{table.keator.id}/relations/{relation_id}",
+        _relation_form(**values),
+        page,
+    )
+    assert f"Relation non enregistrée : {message}" in client.get(page).text
+    db.expire_all()
+    assert db.get(CharacterRelation, relation_id).name == "Jhorvyn"
+    assert db.get(Character, table.keator.id).profile.relations_edited_at is None
+
+
+def test_relation_routes_are_dm_only(client: TestClient, db: Session, table: Table) -> None:
+    character = import_dossier(db, copy.deepcopy(SECRETS))
+    relation_id = character.relations[0].id
+    base = f"/mj/personnages/{table.keator.id}/relations"
+    login(client, "keator")
+    for path in (base, f"{base}/{relation_id}", f"{base}/{relation_id}/supprimer"):
+        response = post_form(client, path, _relation_form(name="Pirate"), "/joueur")
+        assert response.status_code == 404
+    db.expire_all()
+    assert db.get(CharacterRelation, relation_id).name == "Jhorvyn"
+
+
+def test_relation_edits_require_a_csrf_token(client: TestClient, db: Session, table: Table) -> None:
+    login(client, "maitre")
+    response = client.post(
+        f"/mj/personnages/{table.keator.id}/relations",
+        data=_relation_form(),
+        follow_redirects=False,
+    )
+    assert response.status_code == 403
+    assert db.scalar(select(func.count()).select_from(CharacterRelation)) == 0
+
+
+def test_relation_of_another_character_is_not_found(
+    client: TestClient, db: Session, table: Table
+) -> None:
+    character = import_dossier(db, copy.deepcopy(SECRETS))
+    relation_id = character.relations[0].id
+    login(client, "maitre")
+    response = post_form(
+        client,
+        f"/mj/personnages/{table.zilvra.id}/relations/{relation_id}/supprimer",
+        {},
+        f"/mj/articles/{table.khaetar.wa_id}",
+    )
+    assert response.status_code == 404
+    assert db.scalar(select(func.count()).select_from(CharacterRelation)) == 3
+
+
+def test_reimport_keeps_relations_edited_in_the_app(
+    client: TestClient, db: Session, table: Table
+) -> None:
+    import_dossier(db, copy.deepcopy(SECRETS))
+    login(client, "maitre")
+    post_form(
+        client,
+        f"/mj/personnages/{table.keator.id}/relations",
+        _relation_form(name="Tazhira", category="Rivaux"),
+        f"/mj/articles/{table.khaetar.wa_id}",
+    )
+    updated = {**copy.deepcopy(SECRETS), "history": {"backstory": "Nouvelle version."}}
+    updated["relations"] = [{"category": "amis", "name": "Bob"}]
+    db.expire_all()
+    import_dossier(db, updated)
+    db.expire_all()
+    character = db.get(Character, table.keator.id)
+    assert character.profile.backstory == "Nouvelle version."
+    assert [relation.name for relation in character.relations] == [
+        "Jhorvyn",
+        "Mhyriss",
+        "Orzhan Veldrynn",
+        "Tazhira",
+    ]
+    import_dossier(db, updated, replace_relations=True)
+    db.expire_all()
+    character = db.get(Character, table.keator.id)
+    assert [relation.name for relation in character.relations] == ["Bob"]
+    assert character.profile.relations_edited_at is None
+
+
+def test_cli_can_replace_relations_edited_in_the_app(
+    tmp_path: Path, db: Session, table: Table
+) -> None:
+    character = import_dossier(db, copy.deepcopy(SECRETS))
+    character.profile.relations_edited_at = character.profile.updated_at
+    db.commit()
+    (tmp_path / "khaetar.toml").write_text(
+        'character = "Khaetar Voss"\n\n[[relations]]\ncategory = "amis"\nname = "Bob"\n',
+        encoding="utf-8",
+    )
+    assert cli_main(["import-dossiers", str(tmp_path)]) == 0
+    db.expire_all()
+    assert len(db.get(Character, table.keator.id).relations) == 3
+    assert cli_main(["import-dossiers", str(tmp_path), "--replace-relations"]) == 0
+    db.expire_all()
+    assert [item.name for item in db.get(Character, table.keator.id).relations] == ["Bob"]

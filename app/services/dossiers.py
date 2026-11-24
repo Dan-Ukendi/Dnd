@@ -3,6 +3,7 @@ import tomllib
 import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from app.worldanvil.bbcode import RenderContext, render_bbcode
 
 RELATION_CATEGORIES: tuple[tuple[str, str], ...] = (
     ("famille", "Famille"),
+    ("fideles", "Fidèles"),
     ("amis", "Amis"),
     ("allies", "Alliés"),
     ("connaissances", "Connaissances"),
@@ -34,6 +36,10 @@ RELATION_CATEGORIES: tuple[tuple[str, str], ...] = (
 )
 CATEGORY_ALIASES = {
     "family": "famille",
+    "fidele": "fideles",
+    "followers": "fideles",
+    "loyal": "fideles",
+    "loyaux": "fideles",
     "friends": "amis",
     "ami": "amis",
     "amies": "amis",
@@ -79,10 +85,13 @@ COMBAT_FIELDS: tuple[tuple[str, str], ...] = (
     ("spell_attack", "Attaque des sorts"),
 )
 MAX_TEXT_LENGTH = 50_000
+MAX_CATEGORY_LENGTH = 40
 
 
 class DossierError(Exception):
-    pass
+    def __init__(self, message: str, field: str | None = None) -> None:
+        super().__init__(message)
+        self.field = field
 
 
 @dataclass(frozen=True)
@@ -90,6 +99,14 @@ class EventView:
     session: str | None
     title: str
     html: Markup
+
+
+@dataclass(frozen=True)
+class RelationForm:
+    category: str
+    article: str
+    text: str
+    gm_notes: str
 
 
 @dataclass(frozen=True)
@@ -101,6 +118,8 @@ class RelationView:
     html: Markup
     article: WaArticle | None
     href: str | None
+    gm_html: Markup | None = None
+    form: RelationForm | None = None
 
 
 @dataclass(frozen=True)
@@ -118,6 +137,7 @@ class ItemView:
     equipped: bool
     html: Markup
     href: str | None
+    gm_html: Markup | None = None
 
 
 @dataclass(frozen=True)
@@ -130,7 +150,10 @@ class Dossier:
     combat_stats: list["CombatStat"] = field(default_factory=list)
     resources: list["ResourceView"] = field(default_factory=list)
     action_groups: list["ActionGroup"] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)
     source_file: str | None = None
+    dm: bool = False
+    relations_edited_at: datetime | None = None
 
     @property
     def relation_count(self) -> int:
@@ -180,15 +203,31 @@ def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", ascii_only.casefold()).strip("-")
 
 
-def normalize_category(value: str) -> str:
+def category_key(value: str) -> str:
     slug = _slug(value)
-    if not slug:
-        raise DossierError("relation category is empty")
-    return CATEGORY_ALIASES.get(slug, slug)[:40]
+    return CATEGORY_ALIASES.get(slug, slug)
 
 
-def category_label(key: str) -> str:
-    return CATEGORY_LABELS.get(key, key.replace("-", " ").capitalize())
+def normalize_category(value: str) -> str:
+    text = " ".join(value.split())
+    key = category_key(text)
+    if not key:
+        raise DossierError("relation category is empty", "category")
+    if key in CATEGORY_LABELS:
+        return key
+    if len(text) > MAX_CATEGORY_LENGTH:
+        raise DossierError("relation category is too long", "category")
+    return text
+
+
+def category_label(value: str) -> str:
+    key = category_key(value)
+    if key in CATEGORY_LABELS:
+        return CATEGORY_LABELS[key]
+    text = " ".join(value.split())
+    if text == key:
+        text = text.replace("-", " ")
+    return text[:1].upper() + text[1:]
 
 
 def _category_rank(key: str) -> tuple[int, str]:
@@ -202,15 +241,15 @@ def _text(entry: dict[str, Any], key: str, *, required: bool = False, limit: int
     value = entry.get(key)
     if value is None:
         if required:
-            raise DossierError(f"missing '{key}'")
+            raise DossierError(f"missing '{key}'", key)
         return ""
     if not isinstance(value, str):
-        raise DossierError(f"'{key}' must be text")
-    value = value.strip()
+        raise DossierError(f"'{key}' must be text", key)
+    value = value.replace("\r\n", "\n").strip()
     if required and not value:
-        raise DossierError(f"'{key}' is empty")
+        raise DossierError(f"'{key}' is empty", key)
     if len(value) > limit:
-        raise DossierError(f"'{key}' is too long")
+        raise DossierError(f"'{key}' is too long", key)
     return value
 
 
@@ -229,7 +268,7 @@ def _linked_article(db: Session, entry: dict[str, Any]) -> str | None:
     try:
         return find_article(db, wa_id=wa_id, title=title).wa_id
     except LookupError as exc:
-        raise DossierError(str(exc)) from exc
+        raise DossierError(str(exc), "article") from exc
 
 
 def normalize_action_kind(value: str) -> str:
@@ -291,6 +330,40 @@ def _actions(data: dict[str, Any]) -> list[CharacterAction]:
     return actions
 
 
+def _aliases(data: dict[str, Any]) -> list[dict[str, str | None]]:
+    value = data.get("aliases", [])
+    if not isinstance(value, list):
+        raise DossierError("'aliases' must be a list", "aliases")
+    aliases = []
+    for entry in value:
+        if isinstance(entry, str):
+            entry = {"name": entry}
+        if not isinstance(entry, dict):
+            raise DossierError("each alias must be text or a table", "aliases")
+        aliases.append(
+            {"name": _text(entry, "name", required=True), "note": _text(entry, "note") or None}
+        )
+    return aliases
+
+
+def format_alias(alias: dict[str, Any]) -> str:
+    name = str(alias.get("name") or "")
+    note = alias.get("note")
+    return f"{name} ({note})" if note else name
+
+
+def relation_values(db: Session, entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "category": normalize_category(_text(entry, "category", required=True, limit=60)),
+        "name": _text(entry, "name", required=True),
+        "role": _text(entry, "role") or None,
+        "status": _text(entry, "status", limit=100) or None,
+        "wa_article_id": _linked_article(db, entry),
+        "text": _text(entry, "text", limit=MAX_TEXT_LENGTH),
+        "gm_notes": _text(entry, "gm_notes", limit=MAX_TEXT_LENGTH),
+    }
+
+
 def find_character(db: Session, name: str) -> Character:
     character = db.scalar(
         select(Character).where(func.lower(Character.name) == name.strip().casefold())
@@ -308,7 +381,17 @@ def find_character(db: Session, name: str) -> Character:
     return character
 
 
-def import_dossier(db: Session, data: dict[str, Any], source_file: str | None = None) -> Character:
+def relations_locked(character: Character) -> bool:
+    return character.profile is not None and character.profile.relations_edited_at is not None
+
+
+def import_dossier(
+    db: Session,
+    data: dict[str, Any],
+    source_file: str | None = None,
+    *,
+    replace_relations: bool = False,
+) -> Character:
     name = _text(data, "character", required=True)
     character = find_character(db, name)
     history = data.get("history", {})
@@ -326,15 +409,7 @@ def import_dossier(db: Session, data: dict[str, Any], source_file: str | None = 
         for index, entry in enumerate(_entries(history, "events"))
     ]
     relations = [
-        CharacterRelation(
-            position=index,
-            category=normalize_category(_text(entry, "category", required=True, limit=60)),
-            name=_text(entry, "name", required=True),
-            role=_text(entry, "role") or None,
-            status=_text(entry, "status", limit=100) or None,
-            wa_article_id=_linked_article(db, entry),
-            text=_text(entry, "text", limit=MAX_TEXT_LENGTH),
-        )
+        CharacterRelation(position=index, **relation_values(db, entry))
         for index, entry in enumerate(_entries(data, "relations"))
     ]
     items = []
@@ -354,24 +429,61 @@ def import_dossier(db: Session, data: dict[str, Any], source_file: str | None = 
                 equipped=equipped,
                 wa_article_id=_linked_article(db, entry),
                 text=_text(entry, "text", limit=MAX_TEXT_LENGTH),
+                gm_notes=_text(entry, "gm_notes", limit=MAX_TEXT_LENGTH),
             )
         )
 
     combat = _combat(data)
     actions = _actions(data)
+    aliases = _aliases(data)
 
+    keep_relations = relations_locked(character) and not replace_relations
     if character.profile is None:
         character.profile = CharacterProfile(character_id=character.id)
     character.profile.backstory = backstory
     character.profile.combat = combat
+    character.profile.aliases = aliases
     character.profile.source_file = source_file
     character.profile.updated_at = utcnow()
     character.events = events
-    character.relations = relations
+    if not keep_relations:
+        character.relations = relations
+        character.profile.relations_edited_at = None
     character.items = items
     character.actions = actions
     db.commit()
     return character
+
+
+def _mark_relations_edited(character: Character) -> None:
+    if character.profile is None:
+        character.profile = CharacterProfile(character_id=character.id)
+    character.profile.relations_edited_at = utcnow()
+
+
+def add_relation(db: Session, character: Character, entry: dict[str, Any]) -> CharacterRelation:
+    values = relation_values(db, entry)
+    position = max((relation.position for relation in character.relations), default=-1) + 1
+    relation = CharacterRelation(position=position, **values)
+    character.relations.append(relation)
+    _mark_relations_edited(character)
+    db.commit()
+    return relation
+
+
+def update_relation(
+    db: Session, character: Character, relation: CharacterRelation, entry: dict[str, Any]
+) -> None:
+    for key, value in relation_values(db, entry).items():
+        setattr(relation, key, value)
+    _mark_relations_edited(character)
+    db.commit()
+
+
+def delete_relation(db: Session, character: Character, relation: CharacterRelation) -> None:
+    character.relations.remove(relation)
+    _mark_relations_edited(character)
+    db.commit()
 
 
 def load_dossier_file(path: Path) -> dict[str, Any]:
@@ -381,10 +493,16 @@ def load_dossier_file(path: Path) -> dict[str, Any]:
         raise DossierError(f"cannot read {path.name}: {exc}") from exc
 
 
+def _gm_html(notes: str, context: RenderContext, dm: bool) -> Markup | None:
+    return render_bbcode(notes, context) if dm and notes.strip() else None
+
+
 def build_dossier(
     character: Character,
     context: RenderContext,
     article_href: Callable[[WaArticle], str | None],
+    *,
+    dm: bool = False,
 ) -> Dossier:
     profile = character.profile
     events = [
@@ -392,9 +510,22 @@ def build_dossier(
         for event in character.events
     ]
     grouped: dict[str, list[RelationView]] = {}
+    labels: dict[str, str] = {}
     for relation in character.relations:
         href = article_href(relation.article) if relation.article is not None else None
-        grouped.setdefault(relation.category, []).append(
+        key = category_key(relation.category)
+        labels.setdefault(key, category_label(relation.category))
+        form = (
+            RelationForm(
+                labels[key],
+                relation.article.title if relation.article is not None else "",
+                relation.text,
+                relation.gm_notes,
+            )
+            if dm
+            else None
+        )
+        grouped.setdefault(key, []).append(
             RelationView(
                 relation.id,
                 relation.name,
@@ -403,11 +534,12 @@ def build_dossier(
                 render_bbcode(relation.text, context),
                 relation.article if href else None,
                 href,
+                _gm_html(relation.gm_notes, context, dm),
+                form,
             )
         )
     groups = [
-        RelationGroup(key, category_label(key), grouped[key])
-        for key in sorted(grouped, key=_category_rank)
+        RelationGroup(key, labels[key], grouped[key]) for key in sorted(grouped, key=_category_rank)
     ]
     items = [
         ItemView(
@@ -417,6 +549,7 @@ def build_dossier(
             item.equipped,
             render_bbcode(item.text, context),
             article_href(item.article) if item.article is not None else None,
+            _gm_html(item.gm_notes, context, dm),
         )
         for item in character.items
     ]
@@ -457,5 +590,8 @@ def build_dossier(
         events=events,
         relation_groups=groups,
         items=items,
+        aliases=[format_alias(alias) for alias in (profile.aliases if profile else None) or []],
         source_file=profile.source_file if profile else None,
+        dm=dm,
+        relations_edited_at=profile.relations_edited_at if profile else None,
     )

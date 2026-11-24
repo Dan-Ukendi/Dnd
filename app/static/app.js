@@ -149,3 +149,10 @@ window.addEventListener("hashchange", () => {
     }
   });
 });
+
+document.addEventListener("submit", (event) => {
+  const message = event.target.dataset ? event.target.dataset.confirm : undefined;
+  if (message && !window.confirm(message)) {
+    event.preventDefault();
+  }
+});

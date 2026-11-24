@@ -1,6 +1,40 @@
 {% from "components/icons.html" import ui %}
 {% set prefix = "dossier-" ~ dossier.character.id %}
 {% set dm_hint = "" if player_mode else " Complétez le dossier du personnage puis lancez la commande import-dossiers." %}
+{% set editable = dossier.dm and not player_mode %}
+
+{% macro relation_fields(lists, id, values, form) %}
+<div class="relation-form__grid">
+  <div class="field">
+    <label for="{{ id }}-name">Nom</label>
+    <input id="{{ id }}-name" type="text" name="name" value="{{ values.name or '' }}" required maxlength="200" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-category">Catégorie</label>
+    <input id="{{ id }}-category" type="text" name="category" value="{{ form.category if form else '' }}" required maxlength="40" list="{{ lists }}-categories" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-role">Lien</label>
+    <input id="{{ id }}-role" type="text" name="role" value="{{ values.role or '' }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-status">Statut</label>
+    <input id="{{ id }}-status" type="text" name="status" value="{{ values.status or '' }}" maxlength="100" autocomplete="off">
+  </div>
+  <div class="field relation-form__wide">
+    <label for="{{ id }}-article">Fiche World Anvil liée</label>
+    <input id="{{ id }}-article" type="text" name="article" value="{{ form.article if form else '' }}" maxlength="500" list="{{ lists }}-articles" autocomplete="off" placeholder="Titre exact, ou vide">
+  </div>
+</div>
+<div class="field">
+  <label for="{{ id }}-text">Rôle et attitude</label>
+  <textarea id="{{ id }}-text" name="text" rows="4">{{ form.text if form else '' }}</textarea>
+</div>
+<div class="field field--gm">
+  <label for="{{ id }}-gm">Notes du MJ <span class="field__hint">jamais montrées au joueur</span></label>
+  <textarea id="{{ id }}-gm" name="gm_notes" rows="3">{{ form.gm_notes if form else '' }}</textarea>
+</div>
+{% endmacro %}
 
 <section class="tabs__panel" id="{{ prefix }}-actions" role="tabpanel" aria-labelledby="{{ prefix }}-tab-actions" tabindex="0">
   <h2 class="tabs__heading">Actions</h2>
@@ -60,6 +94,13 @@
 
 <section class="tabs__panel" id="{{ prefix }}-relations" role="tabpanel" aria-labelledby="{{ prefix }}-tab-relations" tabindex="0">
   <h2 class="tabs__heading">Relations</h2>
+  {% if editable %}
+  {% if dossier.relations_edited_at %}
+  <p class="alert alert--warn">Relations modifiées dans l'application le {{ dossier.relations_edited_at | datetime_fr }}. Un nouvel import {% if dossier.source_file %}de {{ dossier.source_file }} {% endif %}met à jour le reste du dossier mais ne les remplace plus. Pour revenir au fichier : import-dossiers --replace-relations.</p>
+  {% else %}
+  <p class="dossier-note">Vous pouvez modifier les relations ici. Dès la première modification, un nouvel import du fichier de dossier ne les remplace plus.</p>
+  {% endif %}
+  {% endif %}
   {% if dossier.relation_groups %}
   {% for group in dossier.relation_groups %}
   <section class="relation-group" aria-labelledby="{{ prefix }}-groupe-{{ group.key }}">
@@ -80,7 +121,29 @@
           </summary>
           <div class="relation__body">
             {% if person.html | trim %}<div class="prose">{{ person.html }}</div>{% else %}<p class="muted">Rien de plus n'est consigné pour l'instant.</p>{% endif %}
+            {% if person.gm_html %}
+            <div class="gm-note">
+              <p class="gm-note__label">Notes du MJ</p>
+              <div class="prose">{{ person.gm_html }}</div>
+            </div>
+            {% endif %}
             {% if person.href %}<a class="btn" href="{{ person.href }}">Voir la fiche</a>{% endif %}
+            {% if editable and person.form %}
+            <details class="relation-edit">
+              <summary class="btn">Modifier</summary>
+              <form method="post" action="/mj/personnages/{{ dossier.character.id }}/relations/{{ person.id }}" class="form relation-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {{ relation_fields(prefix, prefix ~ "-rel-" ~ person.id, person, person.form) }}
+                <div class="row">
+                  <button type="submit" class="btn btn--primary">Enregistrer</button>
+                </div>
+              </form>
+              <form method="post" action="/mj/personnages/{{ dossier.character.id }}/relations/{{ person.id }}/supprimer" class="relation-edit__delete" data-confirm="Supprimer la relation « {{ person.name }} » ?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn--danger">Supprimer cette relation</button>
+              </form>
+            </details>
+            {% endif %}
           </div>
         </details>
       </li>
@@ -95,12 +158,32 @@
     <p>Famille, amis, connaissances et ennemis apparaîtront ici.{{ dm_hint }}</p>
   </div>
   {% endif %}
+  {% if editable %}
+  <details class="relation-edit relation-edit--new">
+    <summary class="btn">Ajouter une relation</summary>
+    <form method="post" action="/mj/personnages/{{ dossier.character.id }}/relations" class="form relation-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ relation_fields(prefix, prefix ~ "-rel-new", {}, none) }}
+      <div class="row">
+        <button type="submit" class="btn btn--primary">Ajouter</button>
+      </div>
+    </form>
+  </details>
+  {% set known = relation_categories | map(attribute=1) | list %}
+  <datalist id="{{ prefix }}-categories">
+    {% for label in known %}<option value="{{ label }}">{% endfor %}
+    {% for group in dossier.relation_groups if group.label not in known %}<option value="{{ group.label }}">{% endfor %}
+  </datalist>
+  <datalist id="{{ prefix }}-articles">
+    {% for item in relation_articles %}<option value="{{ item.title }}">{% endfor %}
+  </datalist>
+  {% endif %}
 </section>
 
 <section class="tabs__panel" id="{{ prefix }}-histoire" role="tabpanel" aria-labelledby="{{ prefix }}-tab-histoire" tabindex="0">
   <h2 class="tabs__heading">Histoire</h2>
-  <section class="dossier-block" aria-labelledby="{{ prefix }}-origines">
-    <h3 class="dossier-block__title" id="{{ prefix }}-origines">Origines</h3>
+  <section class="dossier-block" aria-labelledby="{{ prefix }}-backstory">
+    <h3 class="dossier-block__title" id="{{ prefix }}-backstory">Backstory</h3>
     {% if dossier.backstory | trim %}
     <div class="prose prose--story">{{ dossier.backstory }}</div>
     {% else %}
@@ -146,6 +229,12 @@
       </div>
       {% endif %}
       {% if item.html | trim %}<div class="prose">{{ item.html }}</div>{% endif %}
+      {% if item.gm_html %}
+      <div class="gm-note">
+        <p class="gm-note__label">Notes du MJ</p>
+        <div class="prose">{{ item.gm_html }}</div>
+      </div>
+      {% endif %}
       {% if item.href %}<a class="inventory__link" href="{{ item.href }}">Voir la fiche</a>{% endif %}
     </li>
     {% endfor %}

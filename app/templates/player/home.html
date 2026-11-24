@@ -14,6 +14,7 @@
 {% set pills = [] %}
 {% set shared %}{% if shared_count %}<a href="/joueur/articles">{{ shared_count }} fiche{{ "s" if shared_count > 1 }} partagée{{ "s" if shared_count > 1 }}</a>{% else %}Aucune pour l'instant{% endif %}{% endset %}
 {% set facts = [("Personnage", character.name), ("Joué par", current_user.display_name), ("Fiches partagées", shared)] %}
+{% if sheet.dossier and sheet.dossier.aliases %}{% set _ = facts.insert(1, ("Alias", sheet.dossier.aliases | join(", "))) %}{% endif %}
 {% set gm_sections = [] %}
 {% set related = [] %}
 {% set notice = "" %}
