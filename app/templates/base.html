@@ -38,6 +38,7 @@
         <a href="/joueur" {% if path == "/joueur" %}aria-current="page"{% endif %}>{{ ui("mask") }}Mon personnage</a>
         <a href="/joueur/articles?section={{ ADVENTURE_KEY }}" {% if path == "/joueur/articles" and request.query_params.get("section") == ADVENTURE_KEY %}aria-current="page"{% endif %}>{{ ui("compass") }}{{ SECTIONS_BY_KEY[ADVENTURE_KEY].label }}</a>
         <a href="/joueur/articles" {% if path.startswith("/joueur/articles") and request.query_params.get("section") != ADVENTURE_KEY %}aria-current="page"{% endif %}>{{ ui("scroll") }}Mes fiches</a>
+        <a href="/joueur/mot-de-passe" {% if path == "/joueur/mot-de-passe" %}aria-current="page"{% endif %}>{{ ui("key") }}Mot de passe</a>
         {% endif %}
         <form method="post" action="/deconnexion">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

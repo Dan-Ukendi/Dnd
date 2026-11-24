@@ -2,7 +2,7 @@ import re
 from datetime import timedelta
 
 from sqlalchemy import delete, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models import Invitation, Role, User, utcnow
 from app.security import (
@@ -122,9 +122,64 @@ def accept_invitation(
     claimed.used_at = utcnow()
     user = claimed.user
     user.password_hash = hash_password(password)
+    user.must_change_password = False
     user.session_version += 1
     db.commit()
     return user
+
+
+def set_temporary_password(db: Session, user: User, password: str) -> None:
+    if user.role != Role.PLAYER:
+        raise AccountError("not_a_player")
+    if not password:
+        raise AccountError("password_too_short")
+    user.password_hash = hash_password(password)
+    user.must_change_password = True
+    user.session_version += 1
+    db.execute(
+        delete(Invitation).where(Invitation.user_id == user.id, Invitation.used_at.is_(None))
+    )
+    db.commit()
+
+
+def change_password(db: Session, user: User, current: str, new: str, confirmation: str) -> None:
+    if not verify_password(user.password_hash, current):
+        raise AccountError("wrong_password")
+    validate_password(new, confirmation)
+    if new == current:
+        raise AccountError("password_unchanged")
+    user.password_hash = hash_password(new)
+    user.must_change_password = False
+    user.session_version += 1
+    db.commit()
+
+
+def login_players(db: Session) -> list[User]:
+    return list(
+        db.scalars(
+            select(User)
+            .options(selectinload(User.characters))
+            .where(
+                User.role == Role.PLAYER,
+                User.is_active.is_(True),
+                User.password_hash.is_not(None),
+            )
+            .order_by(User.display_name)
+        ).all()
+    )
+
+
+def find_login_player(db: Session, login: str) -> User | None:
+    return db.scalar(
+        select(User)
+        .options(selectinload(User.characters))
+        .where(
+            User.login == normalize_login(login),
+            User.role == Role.PLAYER,
+            User.is_active.is_(True),
+            User.password_hash.is_not(None),
+        )
+    )
 
 
 def set_active(db: Session, user: User, active: bool) -> None:

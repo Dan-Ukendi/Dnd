@@ -121,7 +121,7 @@ def test_anonymous_posts_are_redirected_without_side_effects(
     client: TestClient, world: World, db: Session
 ) -> None:
     for path, data in dm_post_routes(world):
-        response = post_form(client, path, data, "/connexion")
+        response = post_form(client, path, data, "/connexion/mj")
         assert response.status_code == 303, path
         assert response.headers["location"] == "/connexion", path
     assert db.scalar(select(func.count()).select_from(SyncRun)) == 0
@@ -140,7 +140,7 @@ def test_dm_can_use_every_dm_action(
 ) -> None:
     login(client, "maitre")
     for path, data in dm_post_routes(world):
-        response = post_form(client, path, data, "/connexion")
+        response = post_form(client, path, data, "/connexion/mj")
         assert response.status_code in (200, 303), path
     assert len(no_real_sync) == 1
     assert db.scalar(select(User).where(User.login == "mallory")) is not None
@@ -165,7 +165,7 @@ def test_player_dm_actions_are_404_without_side_effects(
 ) -> None:
     login(client, "alice")
     for path, data in dm_post_routes(world):
-        response = post_form(client, path, data, "/connexion")
+        response = post_form(client, path, data, "/connexion/mj")
         assert response.status_code == 404, path
     assert no_real_sync == []
     assert db.scalar(select(User).where(User.login == "mallory")) is None
@@ -237,7 +237,7 @@ def test_deactivated_player_loses_session_and_cannot_log_in(
     login(client, "alice")
     assert client.get("/joueur").status_code == 200
     login(other_client, "maitre")
-    post_form(other_client, f"/mj/joueurs/{world.alice.id}/desactiver", {}, "/connexion")
+    post_form(other_client, f"/mj/joueurs/{world.alice.id}/desactiver", {}, "/connexion/mj")
     response = client.get("/joueur", follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/connexion"
@@ -290,7 +290,7 @@ def test_csrf_token_is_bound_to_the_session(
     client: TestClient, other_client: TestClient, world: World
 ) -> None:
     login(client, "maitre")
-    foreign_token = csrf_token(other_client, "/connexion")
+    foreign_token = csrf_token(other_client, "/connexion/mj")
     response = client.post(
         "/mj/joueurs",
         data={"display_name": "X", "login": "xavier", "csrf_token": foreign_token},

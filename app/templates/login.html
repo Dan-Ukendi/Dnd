@@ -1,17 +1,20 @@
 {% extends "base.html" %}
-{% from "components/icons.html" import emblem, divider_ornament %}
-{% block title %}Connexion{% endblock %}
+{% from "components/icons.html" import emblem, divider_ornament, ui %}
+{% block title %}Connexion du maître du jeu{% endblock %}
 {% block body %}
 <main id="contenu" class="screen">
   <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
   <div class="screen__content">
+    <a class="screen__back reveal" href="/connexion">{{ ui("back") }}Changer de rôle</a>
     <div class="screen__mark reveal">{{ emblem("") }}</div>
+    <p class="eyebrow reveal">Maître du jeu</p>
     <h1 class="screen__title reveal reveal--slow">{{ APP_TITLE }}</h1>
     <p class="screen__tagline reveal reveal-delay-1">{{ APP_TAGLINE }}</p>
     <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
     {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
     <form method="post" action="/connexion" class="form reveal reveal-delay-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="mode" value="mj">
       <div class="field">
         <label for="login">Identifiant</label>
         <input id="login" type="text" name="login" value="{{ login }}" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="100">

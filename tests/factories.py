@@ -89,7 +89,7 @@ def make_character(
     return character
 
 
-def csrf_token(client: TestClient, path: str = "/connexion") -> str:
+def csrf_token(client: TestClient, path: str = "/connexion/mj") -> str:
     response = client.get(path)
     match = CSRF_RE.search(response.text)
     assert match, f"No CSRF token found on {path}"
@@ -97,7 +97,7 @@ def csrf_token(client: TestClient, path: str = "/connexion") -> str:
 
 
 def login(client: TestClient, user_login: str, password: str = PASSWORD) -> Response:
-    token = csrf_token(client, "/connexion")
+    token = csrf_token(client, "/connexion/mj")
     return client.post(
         "/connexion",
         data={"login": user_login, "password": password, "csrf_token": token},

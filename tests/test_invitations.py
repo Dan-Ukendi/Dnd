@@ -13,18 +13,18 @@ LINK_RE = re.compile(r'value="(http://testserver/invitation/[^"]+)"')
 
 def create_player_and_invite(dm_client: TestClient) -> str:
     created = post_form(
-        dm_client, "/mj/joueurs", {"display_name": "Chloé", "login": "chloe"}, "/connexion"
+        dm_client, "/mj/joueurs", {"display_name": "Chloé", "login": "chloe"}, "/connexion/mj"
     )
     assert created.status_code == 303
     page = dm_client.get("/mj/joueurs").text
     player_id = re.search(r"/mj/joueurs/(\d+)/invitation", page).group(1)
-    response = post_form(dm_client, f"/mj/joueurs/{player_id}/invitation", {}, "/connexion")
+    response = post_form(dm_client, f"/mj/joueurs/{player_id}/invitation", {}, "/connexion/mj")
     assert response.status_code == 200
     return LINK_RE.search(response.text).group(1).replace("http://testserver", "")
 
 
 def accept(client: TestClient, path: str, password: str, confirmation: str | None = None):
-    token = csrf_token(client, "/connexion")
+    token = csrf_token(client, "/connexion/mj")
     return client.post(
         path,
         data={
@@ -100,7 +100,7 @@ def test_new_invitation_revokes_the_previous_one(
     login(client, "maitre")
     first = create_player_and_invite(client)
     player_id = db.scalar(select(User.id).where(User.login == "chloe"))
-    response = post_form(client, f"/mj/joueurs/{player_id}/invitation", {}, "/connexion")
+    response = post_form(client, f"/mj/joueurs/{player_id}/invitation", {}, "/connexion/mj")
     second = LINK_RE.search(response.text).group(1).replace("http://testserver", "")
     assert other_client.get(first).status_code == 404
     assert other_client.get(second).status_code == 200

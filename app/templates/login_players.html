@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import emblem, divider_ornament, ui %}
+{% block title %}Connexion des joueurs{% endblock %}
+{% block body %}
+<main id="contenu" class="screen">
+  <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
+  <div class="screen__content screen__content--choice">
+    <a class="screen__back reveal" href="/connexion">{{ ui("back") }}Changer de rôle</a>
+    <p class="eyebrow reveal">Joueurs</p>
+    <h1 class="screen__title screen__title--small reveal reveal--slow">Qui êtes-vous ?</h1>
+    <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
+    {% if players %}
+    <ul class="player-choice stagger" aria-label="Joueurs disponibles">
+      {% for player in players %}
+      <li>
+        <a class="player-card" href="/connexion/joueurs/{{ player.login }}">
+          <span class="player-card__seal" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
+          <span class="player-card__body">
+            <span class="player-card__name">{{ player.display_name }}</span>
+            {% if player.characters %}
+            <span class="player-card__characters">{{ player.characters | map(attribute="name") | join(" · ") }}</span>
+            {% endif %}
+          </span>
+          {{ ui("chevron", "icon player-card__chevron") }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state reveal reveal-delay-2">
+      {{ ui("mask") }}
+      <h2 class="empty-state__title">Aucun joueur pour l'instant</h2>
+      <p>Le maître du jeu n'a encore ouvert aucun compte joueur.</p>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

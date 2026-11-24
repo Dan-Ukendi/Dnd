@@ -54,9 +54,18 @@ def require_dm(user: Annotated[User, Depends(require_user)]) -> User:
     return user
 
 
-def require_player(user: Annotated[User, Depends(require_user)]) -> User:
+ACCOUNT_SETUP_PATH = "/joueur/mot-de-passe"
+
+
+class PasswordChangeRequiredError(Exception):
+    pass
+
+
+def require_player(request: Request, user: Annotated[User, Depends(require_user)]) -> User:
     if user.role != Role.PLAYER:
         raise HTTPException(status_code=404)
+    if user.must_change_password and request.url.path != ACCOUNT_SETUP_PATH:
+        raise PasswordChangeRequiredError
     return user
 
 

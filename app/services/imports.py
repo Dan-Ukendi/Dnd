@@ -6,9 +6,15 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models import Character, Role, User
 from app.sections import SECTIONS_BY_KEY
-from app.services.accounts import AccountError, create_user, normalize_login
+from app.services.accounts import (
+    AccountError,
+    create_user,
+    normalize_login,
+    set_temporary_password,
+)
 from app.services.characters import CharacterError, create_character
 from app.services.media import attach_media, find_article, parse_role, set_banner
 from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError, ProcessedMedia
@@ -119,7 +125,8 @@ def import_characters(db: Session, manifest: dict[str, Any]) -> list[ImportLine]
             db.rollback()
             lines.append(ImportLine("failed", label, exc.code))
             continue
-        lines.append(ImportLine("created", label, user.display_name))
+        set_temporary_password(db, user, get_settings().player_initial_password.get_secret_value())
+        lines.append(ImportLine("created", label, f"{user.display_name} (temporary password)"))
     for entry in manifest.get("characters", []):
         name = _text(entry, "name") or ""
         label = f"character {name or '?'}"

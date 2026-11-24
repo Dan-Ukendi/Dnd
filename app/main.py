@@ -13,7 +13,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
 from app.config import get_settings
 from app.db import get_engine, ping
-from app.deps import NotAuthenticatedError
+from app.deps import ACCOUNT_SETUP_PATH, NotAuthenticatedError, PasswordChangeRequiredError
 from app.routes import auth, dm, media, player
 from app.security import LoginRateLimiter, csrf_protect
 from app.services.media_processing import MAX_UPLOAD_BYTES
@@ -238,6 +238,14 @@ def create_app() -> FastAPI:
         if is_htmx(request):
             return Response(status_code=204, headers={"HX-Redirect": "/connexion"})
         return RedirectResponse("/connexion", status_code=303)
+
+    @app.exception_handler(PasswordChangeRequiredError)
+    async def password_change_required(
+        request: Request, exc: PasswordChangeRequiredError
+    ) -> Response:
+        if is_htmx(request):
+            return Response(status_code=204, headers={"HX-Redirect": ACCOUNT_SETUP_PATH})
+        return RedirectResponse(ACCOUNT_SETUP_PATH, status_code=303)
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException) -> Response:

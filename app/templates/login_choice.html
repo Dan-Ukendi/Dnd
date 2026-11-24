@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import emblem, divider_ornament, ui %}
+{% block title %}Connexion{% endblock %}
+{% block body %}
+<main id="contenu" class="screen">
+  <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
+  <div class="screen__content screen__content--choice">
+    <div class="screen__mark reveal">{{ emblem("") }}</div>
+    <h1 class="screen__title reveal reveal--slow">{{ APP_TITLE }}</h1>
+    <p class="screen__tagline reveal reveal-delay-1">{{ APP_TAGLINE }}</p>
+    <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
+    <nav class="role-choice stagger" aria-label="Choisir son rôle">
+      <a class="role-card" href="/connexion/joueurs">
+        <span class="role-card__icon">{{ ui("mask") }}</span>
+        <span class="role-card__title">Joueur</span>
+        <span class="role-card__text">Retrouver mon personnage et les archives qui me sont confiées.</span>
+      </a>
+      <a class="role-card" href="/connexion/mj">
+        <span class="role-card__icon">{{ ui("scroll") }}</span>
+        <span class="role-card__title">Maître du jeu</span>
+        <span class="role-card__text">Ouvrir l'ensemble des archives de l'Empire.</span>
+      </a>
+    </nav>
+    <p class="screen__footer reveal reveal-delay-3">Accès réservé à la tablée</p>
+  </div>
+</main>
+{% endblock %}

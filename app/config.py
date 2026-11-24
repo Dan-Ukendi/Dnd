@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     wa_user_agent: str = "Campaign Companion (self-hosted, 1.0.0)"
     session_max_age_seconds: int = 60 * 60 * 24 * 14
     invitation_ttl_hours: int = 72
+    player_initial_password: SecretStr = SecretStr("0000")
 
     @field_validator("database_url", "database_url_unpooled")
     @classmethod

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import emblem, divider_ornament, ui %}
+{% block title %}Connexion de {{ player.display_name }}{% endblock %}
+{% block body %}
+<main id="contenu" class="screen">
+  <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
+  <div class="screen__content">
+    <a class="screen__back reveal" href="/connexion/joueurs">{{ ui("back") }}Changer de joueur</a>
+    <span class="player-card__seal player-card__seal--large reveal" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
+    <h1 class="screen__title screen__title--small reveal reveal--slow">{{ player.display_name }}</h1>
+    {% if player.characters %}
+    <p class="screen__tagline reveal reveal-delay-1">{{ player.characters | map(attribute="name") | join(" · ") }}</p>
+    {% endif %}
+    <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
+    {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/connexion" class="form reveal reveal-delay-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="mode" value="joueur">
+      <input type="hidden" name="login" value="{{ player.login }}">
+      <input type="text" name="username" value="{{ player.login }}" autocomplete="username" hidden readonly>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="256" autofocus>
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Entrer</button>
+    </form>
+    <p class="screen__hint reveal reveal-delay-3">Première connexion ? Utilisez le mot de passe provisoire transmis par votre maître du jeu.</p>
+  </div>
+</main>
+{% endblock %}

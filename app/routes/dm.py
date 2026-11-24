@@ -21,7 +21,13 @@ from app.services import articles as article_service
 from app.services import characters as character_service
 from app.services import media as media_service
 from app.services.access import dm_render_context
-from app.services.accounts import AccountError, create_invitation, create_user, set_active
+from app.services.accounts import (
+    AccountError,
+    create_invitation,
+    create_user,
+    set_active,
+    set_temporary_password,
+)
 from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError
 from app.services.sync import SyncAlreadyRunningError, latest_run, run_sync_job, start_run
 from app.templating import flash, is_htmx, render
@@ -282,6 +288,22 @@ def invite_player(request: Request, player_id: int, db: DbSession, dm: CurrentDm
         "dm/players.html",
         {"players": character_service.list_players(db), "form": {}, "invitation": context},
     )
+
+
+@router.post("/joueurs/{player_id}/mot-de-passe-provisoire")
+def reset_player_password(
+    request: Request, player_id: int, db: DbSession, dm: CurrentDm
+) -> Response:
+    player = _get_player(db, player_id)
+    if not player.is_active:
+        raise HTTPException(status_code=400)
+    set_temporary_password(db, player, get_settings().player_initial_password.get_secret_value())
+    flash(
+        request,
+        f"{player.display_name} se connecte désormais avec le mot de passe provisoire "
+        "et devra en choisir un nouveau.",
+    )
+    return RedirectResponse("/mj/joueurs", status_code=303)
 
 
 @router.post("/joueurs/{player_id}/desactiver")

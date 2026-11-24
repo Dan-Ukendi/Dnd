@@ -3,13 +3,15 @@ from typing import Annotated
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
-from app.deps import DbSession, OptionalUser, client_ip, log_in
+from app.deps import ACCOUNT_SETUP_PATH, DbSession, OptionalUser, client_ip, log_in
 from app.models import Role, User
 from app.services.accounts import (
     AccountError,
     accept_invitation,
     authenticate,
+    find_login_player,
     find_valid_invitation,
+    login_players,
 )
 from app.templating import render
 
@@ -33,10 +35,53 @@ def index(user: OptionalUser) -> RedirectResponse:
 
 
 @router.get("/connexion")
+def login_choice(request: Request, user: OptionalUser) -> Response:
+    if user is not None:
+        return RedirectResponse(home_url(user), status_code=303)
+    return render(request, "login_choice.html")
+
+
+@router.get("/connexion/mj")
 def login_form(request: Request, user: OptionalUser) -> Response:
     if user is not None:
         return RedirectResponse(home_url(user), status_code=303)
     return render(request, "login.html", {"login": ""})
+
+
+@router.get("/connexion/joueurs")
+def login_players_page(request: Request, db: DbSession, user: OptionalUser) -> Response:
+    if user is not None:
+        return RedirectResponse(home_url(user), status_code=303)
+    return render(request, "login_players.html", {"players": login_players(db)})
+
+
+@router.get("/connexion/joueurs/{player_login}")
+def login_player_form(
+    request: Request, player_login: str, db: DbSession, user: OptionalUser
+) -> Response:
+    if user is not None:
+        return RedirectResponse(home_url(user), status_code=303)
+    player = find_login_player(db, player_login)
+    if player is None:
+        raise HTTPException(status_code=404)
+    return render(request, "login_player.html", {"player": player})
+
+
+def _login_error(
+    request: Request, db: DbSession, mode: str, login: str, message: str, status_code: int
+) -> Response:
+    if mode == "joueur":
+        player = find_login_player(db, login)
+        if player is not None:
+            return render(
+                request,
+                "login_player.html",
+                {"player": player, "error": message},
+                status_code=status_code,
+            )
+    return render(
+        request, "login.html", {"login": login, "error": message}, status_code=status_code
+    )
 
 
 @router.post("/connexion")
@@ -45,30 +90,32 @@ def login_submit(
     db: DbSession,
     login: Annotated[str, Form(max_length=200)] = "",
     password: Annotated[str, Form(max_length=512)] = "",
+    mode: Annotated[str, Form(max_length=10)] = "mj",
 ) -> Response:
     limiter = request.app.state.login_limiter
     ip = client_ip(request)
     if limiter.is_blocked(ip, login):
-        return render(
+        return _login_error(
             request,
-            "login.html",
-            {
-                "login": login,
-                "error": "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
-            },
-            status_code=429,
+            db,
+            mode,
+            login,
+            "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+            429,
         )
     user = authenticate(db, login, password)
     if user is None:
         limiter.register_failure(ip, login)
-        return render(
-            request,
-            "login.html",
-            {"login": login, "error": "Identifiant ou mot de passe incorrect."},
-            status_code=400,
+        message = (
+            "Mot de passe incorrect."
+            if mode == "joueur"
+            else "Identifiant ou mot de passe incorrect."
         )
+        return _login_error(request, db, mode, login, message, 400)
     limiter.reset(ip, login)
     log_in(request, user)
+    if user.role == Role.PLAYER and user.must_change_password:
+        return RedirectResponse(ACCOUNT_SETUP_PATH, status_code=303)
     return RedirectResponse(home_url(user), status_code=303)
 
 

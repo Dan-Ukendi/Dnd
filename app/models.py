@@ -68,6 +68,9 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(10))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     session_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
     )

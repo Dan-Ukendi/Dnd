@@ -48,6 +48,7 @@ tests/                 pytest suite
 | `WA_AUTH_TOKEN` | for sync | World Anvil user token (`x-auth-token`). |
 | `WA_WORLD_ID` | for sync | Id of the world to synchronise. |
 | `APP_ENV` | no | `production` (default: secure cookies, HSTS) or `development` (plain HTTP on localhost). |
+| `PLAYER_INITIAL_PASSWORD` | no | Temporary password given to new or reset player accounts (default `0000`). Players must replace it at their first login. |
 
 `postgres://` and `postgresql://` URLs are accepted and converted to the psycopg driver automatically.
 Copy `.env.example` to `.env` for local work; `.env` is ignored by git.
@@ -67,6 +68,15 @@ uvicorn app.main:app --reload
 ```
 
 Open http://localhost:8000 and sign in with the DM account.
+
+## Signing in
+
+The landing page asks for a role. **Maître du jeu** opens the DM form (login and password).
+**Joueur** lists the active player accounts that have a password; a player picks their name and types
+their password. Accounts created by `import-characters`, or reset from the DM's *Joueurs* page with
+*Mot de passe provisoire*, use `PLAYER_INITIAL_PASSWORD`: after signing in with it, the player is sent
+to *Choisissez votre mot de passe* and cannot open anything else until they choose their own (at least
+10 characters). Invitation links still work as an alternative.
 
 ## Useful commands
 
@@ -115,7 +125,7 @@ Beyond sheets. The source files themselves stay out of git (`source/` is ignored
 ```bash
 python -m app.cli sync                       # the target articles must be synchronised first
 python -m app.cli import-media source        # created / replaced / unchanged / failed, then a summary
-python -m app.cli import-characters          # players without password, no invitation link
+python -m app.cli import-characters          # players get the temporary password, no invitation link
 ```
 
 Both commands are idempotent: a file whose SHA-256 has not changed is left alone, a changed file

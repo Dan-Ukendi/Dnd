@@ -1,17 +1,20 @@
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import Response
+from typing import Annotated
 
-from app.deps import CurrentPlayer, DbSession
+from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi.responses import RedirectResponse, Response
+
+from app.deps import CurrentPlayer, DbSession, log_in
 from app.services.access import (
     accessible_article_ids,
     get_player_article,
     player_render_context,
     player_shared_articles,
 )
+from app.services.accounts import AccountError, change_password
 from app.services.articles import articles_by_ids
 from app.services.characters import characters_of
 from app.services.media import player_section_banner
-from app.templating import render
+from app.templating import flash, render
 from app.worldanvil.bbcode import render_bbcode
 
 router = APIRouter(prefix="/joueur")
@@ -63,3 +66,44 @@ def shared_article(request: Request, wa_id: str, db: DbSession, player: CurrentP
             "linked": linked,
         },
     )
+
+
+PASSWORD_ERROR_MESSAGES = {
+    "wrong_password": "Le mot de passe actuel est incorrect.",
+    "password_too_short": "Le nouveau mot de passe doit contenir au moins 10 caractères.",
+    "password_too_long": "Le nouveau mot de passe est trop long.",
+    "password_mismatch": "Les deux nouveaux mots de passe ne correspondent pas.",
+    "password_unchanged": "Choisissez un mot de passe différent de l'actuel.",
+}
+
+
+@router.get("/mot-de-passe")
+def password_form(request: Request, player: CurrentPlayer) -> Response:
+    return render(request, "player/password.html", {"forced": player.must_change_password})
+
+
+@router.post("/mot-de-passe")
+def password_submit(
+    request: Request,
+    db: DbSession,
+    player: CurrentPlayer,
+    current_password: Annotated[str, Form(max_length=512)] = "",
+    new_password: Annotated[str, Form(max_length=512)] = "",
+    new_password_confirmation: Annotated[str, Form(max_length=512)] = "",
+) -> Response:
+    forced = player.must_change_password
+    try:
+        change_password(db, player, current_password, new_password, new_password_confirmation)
+    except AccountError as exc:
+        return render(
+            request,
+            "player/password.html",
+            {
+                "forced": forced,
+                "error": PASSWORD_ERROR_MESSAGES.get(exc.code, "Modification impossible."),
+            },
+            status_code=400,
+        )
+    log_in(request, player)
+    flash(request, "Votre mot de passe est enregistré.")
+    return RedirectResponse("/joueur", status_code=303)
