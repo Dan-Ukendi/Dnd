@@ -8,6 +8,7 @@ services:
     startCommand: >-
       python -m app.cli wait-db
       && alembic upgrade head
+      && python -m app.cli load-timeline
       && uvicorn app.main:app --host 0.0.0.0 --port $PORT
       --proxy-headers --forwarded-allow-ips "*"
     healthCheckPath: /health

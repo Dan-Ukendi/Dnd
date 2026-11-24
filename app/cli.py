@@ -10,6 +10,7 @@ from app.config import get_settings
 from app.db import get_engine, get_session_factory, wait_for_database
 from app.models import Role, SyncStatus
 from app.services.accounts import AccountError, create_user
+from app.services.chronology import ChronologyError, load_seed
 from app.services.dossiers import (
     DossierError,
     import_dossier,
@@ -165,6 +166,20 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
     return _print_report(lines)
 
 
+def cmd_load_timeline(args: argparse.Namespace) -> int:
+    with get_session_factory()() as db:
+        try:
+            report = load_seed(db)
+        except ChronologyError as exc:
+            logger.error("Invalid timeline dataset: %s", exc.code)
+            return 1
+    print(
+        f"Timeline loaded: {report.created} created, {report.updated} updated, "
+        f"{report.unchanged} unchanged, {report.skipped} kept as edited in the app"
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -206,6 +221,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also replace relations that the DM edited in the app",
     )
     dossiers.set_defaults(handler=cmd_import_dossiers)
+
+    timeline = commands.add_parser(
+        "load-timeline", help="Insert the chronology events of the versioned dataset"
+    )
+    timeline.set_defaults(handler=cmd_load_timeline)
     return parser
 
 
