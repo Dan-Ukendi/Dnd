@@ -1,8 +1,7 @@
 import logging
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -10,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_session_factory
 from app.models import SyncRun, SyncStatus, WaArticle, WaImage, utcnow
+from app.services.chronology import ChronologyError
+from app.services.chronology_sync import sync_timeline
 from app.worldanvil.bbcode import (
     extract_image_ids,
     extract_links,
@@ -22,6 +23,7 @@ from app.worldanvil.client import (
     WorldAnvilNotFoundError,
     WorldAnvilSource,
 )
+from app.worldanvil.dates import parse_wa_date
 from app.worldanvil.visibility import assess_player_visibility
 
 logger = logging.getLogger(__name__)
@@ -33,20 +35,6 @@ REMOVED_REASON = "Supprimé de World Anvil"
 
 class SyncAlreadyRunningError(Exception):
     pass
-
-
-def parse_wa_date(value: object) -> datetime | None:
-    if not isinstance(value, dict) or not isinstance(value.get("date"), str):
-        return None
-    try:
-        naive = datetime.strptime(value["date"], "%Y-%m-%d %H:%M:%S.%f")
-    except ValueError:
-        return None
-    try:
-        zone = ZoneInfo(str(value.get("timezone") or "UTC"))
-    except (ZoneInfoNotFoundError, ValueError):
-        zone = ZoneInfo("UTC")
-    return naive.replace(tzinfo=zone).astimezone(UTC)
 
 
 def latest_run(db: Session) -> SyncRun | None:
@@ -192,16 +180,21 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
         db.flush()
         _refresh_links(db)
         _sync_images(db, source, full=run.full)
+        sync_timeline(db, source, world_id, run)
         run.status = SyncStatus.SUCCESS
         run.finished_at = utcnow()
         db.commit()
         logger.info(
-            "Sync %d finished: %d created, %d updated, %d unchanged, %d removed",
+            "Sync %d finished: %d created, %d updated, %d unchanged, %d removed; "
+            "chronology: %d created, %d updated, %d removed",
             run_id,
             run.created_count,
             run.updated_count,
             run.unchanged_count,
             run.removed_count,
+            run.events_created,
+            run.events_updated,
+            run.events_removed,
         )
     except Exception as exc:
         db.rollback()
@@ -210,9 +203,12 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
             raise
         failed.status = SyncStatus.FAILED
         failed.finished_at = utcnow()
-        failed.error = (
-            str(exc) if isinstance(exc, WorldAnvilError) else f"Unexpected {type(exc).__name__}"
-        )
+        if isinstance(exc, WorldAnvilError):
+            failed.error = str(exc)
+        elif isinstance(exc, ChronologyError):
+            failed.error = f"Invalid chronology data: {exc.code}"
+        else:
+            failed.error = f"Unexpected {type(exc).__name__}"
         db.commit()
         logger.exception("Sync %d failed", run_id)
         return failed

@@ -198,7 +198,7 @@ def load_dataset(path: Path = DATASET_PATH) -> list[EventData]:
     return events
 
 
-def _apply_content(event: TimelineEvent, data: EventData) -> None:
+def apply_content(event: TimelineEvent, data: EventData) -> None:
     event.title = data.title
     event.summary = data.summary
     event.start_year = data.start_year
@@ -275,7 +275,7 @@ def load_seed(db: Session, dataset: list[EventData] | None = None) -> SeedReport
                 report.skipped += 1
                 continue
             event = TimelineEvent(code=data.code, wa_history_id=data.wa_history_id)
-            _apply_content(event, data)
+            apply_content(event, data)
             _apply_app_fields(event, data)
             db.add(event)
             existing[data.code] = event
@@ -286,7 +286,7 @@ def load_seed(db: Session, dataset: list[EventData] | None = None) -> SeedReport
             report.unchanged += 1
         else:
             before = _event_state(event)
-            _apply_content(event, data)
+            apply_content(event, data)
             _apply_app_fields(event, data)
             pending.append((event, data, False, _event_state(event) != before))
     db.flush()

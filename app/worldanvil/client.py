@@ -35,6 +35,12 @@ class WorldAnvilSource(Protocol):
 
     def get_image(self, image_id: int, granularity: int = 0) -> dict[str, Any]: ...
 
+    def iter_world_timelines(self, world_id: str) -> Iterator[dict[str, Any]]: ...
+
+    def get_timeline(self, timeline_id: str, granularity: int = 2) -> dict[str, Any]: ...
+
+    def get_history(self, history_id: str, granularity: int = 1) -> dict[str, Any]: ...
+
 
 def _retry_after_seconds(response: httpx.Response) -> float | None:
     value = response.headers.get("retry-after")
@@ -198,22 +204,28 @@ class WorldAnvilClient:
     def get_world(self, world_id: str, granularity: int = 0) -> dict[str, Any]:
         return self._request("GET", "/world", params={"id": world_id, "granularity": granularity})
 
-    def iter_world_articles(self, world_id: str) -> Iterator[dict[str, Any]]:
+    def _iter_listing(self, path: str, world_id: str) -> Iterator[dict[str, Any]]:
         offset = 0
         while True:
             payload = self._request(
                 "POST",
-                "/world/articles",
+                path,
                 params={"id": world_id},
                 json={"limit": str(PAGE_SIZE), "offset": str(offset)},
             )
             entities = payload.get("entities") or []
             if not isinstance(entities, list):
-                raise WorldAnvilError("Unexpected article listing format")
+                raise WorldAnvilError(f"Unexpected listing format for {path}")
             yield from entities
             if len(entities) < PAGE_SIZE:
                 return
             offset += PAGE_SIZE
+
+    def iter_world_articles(self, world_id: str) -> Iterator[dict[str, Any]]:
+        return self._iter_listing("/world/articles", world_id)
+
+    def iter_world_timelines(self, world_id: str) -> Iterator[dict[str, Any]]:
+        return self._iter_listing("/world/timelines", world_id)
 
     def get_article(self, article_id: str, granularity: int = 2) -> dict[str, Any]:
         return self._request(
@@ -222,3 +234,13 @@ class WorldAnvilClient:
 
     def get_image(self, image_id: int, granularity: int = 0) -> dict[str, Any]:
         return self._request("GET", "/image", params={"id": image_id, "granularity": granularity})
+
+    def get_timeline(self, timeline_id: str, granularity: int = 2) -> dict[str, Any]:
+        return self._request(
+            "GET", "/timeline", params={"id": timeline_id, "granularity": granularity}
+        )
+
+    def get_history(self, history_id: str, granularity: int = 1) -> dict[str, Any]:
+        return self._request(
+            "GET", "/history", params={"id": history_id, "granularity": granularity}
+        )

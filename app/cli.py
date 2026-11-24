@@ -62,7 +62,9 @@ def cmd_sync(args: argparse.Namespace) -> int:
         return 1
     print(
         f"Synchronisation succeeded: {run.created_count} created, {run.updated_count} updated, "
-        f"{run.unchanged_count} unchanged, {run.removed_count} removed"
+        f"{run.unchanged_count} unchanged, {run.removed_count} removed; chronology: "
+        f"{run.events_created} created, {run.events_updated} updated, "
+        f"{run.events_removed} removed"
     )
     return 0
 

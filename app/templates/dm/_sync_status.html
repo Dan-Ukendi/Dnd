@@ -24,6 +24,12 @@
       <dt>Résultat</dt>
       <dd>{{ run.created_count }} créée(s), {{ run.updated_count }} mise(s) à jour, {{ run.unchanged_count }} inchangée(s), {{ run.removed_count }} retirée(s)</dd>
     </div>
+    {% if run.events_created or run.events_updated or run.events_removed %}
+    <div>
+      <dt>Chronologie</dt>
+      <dd>{{ run.events_created }} événement(s) ajouté(s), {{ run.events_updated }} mis à jour, {{ run.events_removed }} retiré(s)</dd>
+    </div>
+    {% endif %}
     {% endif %}
     {% if run.error %}<div><dt>Erreur</dt><dd class="error-text">{{ run.error }}</dd></div>{% endif %}
   </dl>

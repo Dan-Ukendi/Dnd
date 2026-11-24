@@ -64,6 +64,15 @@ class FakeSource:
             raise WorldAnvilNotFoundError("missing")
         return self.images[image_id]
 
+    def iter_world_timelines(self, world_id: str) -> Iterator[dict[str, Any]]:
+        return iter(())
+
+    def get_timeline(self, timeline_id: str, granularity: int = 2) -> dict[str, Any]:
+        raise WorldAnvilNotFoundError("missing")
+
+    def get_history(self, history_id: str, granularity: int = 1) -> dict[str, Any]:
+        raise WorldAnvilNotFoundError("missing")
+
 
 @pytest.fixture
 def source() -> FakeSource:
