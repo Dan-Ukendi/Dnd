@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import ui %}
 {% from "components/ui.html" import page_head, breadcrumb, empty_state %}
 {% block title %}Personnages joués{% endblock %}
 {% block content %}
@@ -39,9 +40,13 @@
   <ul class="ledger-list">
     {% for character in characters %}
     <li>
-      <div class="candidate__info">
-        <a class="ledger-list__title" href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>
-        <span class="muted">Joué par {{ character.player.display_name }} · Fiche : {{ character.main_article.title if character.main_article else "aucune" }}</span>
+      {% set portrait = character.main_article | article_media("portrait") if character.main_article else None %}
+      <div class="character-row">
+        <span class="character-avatar" aria-hidden="true">{% if portrait %}<img src="{{ portrait | media_url('thumb') }}" alt="" loading="lazy" decoding="async">{% else %}{{ ui("mask") }}{% endif %}</span>
+        <div class="candidate__info">
+          <a class="ledger-list__title" href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>
+          <span class="muted">Joué par {{ character.player.display_name }} · Fiche : {% if character.main_article %}<a href="/mj/articles/{{ character.main_article.wa_id }}">{{ character.main_article.title }}</a>{% else %}aucune{% endif %}</span>
+        </div>
       </div>
       <a class="btn" href="/mj/personnages/{{ character.id }}">Gérer</a>
     </li>

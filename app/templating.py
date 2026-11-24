@@ -10,12 +10,15 @@ from starlette.responses import HTMLResponse
 from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
 from app.presentation import (
     article_image,
+    article_media,
     article_tagline,
     fiche_body,
     group_by_section,
     in_section,
+    media_url,
     natural_order,
     section_types,
+    world_anvil_image,
 )
 from app.sections import ADVENTURE_KEY, SECTIONS, SECTIONS_BY_KEY, section_of
 from app.security import get_csrf_token
@@ -68,6 +71,14 @@ def format_datetime(value: datetime | None) -> str:
     return value.astimezone(DISPLAY_TIMEZONE).strftime("%d/%m/%Y à %H:%M")
 
 
+def format_filesize(size: int | None) -> str:
+    if not size:
+        return "—"
+    if size < 1024 * 1024:
+        return f"{max(1, round(size / 1024))} Ko"
+    return f"{size / (1024 * 1024):.1f} Mo".replace(".", ",")
+
+
 def flash(request: Request, message: str, kind: str = "success") -> None:
     request.session[FLASH_SESSION_KEY] = {"message": message, "kind": kind}
 
@@ -88,6 +99,10 @@ templates.env.filters.update(
         "tagline": article_tagline,
         "fiche_body": fiche_body,
         "article_image": article_image,
+        "article_media": article_media,
+        "media_url": media_url,
+        "world_anvil_image": world_anvil_image,
+        "filesize": format_filesize,
         "in_section": in_section,
         "group_by_section": group_by_section,
         "natural_order": natural_order,
@@ -103,7 +118,7 @@ templates.env.globals.update(
         "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
         "ADVENTURE_KEY": ADVENTURE_KEY,
         "section_types": section_types,
-        "ASSET_VERSION": "2",
+        "ASSET_VERSION": "3",
     }
 )
 

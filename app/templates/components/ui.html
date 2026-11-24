@@ -11,10 +11,11 @@
 {% set section = article | section_of %}
 {% set image = article | article_image(player_mode) %}
 {% set tagline = article | tagline %}
+{% set media_kind = "portrait" if article | article_media("portrait") else ("map" if article | article_media("map") else "") %}
 <a class="card" href="{{ href }}" data-section="{{ section.key }}">
   <div class="card__media">
     {% if image %}
-    <img src="{{ image }}" alt="" loading="lazy" decoding="async">
+    <img src="{{ image }}" alt="" loading="lazy" decoding="async"{% if media_kind %} class="card__img--{{ media_kind }}"{% endif %}>
     {% else %}
     {{ placeholder(article, section) }}
     {% endif %}
@@ -79,4 +80,33 @@
 {% if message %}
 <div class="alert alert--{{ 'error' if message.kind == 'error' else 'success' }}" role="status">{{ message.message }}</div>
 {% endif %}
+{%- endmacro %}
+
+
+{% macro media_viewer(id, asset) -%}
+<dialog class="viewer" id="{{ id }}" aria-labelledby="{{ id }}-titre">
+  <div class="viewer__bar">
+    <h2 class="viewer__title" id="{{ id }}-titre">{{ asset.title }}</h2>
+    <div class="viewer__actions">
+      {% if asset.role == "map" %}<button type="button" class="btn viewer__button" data-viewer-zoom aria-pressed="false">{{ ui("zoom") }}<span>Zoom</span></button>{% endif %}
+      <button type="button" class="btn viewer__button" data-viewer-close autofocus>{{ ui("close") }}<span>Fermer</span></button>
+    </div>
+  </div>
+  <div class="viewer__stage" tabindex="0" aria-label="{{ asset.title }}">
+    <img data-src="{{ asset | media_url }}" alt="{{ asset.title }}"{% if asset.width and asset.height %} width="{{ asset.width }}" height="{{ asset.height }}"{% endif %}>
+  </div>
+</dialog>
+{%- endmacro %}
+
+{% macro map_banner(asset) -%}
+<figure class="map-banner reveal reveal-delay-1">
+  <a class="map-banner__frame" href="{{ asset | media_url }}" data-viewer-open="visionneuse-{{ asset.id }}">
+    <img src="{{ asset | media_url }}" alt="{{ asset.title }}"{% if asset.width and asset.height %} width="{{ asset.width }}" height="{{ asset.height }}"{% endif %} decoding="async">
+  </a>
+  <figcaption class="map-banner__caption">
+    <span>{{ asset.title }}</span>
+    <span class="map-banner__hint" aria-hidden="true">{{ ui("expand") }}Agrandir</span>
+  </figcaption>
+</figure>
+{{ media_viewer("visionneuse-" ~ asset.id, asset) }}
 {%- endmacro %}

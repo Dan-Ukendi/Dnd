@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/ui.html" import page_head, card, empty_state, breadcrumb %}
+{% from "components/ui.html" import page_head, card, empty_state, breadcrumb, map_banner %}
 {% set section_key = request.query_params.get("section", "") %}
 {% set section = SECTIONS_BY_KEY.get(section_key) %}
 {% block title %}{{ section.label if section else "Mes fiches" }}{% endblock %}
@@ -12,6 +12,7 @@
 {{ breadcrumb([("Mon personnage", "/joueur"), ("Mes fiches", "")]) }}
 {{ page_head("Mes fiches", eyebrow="Archives partagées", lead="Les pages des archives que votre MJ a choisi de vous confier.") }}
 {% endif %}
+{% if banner %}{{ map_banner(banner) }}{% endif %}
 {% set groups = (articles | in_section(section_key)) | group_by_section %}
 {% if groups %}
 {% for key, items in groups %}

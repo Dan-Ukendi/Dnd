@@ -52,5 +52,6 @@
 {% set notice = "Cette fiche a été supprimée de World Anvil ; elle reste consultable ici pour mémoire." if article.removed_at else "" %}
 {% set body_html = content_html %}
 {% set player_mode = False %}
+{% set media_admin = True %}
 {% include "components/fiche.html" %}
 {% endblock %}

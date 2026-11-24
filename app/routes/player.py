@@ -10,6 +10,7 @@ from app.services.access import (
 )
 from app.services.articles import articles_by_ids
 from app.services.characters import characters_of
+from app.services.media import player_section_banner
 from app.templating import render
 from app.worldanvil.bbcode import render_bbcode
 
@@ -36,7 +37,12 @@ def my_character(request: Request, db: DbSession, player: CurrentPlayer) -> Resp
 
 @router.get("/articles")
 def shared_articles(request: Request, db: DbSession, player: CurrentPlayer) -> Response:
-    return render(request, "player/articles.html", {"articles": player_shared_articles(db, player)})
+    banner = player_section_banner(db, player, request.query_params.get("section", ""))
+    return render(
+        request,
+        "player/articles.html",
+        {"articles": player_shared_articles(db, player), "banner": banner},
+    )
 
 
 @router.get("/articles/{wa_id}")

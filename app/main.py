@@ -14,8 +14,9 @@ from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
 from app.config import get_settings
 from app.db import get_engine, ping
 from app.deps import NotAuthenticatedError
-from app.routes import auth, dm, player
+from app.routes import auth, dm, media, player
 from app.security import LoginRateLimiter, csrf_protect
+from app.services.media_processing import MAX_UPLOAD_BYTES
 from app.templating import STATIC_DIR, is_htmx, render
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,10 @@ ERROR_MESSAGES = {
         "Cette page s'est perdue dans les archives, ou elle ne vous est pas ouverte.",
     ),
     405: ("Action impossible", "Cette action n'est pas disponible ici."),
+    413: (
+        "Fichier trop volumineux",
+        "L'envoi dépasse la taille autorisée (15 Mo par fichier).",
+    ),
     429: ("Trop de tentatives", "Patientez quelques minutes avant de réessayer."),
     503: (
         "Service momentanément indisponible",
@@ -116,6 +121,53 @@ class SecurityHeadersMiddleware:
         await self.app(scope, receive, send_wrapper)
 
 
+class BodyTooLargeError(Exception):
+    pass
+
+
+class BodySizeLimitMiddleware:
+    def __init__(self, app: ASGIApp, *, max_bytes: int) -> None:
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        length = dict(scope.get("headers", [])).get(b"content-length", b"")
+        if length.isdigit() and int(length) > self.max_bytes:
+            await self._reject(scope, receive, send)
+            return
+        received = 0
+        started = False
+
+        async def limited_receive() -> Message:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.max_bytes:
+                    raise BodyTooLargeError
+            return message
+
+        async def tracking_send(message: Message) -> None:
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, limited_receive, tracking_send)
+        except BodyTooLargeError:
+            if started:
+                raise
+            await self._reject(scope, receive, send)
+
+    async def _reject(self, scope: Scope, receive: Receive, send: Send) -> None:
+        response = _error_page(Request(scope, receive), 413, {"Connection": "close"})
+        await response(scope, receive, send)
+
+
 def _error_page(
     request: Request, status_code: int, headers: dict[str, str] | None = None
 ) -> Response:
@@ -144,6 +196,7 @@ def create_app() -> FastAPI:
     )
     app.state.login_limiter = LoginRateLimiter()
 
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_UPLOAD_BYTES + 1024 * 1024)
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret_key.get_secret_value(),
@@ -158,6 +211,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(dm.router)
     app.include_router(player.router)
+    app.include_router(media.router)
 
     @app.get("/health", include_in_schema=False)
     def health() -> JSONResponse:

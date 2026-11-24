@@ -1,17 +1,28 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import func, select
 
 from app.config import get_settings
 from app.deps import CurrentDm, DbSession
-from app.models import Character, Role, SyncStatus, User, WaArticle
+from app.models import Character, MediaAsset, MediaRole, Role, SyncStatus, User, WaArticle
 from app.sections import section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
+from app.services import media as media_service
 from app.services.access import dm_render_context
 from app.services.accounts import AccountError, create_invitation, create_user, set_active
+from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError
 from app.services.sync import SyncAlreadyRunningError, latest_run, run_sync_job, start_run
 from app.templating import flash, is_htmx, render
 from app.worldanvil.bbcode import render_bbcode
@@ -25,6 +36,27 @@ PLAYER_ERROR_MESSAGES = {
         "point, tiret ou tiret bas."
     ),
     "login_taken": "Cet identifiant est déjà utilisé.",
+}
+MEDIA_ERROR_MESSAGES = {
+    "invalid_role": "Type de fichier inconnu.",
+    "missing_file": "Choisissez un fichier à envoyer.",
+    "empty_file": "Le fichier envoyé est vide.",
+    "file_too_large": "Le fichier dépasse la taille maximale de 15 Mo.",
+    "image_too_large": "L'image est trop grande (60 mégapixels au maximum).",
+    "unsupported_type": "Format non pris en charge : envoyez une image JPEG, PNG ou WebP.",
+    "invalid_image": "L'image est illisible ou endommagée.",
+    "invalid_svg": "Le fichier SVG est invalide ou mal formé.",
+    "invalid_pdf": "Ce fichier n'est pas un PDF valide.",
+}
+MEDIA_SAVED_MESSAGES = {
+    MediaRole.PORTRAIT: "Portrait enregistré.",
+    MediaRole.MAP: "Carte enregistrée.",
+    MediaRole.SHEET: "Fiche de personnage (PDF) enregistrée.",
+}
+MEDIA_REMOVED_MESSAGES = {
+    MediaRole.PORTRAIT: "Portrait retiré.",
+    MediaRole.MAP: "Carte retirée.",
+    MediaRole.SHEET: "Fiche de personnage (PDF) retirée.",
 }
 CHARACTER_ERROR_MESSAGES = {
     "invalid_name": "Le nom du personnage est obligatoire.",
@@ -112,14 +144,13 @@ def article_list(
     }
     if is_htmx(request) and request.headers.get("hx-target") == "article-results":
         return render(request, "dm/_article_results.html", context)
-    return render(request, "dm/articles.html", context)
+    banner = media_service.section_banner(db, request.query_params.get("section", ""))
+    return render(request, "dm/articles.html", {**context, "banner": banner})
 
 
 @router.get("/articles/{wa_id}")
 def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -> Response:
-    article = db.get(WaArticle, wa_id)
-    if article is None:
-        raise HTTPException(status_code=404)
+    article = _get_article(db, wa_id)
     render_context = dm_render_context(db)
     extra_fields = [
         (field.label, render_bbcode(field.value, render_context))
@@ -141,6 +172,52 @@ def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -
             "characters": characters,
         },
     )
+
+
+def _get_article(db: DbSession, wa_id: str) -> WaArticle:
+    article = db.get(WaArticle, wa_id)
+    if article is None:
+        raise HTTPException(status_code=404)
+    return article
+
+
+@router.post("/articles/{wa_id}/medias")
+def upload_media(
+    request: Request,
+    wa_id: str,
+    db: DbSession,
+    dm: CurrentDm,
+    role: Annotated[str, Form(max_length=20)] = "",
+    file: Annotated[UploadFile | None, File()] = None,
+) -> Response:
+    article = _get_article(db, wa_id)
+    try:
+        media_role = media_service.parse_role(role)
+        if file is None or not file.filename:
+            raise MediaError("missing_file")
+        data = file.file.read(MAX_UPLOAD_BYTES + 1)
+        media_service.attach_media(
+            db, article=article, role=media_role, data=data, filename=file.filename
+        )
+    except MediaError as exc:
+        db.rollback()
+        flash(request, MEDIA_ERROR_MESSAGES.get(exc.code, "Envoi impossible."), "error")
+    else:
+        flash(request, MEDIA_SAVED_MESSAGES[media_role])
+    return RedirectResponse(f"/mj/articles/{wa_id}", status_code=303)
+
+
+@router.post("/articles/{wa_id}/medias/{media_id}/supprimer")
+def remove_media(
+    request: Request, wa_id: str, media_id: int, db: DbSession, dm: CurrentDm
+) -> Response:
+    asset = db.get(MediaAsset, media_id)
+    if asset is None or asset.wa_article_id != wa_id:
+        raise HTTPException(status_code=404)
+    role = MediaRole(asset.role)
+    media_service.remove_media(db, asset)
+    flash(request, MEDIA_REMOVED_MESSAGES[role])
+    return RedirectResponse(f"/mj/articles/{wa_id}", status_code=303)
 
 
 @router.get("/joueurs")

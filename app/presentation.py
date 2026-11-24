@@ -6,7 +6,7 @@ from urllib.parse import urlsplit
 
 from markupsafe import Markup
 
-from app.models import WaArticle
+from app.models import MediaAsset, MediaRole, WaArticle
 from app.sections import SECTIONS_BY_KEY, TEMPLATE_SECTIONS, section_key
 from app.worldanvil.bbcode import IMAGE_HOSTS, to_plain_text
 
@@ -90,7 +90,23 @@ def _allowed_image(url: object) -> bool:
     return parts.scheme == "https" and (parts.hostname or "").lower() in IMAGE_HOSTS
 
 
+def article_media(article: WaArticle, role: str) -> MediaAsset | None:
+    return next((asset for asset in article.media if asset.role == role), None)
+
+
+def media_url(asset: MediaAsset, variant: str = "full") -> str:
+    return f"/media/{asset.id}/{variant}?v={asset.version}"
+
+
 def article_image(article: WaArticle, player_mode: bool = False) -> str | None:
+    for role in (MediaRole.PORTRAIT, MediaRole.MAP):
+        asset = article_media(article, role)
+        if asset is not None:
+            return media_url(asset, "thumb")
+    return world_anvil_image(article, player_mode)
+
+
+def world_anvil_image(article: WaArticle, player_mode: bool = False) -> str | None:
     raw = article.raw or {}
     for key in ("portrait", "cover"):
         image = raw.get(key)

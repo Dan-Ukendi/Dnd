@@ -1,11 +1,20 @@
 {% from "components/icons.html" import section_icon, ui %}
-{% from "components/ui.html" import breadcrumb, card, placeholder %}
+{% from "components/ui.html" import breadcrumb, card, placeholder, media_viewer %}
 {% set section = article | section_of %}
-{% set image = article | article_image(player_mode) %}
+{% set portrait = article | article_media("portrait") %}
+{% set map = article | article_media("map") %}
+{% set sheet = article | article_media("sheet") %}
+{% set image = article | world_anvil_image(player_mode) %}
 {% set tagline = article | tagline %}
 <div data-section="{{ section.key }}">
   {{ breadcrumb(crumbs) }}
-  <header class="fiche-hero reveal">
+  <header class="fiche-hero{% if portrait %} fiche-hero--portrait{% endif %} reveal">
+    {% if portrait %}
+    <div class="fiche-hero__backdrop" aria-hidden="true">{{ section_icon(section.key) }}</div>
+    <a class="portrait-frame" href="{{ portrait | media_url }}" data-viewer-open="visionneuse-{{ portrait.id }}">
+      <img src="{{ portrait | media_url('thumb') }}" srcset="{{ portrait | media_url('thumb') }} 1x, {{ portrait | media_url }} 2x" alt="{{ portrait.title }}"{% if portrait.width and portrait.height %} width="{{ portrait.width }}" height="{{ portrait.height }}"{% endif %} decoding="async">
+    </a>
+    {% else %}
     <div class="fiche-hero__media">
       {% if image %}
       <img src="{{ image }}" alt="" decoding="async">
@@ -13,6 +22,7 @@
       {{ placeholder(article, section) }}
       {% endif %}
     </div>
+    {% endif %}
     <div class="fiche-hero__content">
       <div class="eyebrow">{{ section.label }}</div>
       <h1 class="fiche-hero__title">{{ article.title }}</h1>
@@ -24,11 +34,18 @@
     </div>
     <div class="frieze" aria-hidden="true"></div>
   </header>
+  {% if portrait %}{{ media_viewer("visionneuse-" ~ portrait.id, portrait) }}{% endif %}
 
   <div class="fiche-layout">
     <details class="fiche-panel reveal reveal-delay-1" open data-responsive-panel>
       <summary>Informations clés {{ ui("chevron") }}</summary>
       <div class="fiche-panel__body">
+        {% if sheet %}
+        <a class="sheet-link" href="{{ sheet | media_url }}" download>
+          {{ ui("download") }}
+          <span class="sheet-link__text">Fiche de personnage (PDF)<span class="sheet-link__meta">{{ sheet.size | filesize }}</span></span>
+        </a>
+        {% endif %}
         <dl class="facts">
           {% for label, value in facts %}
           <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
@@ -39,6 +56,16 @@
 
     <div class="fiche-main reveal reveal-delay-2">
       {% if notice %}<p class="alert alert--warn">{{ notice }}</p>{% endif %}
+      {% if map %}
+      <section class="map-block" aria-labelledby="carte-{{ map.id }}">
+        <h2 class="map-block__title" id="carte-{{ map.id }}">{{ ui("map") }}Carte</h2>
+        <a class="map-frame" href="{{ map | media_url }}" data-viewer-open="visionneuse-{{ map.id }}">
+          <img src="{{ map | media_url }}" alt="{{ map.title }}"{% if map.width and map.height %} width="{{ map.width }}" height="{{ map.height }}"{% endif %} loading="lazy" decoding="async">
+          <span class="map-frame__hint" aria-hidden="true">{{ ui("expand") }}Agrandir</span>
+        </a>
+      </section>
+      {{ media_viewer("visionneuse-" ~ map.id, map) }}
+      {% endif %}
       {% set body = body_html | fiche_body(article.title) %}
       {% if body | trim %}
       <div class="prose">{{ body }}</div>
@@ -55,6 +82,7 @@
         <div class="prose">{{ html }}</div>
       </section>
       {% endfor %}
+      {% if media_admin %}{% include "dm/_media_admin.html" %}{% endif %}
     </div>
   </div>
 

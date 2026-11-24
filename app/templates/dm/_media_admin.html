@@ -1,0 +1,48 @@
+{% from "components/icons.html" import ui %}
+{% set slots = [
+  ("portrait", "Portrait", portrait, "image/jpeg,image/png,image/webp", "JPEG, PNG ou WebP, 15 Mo au plus. Converti en WebP, métadonnées retirées."),
+  ("map", "Carte", map, "image/svg+xml,.svg,image/jpeg,image/png,image/webp", "SVG (nettoyé à l'envoi), JPEG, PNG ou WebP, 15 Mo au plus."),
+  ("sheet", "Fiche de personnage (PDF)", sheet, "application/pdf,.pdf", "PDF, 15 Mo au plus. Proposé en téléchargement sur la fiche."),
+] %}
+<section class="panel media-admin" id="medias" aria-labelledby="medias-titre">
+  <h2 class="panel__title" id="medias-titre">Illustrations et documents</h2>
+  <p class="muted media-admin__lead">Réservé au MJ. Un joueur ne voit ces fichiers que si cette fiche lui est partagée.</p>
+  <ul class="media-slots">
+    {% for role, label, asset, accept, hint in slots %}
+    <li class="media-slot">
+      <div class="media-slot__preview{% if asset and role == 'map' %} media-slot__preview--map{% endif %}">
+        {% if asset and role != "sheet" %}
+        <img src="{{ asset | media_url('thumb') }}" alt="" loading="lazy" decoding="async">
+        {% else %}
+        {{ ui("download" if role == "sheet" else role) }}
+        {% endif %}
+      </div>
+      <div class="media-slot__info">
+        <h3 class="media-slot__title">{{ label }}</h3>
+        {% if asset %}
+        <p class="media-slot__file">{{ asset.original_filename }}</p>
+        <p class="media-slot__meta">{{ asset.size | filesize }}{% if asset.width and asset.height %} · {{ asset.width }} × {{ asset.height }} px{% endif %}{% if asset.banner_section %} · bannière de la section {{ SECTIONS_BY_KEY[asset.banner_section].label if asset.banner_section in SECTIONS_BY_KEY else asset.banner_section }}{% endif %}</p>
+        {% else %}
+        <p class="media-slot__meta">Aucun fichier.</p>
+        {% endif %}
+        <p class="media-slot__hint" id="aide-{{ role }}">{{ hint }}</p>
+      </div>
+      <div class="media-slot__actions">
+        <form method="post" action="/mj/articles/{{ article.wa_id }}/medias" enctype="multipart/form-data" class="media-slot__form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="role" value="{{ role }}">
+          <label class="visually-hidden" for="fichier-{{ role }}">{{ label }} : choisir un fichier</label>
+          <input id="fichier-{{ role }}" type="file" name="file" accept="{{ accept }}" required aria-describedby="aide-{{ role }}">
+          <button type="submit" class="btn btn--primary">{{ "Remplacer" if asset else "Ajouter" }}</button>
+        </form>
+        {% if asset %}
+        <form method="post" action="/mj/articles/{{ article.wa_id }}/medias/{{ asset.id }}/supprimer" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn--danger">Retirer</button>
+        </form>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>

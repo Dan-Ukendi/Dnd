@@ -85,6 +85,18 @@
   <path d="M12 2.8c1.8 2.2 1.8 4 0 5.4-1.8-1.4-1.8-3.2 0-5.4z"/><path d="M12 8.2V10"/><path d="M9 10h6v10H9z"/><path d="M6.5 20.5h11"/>
 {%- elif name == "compass" %}
   <circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>
+{%- elif name == "expand" %}
+  <path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>
+{%- elif name == "zoom" %}
+  <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/>
+{%- elif name == "close" %}
+  <path d="M6 6l12 12M18 6 6 18"/>
+{%- elif name == "download" %}
+  <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/>
+{%- elif name == "map" %}
+  <path d="M3.5 6.5 9 4l6 2.5 5.5-2.5v13L15 19.5 9 17l-5.5 2.5z"/><path d="M9 4v13M15 6.5v13"/>
+{%- elif name == "portrait" %}
+  <rect x="5" y="3.5" width="14" height="17" rx="1"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18c.8-2.6 2.4-4 4.5-4s3.7 1.4 4.5 4"/>
 {%- elif name == "scroll" %}
   <path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h10"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M8.5 9h4.5M8.5 12.5h4.5"/>
 {%- endif %}
