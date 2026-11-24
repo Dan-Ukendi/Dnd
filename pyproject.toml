@@ -1,0 +1,26 @@
+[project]
+name = "campaign-companion"
+version = "1.0.0"
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations/script.py.mako"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "N", "ANN"]
+ignore = ["S101", "RUF001", "RUF003", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "ANN"]
+"migrations/**" = ["ANN"]
+"app/worldanvil/bbcode.py" = ["S704"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    "error::DeprecationWarning:app.*",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]

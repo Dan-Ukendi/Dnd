@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.neon
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+CLAUDE.md
+.claude/
+.mcp.json
+.vscode/
+.cursor/
