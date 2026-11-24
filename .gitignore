@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 .neon
+source/
 node_modules/
 .venv/
 __pycache__/

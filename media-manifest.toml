@@ -1,0 +1,75 @@
+[[media]]
+file = "Keator portrait.jpg"
+article = "Khaetar Voss"
+role = "portrait"
+
+[[media]]
+file = "Zilvra portrait.jpeg"
+article = "Zilvra"
+role = "portrait"
+
+[[media]]
+file = "krateros portrait.jpg"
+article_id = "a807dc99-1661-455b-8faa-211393c1b0ab"
+role = "portrait"
+
+[[media]]
+file = "Octave.jpg"
+article_id = "141c80b2-7c26-47b5-ada0-e8d1eaa82d60"
+role = "portrait"
+
+[[media]]
+file = "Sophie.jpg"
+article_id = "8850c875-a01c-4b97-b8c4-bc7b5a13a87a"
+role = "portrait"
+
+[[media]]
+file = "carte_empire_ebene.svg"
+article_id = "9a0ff719-7202-4be9-a52c-997e5af92751"
+role = "map"
+title = "Carte de l'Empire d'Ébène"
+banner = "monde"
+
+[[media]]
+file = "carte_heliopolis_harmoniens.svg"
+article_id = "ea2b7304-a3e1-41ac-aa67-0ab4462a18fa"
+role = "map"
+title = "Carte de l'Héliopolis des Harmoniens"
+
+[[media]]
+file = "carte_khaanat_cinq_lances.svg"
+article_id = "9ef5d01c-1871-4c1d-8520-ba581c056e7e"
+role = "map"
+title = "Carte du Khaanat des Cinq Lances"
+
+[[media]]
+file = "carte_royaume_sanguis_coronae.svg"
+article_id = "3936fd24-8259-43ed-a359-24bdbfc6e6e9"
+role = "map"
+title = "Carte du royaume de Sanguis Coronae"
+
+[[media]]
+file = "Keator.pdf"
+article = "Khaetar Voss"
+role = "sheet"
+title = "Khaetar Voss - fiche de personnage"
+
+[[media]]
+file = "Zilvra.pdf"
+article = "Zilvra"
+role = "sheet"
+title = "Zilvra Vhaelor - fiche de personnage"
+
+[[players]]
+login = "dazen_guile"
+display_name = "Dazen_Guile"
+
+[[characters]]
+name = "Khaetar Voss"
+player = "dazen_guile"
+article = "Khaetar Voss"
+
+[[characters]]
+name = "Zilvra Vhaelor"
+player = "dazen_guile"
+article = "Zilvra"

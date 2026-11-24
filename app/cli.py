@@ -2,6 +2,7 @@ import argparse
 import getpass
 import logging
 import sys
+from pathlib import Path
 
 from sqlalchemy.exc import OperationalError
 
@@ -9,6 +10,14 @@ from app.config import get_settings
 from app.db import get_engine, get_session_factory, wait_for_database
 from app.models import Role, SyncStatus
 from app.services.accounts import AccountError, create_user
+from app.services.imports import (
+    DEFAULT_MANIFEST,
+    ImportLine,
+    ManifestError,
+    import_characters,
+    import_media,
+    load_manifest,
+)
 from app.services.sync import SyncAlreadyRunningError, sync_world
 from app.worldanvil.client import WorldAnvilClient, WorldAnvilError
 
@@ -78,6 +87,40 @@ def cmd_create_dm(args: argparse.Namespace) -> int:
     return 0
 
 
+def _print_report(lines: list[ImportLine]) -> int:
+    counts: dict[str, int] = {}
+    for line in lines:
+        counts[line.status] = counts.get(line.status, 0) + 1
+        print(f"{line.status:<9} {line.label} {line.detail}")
+    summary = ", ".join(f"{count} {status}" for status, count in sorted(counts.items()))
+    print(f"Summary: {summary or 'nothing to import'}")
+    return 1 if any(line.failed for line in lines) else 0
+
+
+def cmd_import_media(args: argparse.Namespace) -> int:
+    folder = Path(args.folder)
+    if not folder.is_dir():
+        logger.error("Folder not found: %s", folder)
+        return 1
+    try:
+        manifest = load_manifest(Path(args.manifest))
+    except ManifestError as exc:
+        logger.error("%s", exc)
+        return 1
+    with get_session_factory()() as db:
+        return _print_report(import_media(db, folder, manifest))
+
+
+def cmd_import_characters(args: argparse.Namespace) -> int:
+    try:
+        manifest = load_manifest(Path(args.manifest))
+    except ManifestError as exc:
+        logger.error("%s", exc)
+        return 1
+    with get_session_factory()() as db:
+        return _print_report(import_characters(db, manifest))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -97,6 +140,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--password-stdin", action="store_true", help="Read the password from standard input"
     )
     create_dm.set_defaults(handler=cmd_create_dm)
+
+    media = commands.add_parser("import-media", help="Import portraits, maps and sheets")
+    media.add_argument("folder", help="Folder containing the files listed in the manifest")
+    media.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
+    media.set_defaults(handler=cmd_import_media)
+
+    players = commands.add_parser(
+        "import-characters", help="Create the player accounts and characters of the manifest"
+    )
+    players.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
+    players.set_defaults(handler=cmd_import_characters)
     return parser
 
 
