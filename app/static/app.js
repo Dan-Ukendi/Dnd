@@ -199,6 +199,11 @@ function initFrise(root = document) {
     const selected = viewport.querySelector(".is-selected[data-x]");
     if (selected) {
       viewport.scrollLeft = Math.max(0, Number.parseFloat(selected.dataset.x) - viewport.clientWidth / 2);
+    } else if (frise.hasAttribute("data-filtered")) {
+      const positions = Array.from(viewport.querySelectorAll("[data-frise-marker]"), (marker) => Number.parseFloat(marker.dataset.x));
+      if (positions.length) {
+        viewport.scrollLeft = Math.max(0, Math.min(...positions) - 48);
+      }
     }
     frise.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target : null;

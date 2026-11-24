@@ -1,7 +1,7 @@
 {% from "components/icons.html" import ui %}
 {% set selected_id = detail.id if detail is defined else None %}
 {% set tip_flip = frise.width - 220 %}
-<section class="frise reveal reveal-delay-2" aria-label="Frise chronologique" data-frise>
+<section class="frise reveal reveal-delay-2" aria-label="Frise chronologique" data-frise{% if filters.active %} data-filtered{% endif %}>
   <div class="frise__controls">
     <ul class="frise__jumps" aria-label="Aller à une ère">
       {% for band in frise.bands %}
