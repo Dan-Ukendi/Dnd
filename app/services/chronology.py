@@ -727,6 +727,12 @@ class MilestoneMark:
     x: float
 
 
+@dataclass(frozen=True)
+class Tick:
+    year: int
+    x: float
+
+
 @dataclass
 class Frise:
     width: float
@@ -734,8 +740,28 @@ class Frise:
     ranges: list[Marker]
     points: list[Marker]
     milestones: list[MilestoneMark]
+    ticks: list[Tick]
     range_lanes: int
     point_lanes: int
+
+
+TICK_STEPS = (5, 10, 25, 50, 100, 200, 250, 500)
+TICK_MIN_PX = 90
+
+
+def _band_ticks(band: Band) -> list[int]:
+    inner = band.width - 2 * BAND_PAD_PX
+    step = next(
+        (value for value in TICK_STEPS if value / band.span * inner >= TICK_MIN_PX),
+        TICK_STEPS[-1],
+    )
+    first = -(-band.first_year // step) * step
+    margin = band.span * 0.06
+    return [
+        year
+        for year in range(first, band.last_year + 1, step)
+        if band.first_year + margin <= year <= band.last_year - margin
+    ]
 
 
 def _band_domain(era: EraView, years: list[int]) -> tuple[int, int]:
@@ -817,12 +843,20 @@ def build_frise(domain: list[EventView], shown: list[EventView], eras: list[EraV
         point_ends[lane] = marker.x
 
     milestones = [MilestoneMark(item, position(item.year, 0.5)) for item in MILESTONES]
+    milestone_years = {item.year for item in MILESTONES}
+    ticks = [
+        Tick(year, position(year, 0.5))
+        for band in bands
+        for year in _band_ticks(band)
+        if year not in milestone_years
+    ]
     return Frise(
         width=cursor,
         bands=bands,
         ranges=ranges,
         points=points,
         milestones=milestones,
+        ticks=ticks,
         range_lanes=len(range_ends),
         point_lanes=max(1, len(point_ends)),
     )
