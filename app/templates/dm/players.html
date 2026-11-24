@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Joueurs{% endblock %}
+{% block content %}
+<h1>Joueurs</h1>
+{% if invitation %}{% include "dm/_invitation_link.html" %}{% endif %}
+<section class="card">
+  <h2>Nouveau joueur</h2>
+  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/mj/joueurs" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Nom affiché
+      <input type="text" name="display_name" value="{{ form.display_name or '' }}" required maxlength="100">
+    </label>
+    <label>Identifiant de connexion
+      <input type="text" name="login" value="{{ form.login or '' }}" required maxlength="50" autocapitalize="none" pattern="[a-z0-9][a-z0-9._\-]{2,49}" title="3 à 50 caractères : minuscules, chiffres, point, tiret, tiret bas">
+    </label>
+    <button type="submit" class="button primary">Créer le joueur</button>
+  </form>
+</section>
+<section class="card">
+  <h2>Comptes</h2>
+  {% if players %}
+  <ul class="list">
+    {% for player in players %}
+    <li class="list-item">
+      <div class="list-title">{{ player.display_name }} <span class="muted">({{ player.login }})</span></div>
+      <div class="badges">
+        {% if not player.is_active %}<span class="badge badge-danger">Désactivé</span>
+        {% elif player.has_password %}<span class="badge badge-ok">Actif</span>
+        {% else %}<span class="badge badge-warn">Invitation en attente</span>{% endif %}
+      </div>
+      <div class="row">
+        {% if player.is_active %}
+        <form method="post" action="/mj/joueurs/{{ player.id }}/invitation"
+          hx-post="/mj/joueurs/{{ player.id }}/invitation" hx-target="#invite-{{ player.id }}" hx-swap="innerHTML">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="button">{{ "Nouveau lien (mot de passe oublié)" if player.has_password else "Générer un lien d'invitation" }}</button>
+        </form>
+        <form method="post" action="/mj/joueurs/{{ player.id }}/desactiver">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="button danger">Désactiver</button>
+        </form>
+        {% else %}
+        <form method="post" action="/mj/joueurs/{{ player.id }}/reactiver">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="button">Réactiver</button>
+        </form>
+        {% endif %}
+      </div>
+      <div id="invite-{{ player.id }}"></div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Aucun joueur pour l'instant.</p>
+  {% endif %}
+</section>
+{% endblock %}

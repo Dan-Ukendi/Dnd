@@ -1,0 +1,36 @@
+<div id="sync-status" class="stack"
+  {% if running %}hx-get="/mj/synchronisation" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+  {% if not world_anvil_configured %}
+  <div class="alert alert-error">Les clés World Anvil ne sont pas configurées sur le serveur.</div>
+  {% endif %}
+  {% if run %}
+  <dl class="meta">
+    <dt>Dernière synchronisation</dt>
+    <dd>{{ run.started_at | datetime_fr }} ({{ "complète" if run.full else "incrémentale" }}, {{ "bouton" if run.trigger == "ui" else "ligne de commande" }})</dd>
+    <dt>État</dt>
+    <dd>
+      {% if run.status == "running" %}<span class="badge badge-warn">En cours…</span>
+      {% elif run.status == "success" %}<span class="badge badge-ok">Réussie</span>
+      {% else %}<span class="badge badge-danger">Échec</span>{% endif %}
+    </dd>
+    {% if run.status != "running" %}
+    <dt>Résultat</dt>
+    <dd>{{ run.created_count }} créé(s), {{ run.updated_count }} mis à jour, {{ run.unchanged_count }} inchangé(s), {{ run.removed_count }} retiré(s)</dd>
+    {% endif %}
+    {% if run.error %}<dt>Erreur</dt><dd class="error-text">{{ run.error }}</dd>{% endif %}
+  </dl>
+  {% else %}
+  <p>Aucune synchronisation n'a encore été lancée.</p>
+  {% endif %}
+  {% if not running %}
+  <form method="post" action="/mj/synchroniser" hx-post="/mj/synchroniser" hx-target="#sync-status" hx-swap="outerHTML" class="row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <select name="mode" aria-label="Mode de synchronisation">
+      <option value="incremental">Incrémentale</option>
+      <option value="full">Complète</option>
+    </select>
+    <button type="submit" class="button primary">Synchroniser</button>
+  </form>
+  {% endif %}
+</div>

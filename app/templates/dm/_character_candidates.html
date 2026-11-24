@@ -1,0 +1,8 @@
+<ul id="candidate-results" class="list">
+  {% for article in candidates if article.wa_id != character.main_article_id %}
+  {% set shared = article.wa_id in shared_ids %}
+  {% include "dm/_candidate_row.html" %}
+  {% else %}
+  <li class="list-item muted">Aucun article ne correspond.</li>
+  {% endfor %}
+</ul>

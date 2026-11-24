@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Articles{% endblock %}
+{% block content %}
+<h1>Articles</h1>
+<form method="get" action="/mj/articles" class="filters" role="search"
+  hx-get="/mj/articles" hx-target="#article-results" hx-swap="outerHTML" hx-push-url="true"
+  hx-trigger="input delay:300ms, change, submit">
+  <input type="search" name="q" value="{{ q }}" placeholder="Rechercher dans le titre et le texte" aria-label="Recherche" maxlength="200">
+  <select name="type" aria-label="Type d'article">
+    <option value="">Tous les types</option>
+    {% for value, count in types %}
+    <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }} ({{ count }})</option>
+    {% endfor %}
+  </select>
+  <noscript><button type="submit" class="button">Filtrer</button></noscript>
+</form>
+{% include "dm/_article_results.html" %}
+{% endblock %}

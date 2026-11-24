@@ -1,0 +1,19 @@
+{% from "macros.html" import type_badge, visibility_badge %}
+<li class="list-item candidate">
+  <div>
+    <a class="list-title" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>
+    <div class="badges">{{ type_badge(article) }} {{ visibility_badge(article) }}</div>
+  </div>
+  <form method="post" action="/mj/personnages/{{ character.id }}/articles"
+    hx-post="/mj/personnages/{{ character.id }}/articles" hx-target="closest li" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="article_id" value="{{ article.wa_id }}">
+    {% if shared %}
+    <input type="hidden" name="shared" value="0">
+    <button type="submit" class="button danger">Retirer</button>
+    {% else %}
+    <input type="hidden" name="shared" value="1">
+    <button type="submit" class="button">Partager</button>
+    {% endif %}
+  </form>
+</li>

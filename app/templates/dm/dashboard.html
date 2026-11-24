@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block content %}
+<h1>Tableau de bord</h1>
+<section class="stats">
+  <a class="stat" href="/mj/articles"><span class="stat-value">{{ stats.articles }}</span><span class="stat-label">articles</span></a>
+  <div class="stat"><span class="stat-value">{{ stats.visible }}</span><span class="stat-label">partageables</span></div>
+  <a class="stat" href="/mj/joueurs"><span class="stat-value">{{ stats.players }}</span><span class="stat-label">joueurs</span></a>
+  <a class="stat" href="/mj/personnages"><span class="stat-value">{{ stats.characters }}</span><span class="stat-label">personnages</span></a>
+</section>
+<section class="card">
+  <h2>Synchronisation World Anvil</h2>
+  {% include "dm/_sync_status.html" %}
+</section>
+{% endblock %}

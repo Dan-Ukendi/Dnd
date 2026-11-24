@@ -1,0 +1,17 @@
+{% from "macros.html" import type_badge, visibility_badge %}
+<section id="article-results">
+  <p class="muted">{{ articles | length }} résultat(s)</p>
+  {% if articles %}
+  <ul class="list">
+    {% for article in articles %}
+    <li class="list-item">
+      <a class="list-title" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>
+      <div class="badges">{{ type_badge(article) }} {{ visibility_badge(article) }}</div>
+      {% if article.content_text %}<p class="excerpt">{{ article.content_text[:180] }}{% if article.content_text | length > 180 %}…{% endif %}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Aucun article ne correspond à ces critères.</p>
+  {% endif %}
+</section>
