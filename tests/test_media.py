@@ -1,3 +1,4 @@
+import base64
 import gzip
 import io
 from dataclasses import dataclass
@@ -11,12 +12,14 @@ from sqlalchemy.orm import Session
 
 from app.models import MediaAsset, MediaRole, MediaVariant, Role, User, WaArticle
 from app.presentation import article_image
+from app.security import verify_password
 from app.services.imports import import_characters, import_media
 from app.services.media import attach_media, set_banner
 from app.services.media_processing import (
     MAX_UPLOAD_BYTES,
     MediaError,
     process_raster,
+    process_svg,
     process_upload,
     sanitize_svg,
 )
@@ -378,7 +381,7 @@ def test_players_and_anonymous_cannot_upload_or_remove(
     upload_path = f"/mj/articles/{article.wa_id}/medias"
     remove_path = f"{upload_path}/{media_world.alice_portrait.id}/supprimer"
     files = {"file": ("x.pdf", PDF, "application/pdf")}
-    token = csrf_token(client, "/connexion")
+    token = csrf_token(client, "/connexion/mj")
     data = {"csrf_token": token, "role": "sheet"}
     response = client.post(upload_path, data=data, files=files, follow_redirects=False)
     assert response.status_code == 303
@@ -471,6 +474,41 @@ def test_svg_sanitisation() -> None:
     assert 'fill="url(#gradient)"' in markup
     assert "Bonjour" in markup
     assert markup.startswith("<svg") and 'xmlns="http://www.w3.org/2000/svg"' in markup
+
+
+def test_svg_with_embedded_raster_gets_a_webp_thumbnail() -> None:
+    buffer = io.BytesIO()
+    Image.new("RGB", (1600, 1000), (90, 60, 30)).save(buffer, "JPEG")
+    payload = base64.b64encode(buffer.getvalue()).decode()
+    source = f"""<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000">
+  <image width="1600" height="1000" href="data:image/jpeg;base64,{payload}"/>
+  <text x="10" y="20">Vallée</text>
+</svg>""".encode()
+    variants = {variant.name: variant for variant in process_svg(source).variants}
+    assert variants["full"].content_type == "image/svg+xml"
+    assert variants["thumb"].content_type == "image/webp"
+    assert (variants["thumb"].width, variants["thumb"].height) == (800, 500)
+
+
+def test_svg_without_raster_has_no_thumbnail() -> None:
+    source = b'<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect/></svg>'
+    assert [variant.name for variant in process_svg(source).variants] == ["full"]
+
+
+def test_svg_keeps_only_embedded_raster_images() -> None:
+    jpeg = base64.b64encode(b"\xff\xd8\xff\xe0fake").decode()
+    nested = base64.b64encode(b"<svg onload='alert(1)'/>").decode()
+    source = f"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="20" height="10">
+  <image width="20" height="10" xlink:href="data:image/jpeg;base64,{jpeg}"/>
+  <image width="20" height="10" href="data:image/svg+xml;base64,{nested}"/>
+  <image width="20" height="10" href="data:text/html;base64,{nested}"/>
+</svg>""".encode()
+    markup = sanitize_svg(source)[0].decode()
+    assert markup.count("<image") == 1
+    assert f'href="data:image/jpeg;base64,{jpeg}"' in markup
+    assert "svg+xml" not in markup
+    assert "text/html" not in markup
 
 
 @pytest.mark.parametrize(
@@ -567,6 +605,7 @@ def test_import_characters_is_idempotent(db: Session) -> None:
     player = db.scalar(select(User).where(User.login == "dazen_guile"))
     assert player is not None
     assert player.role == Role.PLAYER
-    assert player.password_hash is None
+    assert player.must_change_password
+    assert verify_password(player.password_hash, "0000")
     assert player.display_name == "Dazen_Guile"
     assert [c.main_article_id for c in player.characters] == [article.wa_id]

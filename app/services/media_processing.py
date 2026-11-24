@@ -1,3 +1,4 @@
+import base64
 import contextlib
 import gzip
 import hashlib
@@ -69,9 +70,15 @@ SVG_ELEMENTS = frozenset(
         "feMorphology",
         "feOffset",
         "feTurbulence",
+        "image",
     }
 )
 LINK_ATTRIBUTES = frozenset({"href", f"{{{XLINK_NS}}}href"})
+MAP_THUMB_BOX = (800, 800)
+EMBEDDED_PAYLOAD_RE = re.compile(
+    rb'href="data:image/(?:png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=\s]+)"'
+)
+EMBEDDED_RASTER_RE = re.compile(r"^data:image/(?:png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=\s]+$")
 KEPT_XML_ATTRIBUTES = frozenset({f"{{{XML_NS}}}space", f"{{{XML_NS}}}lang"})
 URL_REF_RE = re.compile(r"url\(\s*(['\"]?)(.*?)\1\s*\)", re.I | re.S)
 FORBIDDEN_CSS_RE = re.compile(r"@import|expression\s*\(|javascript:|behavior\s*:", re.I)
@@ -177,7 +184,10 @@ def _clean_attributes(element: ET.Element) -> None:
     for key, value in list(element.attrib.items()):
         del element.attrib[key]
         if key in LINK_ATTRIBUTES:
-            if _local_reference(value):
+            if element.tag == "image":
+                if EMBEDDED_RASTER_RE.match(value.strip()):
+                    element.set("href", value.strip())
+            elif _local_reference(value):
                 element.set("href", value.strip())
             continue
         if key.startswith("{"):
@@ -214,6 +224,9 @@ def _clean_tree(element: ET.Element) -> None:
             continue
         child.tag = name
         _clean_attributes(child)
+        if name == "image" and "href" not in child.attrib:
+            element.remove(child)
+            continue
         _clean_tree(child)
 
 
@@ -249,10 +262,32 @@ def sanitize_svg(data: bytes) -> tuple[bytes, int | None, int | None]:
     return markup.encode("utf-8"), width, height
 
 
+def _embedded_raster_thumb(markup: bytes) -> Variant | None:
+    payloads = EMBEDDED_PAYLOAD_RE.findall(markup)
+    if not payloads:
+        return None
+    try:
+        raster = base64.b64decode(max(payloads, key=len), validate=False)
+        with Image.open(io.BytesIO(raster)) as source:
+            if source.format not in RASTER_FORMATS:
+                return None
+            if source.width * source.height > MAX_IMAGE_PIXELS:
+                return None
+            image = source.convert("RGB")
+    except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError):
+        return None
+    image.thumbnail(MAP_THUMB_BOX, Image.Resampling.LANCZOS)
+    return Variant("thumb", "image/webp", _encode_webp(image, None), image.width, image.height)
+
+
 def process_svg(data: bytes) -> ProcessedMedia:
     cleaned, width, height = sanitize_svg(data)
     compressed = gzip.compress(cleaned, compresslevel=9, mtime=0)
-    return ProcessedMedia((Variant("full", "image/svg+xml", cleaned, width, height, compressed),))
+    variants = [Variant("full", "image/svg+xml", cleaned, width, height, compressed)]
+    thumb = _embedded_raster_thumb(cleaned)
+    if thumb is not None:
+        variants.append(thumb)
+    return ProcessedMedia(tuple(variants))
 
 
 def process_pdf(data: bytes) -> ProcessedMedia:

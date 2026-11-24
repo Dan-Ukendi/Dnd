@@ -49,6 +49,12 @@ role = "map"
 title = "Carte du royaume de Sanguis Coronae"
 
 [[media]]
+file = "plan Khuchniin Khondii.svg"
+article_id = "b8ff2534-8a62-4a4c-b1e6-885e75140eb5"
+role = "map"
+title = "Plan de Khüchniin Khöndii, la Vallée de la Volonté"
+
+[[media]]
 file = "Keator.pdf"
 article = "Khaetar Voss"
 role = "sheet"
@@ -61,15 +67,19 @@ role = "sheet"
 title = "Zilvra Vhaelor - fiche de personnage"
 
 [[players]]
-login = "dazen_guile"
-display_name = "Dazen_Guile"
+login = "zilvra"
+display_name = "Zilvra"
+
+[[players]]
+login = "keator"
+display_name = "Keator"
 
 [[characters]]
 name = "Khaetar Voss"
-player = "dazen_guile"
+player = "keator"
 article = "Khaetar Voss"
 
 [[characters]]
 name = "Zilvra Vhaelor"
-player = "dazen_guile"
+player = "zilvra"
 article = "Zilvra"
