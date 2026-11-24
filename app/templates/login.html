@@ -1,18 +1,28 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import emblem, divider_ornament %}
 {% block title %}Connexion{% endblock %}
-{% block content %}
-<section class="card narrow">
-  <h1>Connexion</h1>
-  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
-  <form method="post" action="/connexion" class="stack">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Identifiant
-      <input type="text" name="login" value="{{ login }}" autocomplete="username" autocapitalize="none" required maxlength="100">
-    </label>
-    <label>Mot de passe
-      <input type="password" name="password" autocomplete="current-password" required maxlength="256">
-    </label>
-    <button type="submit" class="button primary">Se connecter</button>
-  </form>
-</section>
+{% block body %}
+<main id="contenu" class="screen">
+  <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
+  <div class="screen__content">
+    <div class="screen__mark reveal">{{ emblem("") }}</div>
+    <h1 class="screen__title reveal reveal--slow">{{ APP_TITLE }}</h1>
+    <p class="screen__tagline reveal reveal-delay-1">{{ APP_TAGLINE }}</p>
+    <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
+    {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/connexion" class="form reveal reveal-delay-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="login">Identifiant</label>
+        <input id="login" type="text" name="login" value="{{ login }}" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="100">
+      </div>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="256">
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Entrer dans les archives</button>
+    </form>
+    <p class="screen__footer reveal reveal-delay-3">Accès réservé à la tablée</p>
+  </div>
+</main>
 {% endblock %}

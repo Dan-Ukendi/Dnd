@@ -1,17 +1,15 @@
 {% extends "base.html" %}
-{% from "macros.html" import type_badge %}
 {% block title %}{{ article.title }}{% endblock %}
 {% block content %}
-<p><a href="/joueur/articles">← Mes articles</a></p>
-<article class="card">
-  <h1>{{ article.title }}</h1>
-  <div class="badges">{{ type_badge(article) }}</div>
-  <div class="prose">{{ content_html }}</div>
-</article>
-{% if linked %}
-<section class="card">
-  <h2>Voir aussi</h2>
-  <ul>{% for item in linked %}<li><a href="/joueur/articles/{{ item.wa_id }}">{{ item.title }}</a></li>{% endfor %}</ul>
-</section>
-{% endif %}
+{% set section = article | section_of %}
+{% set crumbs = [("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles"), (article.title, "")] %}
+{% set pills = [] %}
+{% set facts = [("Section", section.label), ("Type", article.template_type | template_label)] %}
+{% set gm_sections = [] %}
+{% set related = [] %}
+{% for item in linked %}{% set _ = related.append((item, "/joueur/articles/" ~ item.wa_id)) %}{% endfor %}
+{% set notice = "" %}
+{% set body_html = content_html %}
+{% set player_mode = True %}
+{% include "components/fiche.html" %}
 {% endblock %}

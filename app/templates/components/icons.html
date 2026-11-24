@@ -1,0 +1,83 @@
+{% macro section_icon(key, class="icon") -%}
+<svg class="{{ class }}" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+{%- if key == "monde" %}
+  <path d="M9 17.5 24 8l15 9.5z"/>
+  <circle cx="24" cy="14" r="1.6"/>
+  <path d="M10 20.5h28"/>
+  <path d="M14 21v12.5M20 21v12.5M28 21v12.5M34 21v12.5"/>
+  <path d="M8.5 34.5h31M6 38.5h36"/>
+  <path d="M3 42.5c5-1.6 9-1.6 14 0s9 1.6 14 0 9-1.6 14 0" opacity=".6"/>
+{%- elif key == "personnage" %}
+  <circle cx="24" cy="16" r="6.5"/>
+  <path d="M11 40c0-8.5 5.5-13 13-13s13 4.5 13 13"/>
+  <path d="M9 40h30M12.5 43.5h23"/>
+  <path d="M16.5 21.5C13.8 17.5 14.2 12 18 8.6"/>
+  <path d="M31.5 21.5c2.7-4 2.3-9.5-1.5-12.9"/>
+  <path d="M15.2 18.6l-2.6-.8M14.9 14.8l-2.5-.3M16.3 11.3l-2-1.4"/>
+  <path d="M32.8 18.6l2.6-.8M33.1 14.8l2.5-.3M31.7 11.3l2-1.4"/>
+{%- elif key == "lore" %}
+  <path d="M24 14.5c-5-2.6-11.5-3.1-18-1.6v24.6c6.5-1.5 13-1 18 1.8z"/>
+  <path d="M24 14.5c5-2.6 11.5-3.1 18-1.6v24.6c-6.5-1.5-13-1-18 1.8"/>
+  <path d="M24 14.5v24.8"/>
+  <path d="M10 19.5h9.5M10 23.5h9.5M10 27.5h7.5"/>
+  <path d="M28.5 19.5h5M28.5 23.5h5"/>
+  <path d="M36 12.6V28l2-2 2 2V13.2"/>
+  <path d="M24 3.5l2 3-2 3-2-3z"/>
+{%- elif key == "organisation" %}
+  <path d="M24 9v35"/>
+  <circle cx="24" cy="6.5" r="2.5"/>
+  <path d="M13 13h22"/>
+  <path d="M15 13v18l4.5-3 4.5 3 4.5-3 4.5 3V13"/>
+  <path d="M24 17.5l3.2 3.2-3.2 3.2-3.2-3.2z"/>
+  <circle cx="24" cy="36" r="2"/>
+  <path d="M19.5 40.5h9"/>
+{%- endif %}
+</svg>
+{%- endmacro %}
+
+{% macro emblem(class="emblem") -%}
+<svg class="{{ class }} icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <circle cx="32" cy="32" r="29.5"/>
+  <circle cx="32" cy="32" r="25" opacity=".55"/>
+  <circle cx="32" cy="32" r="12"/>
+  <path d="M38.5 22.4a12 12 0 0 1 0 19.2 12 12 0 1 1 0-19.2z" fill="currentColor" opacity=".9" stroke="none"/>
+  <path d="M32 7v6M32 51v6M7 32h6M51 32h6M14.3 14.3l4.2 4.2M45.5 45.5l4.2 4.2M14.3 49.7l4.2-4.2M45.5 18.5l4.2-4.2"/>
+  <path class="emblem__gems" d="M32 2.5l1.8 2.5L32 7.5 30.2 5zM6.6 46.7l3-.4 1.3 2.8-3 .4zM57.4 46.7l-3-.4-1.3 2.8 3 .4z" fill="currentColor" stroke="none"/>
+</svg>
+{%- endmacro %}
+
+{% macro divider_ornament() -%}
+<div class="divider" aria-hidden="true">
+  <svg class="icon" viewBox="0 0 56 14">
+    <path d="M2 7h14M40 7h14"/>
+    <path d="M28 1.5l5.5 5.5-5.5 5.5-5.5-5.5z"/>
+    <path d="M18.5 7l3-3 3 3-3 3zM31.5 7l3-3 3 3-3 3z" opacity=".6"/>
+  </svg>
+</div>
+{%- endmacro %}
+
+{% macro ui(name, class="icon") -%}
+<svg class="{{ class }}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+{%- if name == "search" %}
+  <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/>
+{%- elif name == "chevron" %}
+  <path d="M9 5l7 7-7 7"/>
+{%- elif name == "back" %}
+  <path d="M15 5l-7 7 7 7"/>
+{%- elif name == "sync" %}
+  <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/>
+{%- elif name == "users" %}
+  <circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.4c2.2.7 3.5 2.8 3.5 5.6"/>
+{%- elif name == "mask" %}
+  <path d="M4 5c5 1.6 11 1.6 16 0v6c0 5-3.6 9-8 9s-8-4-8-9z"/><path d="M8 10.5c1 .9 2.2.9 3 0M13 10.5c.8.9 2 .9 3 0M9.5 15c1.5 1 3.5 1 5 0"/>
+{%- elif name == "logout" %}
+  <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/>
+{%- elif name == "hearth" %}
+  <path d="M4 20h16M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/>
+{%- elif name == "candle" %}
+  <path d="M12 2.8c1.8 2.2 1.8 4 0 5.4-1.8-1.4-1.8-3.2 0-5.4z"/><path d="M12 8.2V10"/><path d="M9 10h6v10H9z"/><path d="M6.5 20.5h11"/>
+{%- elif name == "scroll" %}
+  <path d="M7 4h11a2 2 0 0 1 2 2v1h-4"/><path d="M16 7v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1h10"/><path d="M7 4a2 2 0 0 0-2 2v11"/><path d="M8.5 9h4.5M8.5 12.5h4.5"/>
+{%- endif %}
+</svg>
+{%- endmacro %}

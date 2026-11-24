@@ -1,0 +1,82 @@
+{% from "components/icons.html" import section_icon, ui %}
+
+{% macro placeholder(article, section) -%}
+<div class="placeholder" aria-hidden="true">
+
+  {{ section_icon(section.key) }}
+</div>
+{%- endmacro %}
+
+{% macro card(article, href, player_mode=False) -%}
+{% set section = article | section_of %}
+{% set image = article | article_image(player_mode) %}
+{% set tagline = article | tagline %}
+<a class="card" href="{{ href }}" data-section="{{ section.key }}">
+  <div class="card__media">
+    {% if image %}
+    <img src="{{ image }}" alt="" loading="lazy" decoding="async">
+    {% else %}
+    {{ placeholder(article, section) }}
+    {% endif %}
+  </div>
+  <div class="card__body">
+    <h3 class="card__title">{{ article.title }}</h3>
+    <p class="card__subtitle">{{ tagline or (article.template_type | template_label) }}</p>
+    <div class="card__meta">
+      <span class="pill">{{ section.label }}</span>
+      {% if tagline %}<span class="pill pill--muted">{{ article.template_type | template_label }}</span>{% endif %}
+      {% if caller is defined %}{{ caller() }}{% endif %}
+    </div>
+  </div>
+</a>
+{%- endmacro %}
+
+{% macro breadcrumb(items) -%}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <ol>
+    {% for label, href in items %}
+    {% if loop.last %}
+    <li><span aria-current="page">{{ label }}</span></li>
+    {% else %}
+    <li><a href="{{ href }}">{{ label }}</a></li>
+    {% endif %}
+    {% endfor %}
+  </ol>
+</nav>
+{%- endmacro %}
+
+{% macro empty_state(title, text, icon="candle") -%}
+<div class="empty-state">
+  {{ ui(icon) }}
+  <h3 class="empty-state__title">{{ title }}</h3>
+  <p>{{ text }}</p>
+</div>
+{%- endmacro %}
+
+{% macro skeleton_cards(count=6) -%}
+<ul class="card-grid skeleton-grid" aria-hidden="true">
+  {% for _ in range(count) %}
+  <li class="skeleton">
+    <div class="skeleton__media"></div>
+    <div class="skeleton__line"></div>
+    <div class="skeleton__line"></div>
+  </li>
+  {% endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro page_head(title, eyebrow=None, lead=None) -%}
+<header class="page-head reveal">
+  {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
+  <h1 class="page-title">{{ title }}</h1>
+  {% from "components/icons.html" import divider_ornament %}
+  {{ divider_ornament() }}
+  {% if lead %}<p class="page-lead">{{ lead }}</p>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro flash_message(message) -%}
+{% if message %}
+<div class="alert alert--{{ 'error' if message.kind == 'error' else 'success' }}" role="status">{{ message.message }}</div>
+{% endif %}
+{%- endmacro %}

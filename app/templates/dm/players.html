@@ -1,58 +1,68 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import page_head, breadcrumb, empty_state %}
 {% block title %}Joueurs{% endblock %}
 {% block content %}
-<h1>Joueurs</h1>
+{{ breadcrumb([("Accueil", "/mj"), ("Joueurs", "")]) }}
+{{ page_head("Joueurs", eyebrow="La tablée", lead="Créez les comptes de vos joueurs et transmettez-leur un lien d'invitation à usage unique.") }}
 {% if invitation %}{% include "dm/_invitation_link.html" %}{% endif %}
-<section class="card">
-  <h2>Nouveau joueur</h2>
-  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
-  <form method="post" action="/mj/joueurs" class="stack">
+
+<section class="panel reveal reveal-delay-1" aria-labelledby="nouveau-joueur">
+  <h2 class="panel__title" id="nouveau-joueur">Nouveau joueur</h2>
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/mj/joueurs" class="form form--inline">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Nom affiché
-      <input type="text" name="display_name" value="{{ form.display_name or '' }}" required maxlength="100">
-    </label>
-    <label>Identifiant de connexion
-      <input type="text" name="login" value="{{ form.login or '' }}" required maxlength="50" autocapitalize="none" pattern="[a-z0-9][a-z0-9._\-]{2,49}" title="3 à 50 caractères : minuscules, chiffres, point, tiret, tiret bas">
-    </label>
-    <button type="submit" class="button primary">Créer le joueur</button>
+    <div class="field">
+      <label for="display_name">Nom affiché</label>
+      <input id="display_name" type="text" name="display_name" value="{{ form.display_name or '' }}" required maxlength="100" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="login">Identifiant de connexion</label>
+      <input id="login" type="text" name="login" value="{{ form.login or '' }}" required maxlength="50" autocapitalize="none" autocomplete="off" pattern="[a-z0-9][a-z0-9._\-]{2,49}" title="3 à 50 caractères : minuscules, chiffres, point, tiret, tiret bas">
+    </div>
+    <button type="submit" class="btn btn--primary">Créer le joueur</button>
   </form>
 </section>
-<section class="card">
-  <h2>Comptes</h2>
+
+<section class="panel reveal reveal-delay-2" aria-labelledby="comptes">
+  <h2 class="panel__title" id="comptes">Comptes</h2>
   {% if players %}
-  <ul class="list">
+  <ul class="ledger-list">
     {% for player in players %}
-    <li class="list-item">
-      <div class="list-title">{{ player.display_name }} <span class="muted">({{ player.login }})</span></div>
-      <div class="badges">
-        {% if not player.is_active %}<span class="badge badge-danger">Désactivé</span>
-        {% elif player.has_password %}<span class="badge badge-ok">Actif</span>
-        {% else %}<span class="badge badge-warn">Invitation en attente</span>{% endif %}
+    <li>
+      <div class="candidate__info">
+        <span class="ledger-list__title">{{ player.display_name }}</span>
+        <div class="chips">
+          <span class="pill pill--muted">{{ player.login }}</span>
+          {% if not player.is_active %}<span class="pill pill--danger">Désactivé</span>
+          {% elif player.has_password %}<span class="pill pill--ok">Actif</span>
+          {% else %}<span class="pill pill--warn">Invitation en attente</span>{% endif %}
+        </div>
       </div>
       <div class="row">
         {% if player.is_active %}
-        <form method="post" action="/mj/joueurs/{{ player.id }}/invitation"
+        <form method="post" action="/mj/joueurs/{{ player.id }}/invitation" class="inline-form"
           hx-post="/mj/joueurs/{{ player.id }}/invitation" hx-target="#invite-{{ player.id }}" hx-swap="innerHTML">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="button">{{ "Nouveau lien (mot de passe oublié)" if player.has_password else "Générer un lien d'invitation" }}</button>
+          <button type="submit" class="btn">{{ "Nouveau lien" if player.has_password else "Lien d'invitation" }}</button>
         </form>
-        <form method="post" action="/mj/joueurs/{{ player.id }}/desactiver">
+        <form method="post" action="/mj/joueurs/{{ player.id }}/desactiver" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="button danger">Désactiver</button>
+          <button type="submit" class="btn btn--danger">Désactiver</button>
         </form>
         {% else %}
-        <form method="post" action="/mj/joueurs/{{ player.id }}/reactiver">
+        <form method="post" action="/mj/joueurs/{{ player.id }}/reactiver" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="button">Réactiver</button>
+          <button type="submit" class="btn">Réactiver</button>
         </form>
         {% endif %}
       </div>
-      <div id="invite-{{ player.id }}"></div>
+      <div id="invite-{{ player.id }}" class="invite-slot"></div>
     </li>
     {% endfor %}
   </ul>
   {% else %}
-  <p>Aucun joueur pour l'instant.</p>
+  {{ empty_state("Aucun joueur", "Créez le premier compte ci-dessus, puis générez son lien d'invitation.", "users") }}
   {% endif %}
 </section>
 {% endblock %}

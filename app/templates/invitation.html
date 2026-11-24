@@ -1,20 +1,29 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import emblem, divider_ornament %}
 {% block title %}Activer mon compte{% endblock %}
-{% block content %}
-<section class="card narrow">
-  <h1>Bienvenue, {{ invited.display_name }}</h1>
-  <p>Choisissez votre mot de passe pour activer votre compte. Votre identifiant de connexion est <strong>{{ invited.login }}</strong>.</p>
-  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
-  <form method="post" action="/invitation/{{ token }}" class="stack">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <input type="text" name="username" value="{{ invited.login }}" autocomplete="username" hidden readonly>
-    <label>Mot de passe (10 caractères minimum)
-      <input type="password" name="password" autocomplete="new-password" required minlength="10" maxlength="256">
-    </label>
-    <label>Confirmez le mot de passe
-      <input type="password" name="password_confirmation" autocomplete="new-password" required minlength="10" maxlength="256">
-    </label>
-    <button type="submit" class="button primary">Activer mon compte</button>
-  </form>
-</section>
+{% block body %}
+<main id="contenu" class="screen">
+  <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
+  <div class="screen__content">
+    <div class="screen__mark reveal">{{ emblem("") }}</div>
+    <p class="eyebrow reveal">{{ APP_TITLE }}</p>
+    <h1 class="screen__title screen__title--small reveal reveal--slow">Bienvenue, {{ invited.display_name }}</h1>
+    <p class="screen__tagline reveal reveal-delay-1">Choisissez votre mot de passe pour rejoindre la tablée. Votre identifiant est <strong>{{ invited.login }}</strong>.</p>
+    <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
+    {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/invitation/{{ token }}" class="form reveal reveal-delay-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="text" name="username" value="{{ invited.login }}" autocomplete="username" hidden readonly>
+      <div class="field">
+        <label for="password">Mot de passe (10 caractères minimum)</label>
+        <input id="password" type="password" name="password" autocomplete="new-password" required minlength="10" maxlength="256">
+      </div>
+      <div class="field">
+        <label for="password_confirmation">Confirmez le mot de passe</label>
+        <input id="password_confirmation" type="password" name="password_confirmation" autocomplete="new-password" required minlength="10" maxlength="256">
+      </div>
+      <button type="submit" class="btn btn--primary btn--block">Activer mon compte</button>
+    </form>
+  </div>
+</main>
 {% endblock %}

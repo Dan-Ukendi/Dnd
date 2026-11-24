@@ -1,0 +1,75 @@
+{% from "components/icons.html" import section_icon, ui %}
+{% from "components/ui.html" import breadcrumb, card, placeholder %}
+{% set section = article | section_of %}
+{% set image = article | article_image(player_mode) %}
+{% set tagline = article | tagline %}
+<div data-section="{{ section.key }}">
+  {{ breadcrumb(crumbs) }}
+  <header class="fiche-hero reveal">
+    <div class="fiche-hero__media">
+      {% if image %}
+      <img src="{{ image }}" alt="" decoding="async">
+      {% else %}
+      {{ placeholder(article, section) }}
+      {% endif %}
+    </div>
+    <div class="fiche-hero__content">
+      <div class="eyebrow">{{ section.label }}</div>
+      <h1 class="fiche-hero__title">{{ article.title }}</h1>
+      {% if tagline %}<p class="fiche-hero__tagline">{{ tagline }}</p>{% endif %}
+      <div class="fiche-hero__pills">
+        <span class="pill">{{ article.template_type | template_label }}</span>
+        {% for label, kind in pills %}<span class="pill pill--{{ kind }}">{{ label }}</span>{% endfor %}
+      </div>
+    </div>
+    <div class="frieze" aria-hidden="true"></div>
+  </header>
+
+  <div class="fiche-layout">
+    <details class="fiche-panel reveal reveal-delay-1" open data-responsive-panel>
+      <summary>Informations clés {{ ui("chevron") }}</summary>
+      <div class="fiche-panel__body">
+        <dl class="facts">
+          {% for label, value in facts %}
+          <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+          {% endfor %}
+        </dl>
+      </div>
+    </details>
+
+    <div class="fiche-main reveal reveal-delay-2">
+      {% if notice %}<p class="alert alert--warn">{{ notice }}</p>{% endif %}
+      {% set body = body_html | fiche_body(article.title) %}
+      {% if body | trim %}
+      <div class="prose">{{ body }}</div>
+      {% else %}
+      <div class="empty-state">
+        {{ ui("candle") }}
+        <h2 class="empty-state__title">Page encore blanche</h2>
+        <p>Cette fiche n'a pas encore de contenu.</p>
+      </div>
+      {% endif %}
+      {% for title, html in gm_sections %}
+      <section class="panel panel--gm prose-panel">
+        <h2 class="panel__title">{{ title }}</h2>
+        <div class="prose">{{ html }}</div>
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if related %}
+  <section class="related" aria-labelledby="fiches-liees">
+    <div class="related__head">
+      <h2 class="related__title" id="fiches-liees">Fiches liées</h2>
+      {% from "components/icons.html" import divider_ornament %}
+      {{ divider_ornament() }}
+    </div>
+    <ul class="card-grid stagger">
+      {% for item, href in related %}
+      <li>{{ card(item, href, player_mode) }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>

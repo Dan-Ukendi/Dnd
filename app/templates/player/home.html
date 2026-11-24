@@ -1,23 +1,28 @@
 {% extends "base.html" %}
+{% from "components/ui.html" import page_head, empty_state %}
 {% block title %}Mon personnage{% endblock %}
 {% block content %}
 {% if not sheets %}
-<section class="card">
-  <h1>Mon personnage</h1>
-  <p>Aucun personnage ne vous est encore attribué. Votre MJ s'en occupera bientôt.</p>
-</section>
+{{ page_head("Mon personnage", eyebrow="Bienvenue, " ~ current_user.display_name) }}
+{{ empty_state("Aucun personnage pour l'instant", "Votre MJ ne vous a pas encore confié de personnage. Revenez après la prochaine séance.", "mask") }}
 {% endif %}
 {% for sheet in sheets %}
-<article class="card">
-  <h1>{{ sheet.character.name }}</h1>
-  {% if sheet.content_html %}
-  <div class="prose">{{ sheet.content_html }}</div>
-  {% else %}
-  <p class="muted">Le contenu de ce personnage n'est pas encore disponible.</p>
-  {% endif %}
-</article>
-{% endfor %}
-{% if shared_count %}
-<p><a class="button" href="/joueur/articles">Voir mes articles ({{ shared_count }})</a></p>
+{% set character = sheet.character %}
+{% if sheet.content_html is not none and character.main_article %}
+{% set article = character.main_article %}
+{% set crumbs = [("Mon personnage", "")] %}
+{% set pills = [] %}
+{% set shared %}{% if shared_count %}<a href="/joueur/articles">{{ shared_count }} fiche{{ "s" if shared_count > 1 }} partagée{{ "s" if shared_count > 1 }}</a>{% else %}Aucune pour l'instant{% endif %}{% endset %}
+{% set facts = [("Personnage", character.name), ("Joué par", current_user.display_name), ("Fiches partagées", shared)] %}
+{% set gm_sections = [] %}
+{% set related = [] %}
+{% set notice = "" %}
+{% set body_html = sheet.content_html %}
+{% set player_mode = True %}
+{% include "components/fiche.html" %}
+{% else %}
+{{ page_head(character.name, eyebrow="Mon personnage") }}
+{{ empty_state("Fiche en préparation", "Le contenu de ce personnage n'est pas encore disponible.", "mask") }}
 {% endif %}
+{% endfor %}
 {% endblock %}

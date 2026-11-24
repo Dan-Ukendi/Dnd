@@ -1,15 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Tableau de bord{% endblock %}
+{% from "components/icons.html" import section_icon, ui %}
+{% from "components/ui.html" import page_head %}
+{% block title %}Accueil{% endblock %}
 {% block content %}
-<h1>Tableau de bord</h1>
-<section class="stats">
-  <a class="stat" href="/mj/articles"><span class="stat-value">{{ stats.articles }}</span><span class="stat-label">articles</span></a>
-  <div class="stat"><span class="stat-value">{{ stats.visible }}</span><span class="stat-label">partageables</span></div>
-  <a class="stat" href="/mj/joueurs"><span class="stat-value">{{ stats.players }}</span><span class="stat-label">joueurs</span></a>
-  <a class="stat" href="/mj/personnages"><span class="stat-value">{{ stats.characters }}</span><span class="stat-label">personnages</span></a>
-</section>
-<section class="card">
-  <h2>Synchronisation World Anvil</h2>
-  {% include "dm/_sync_status.html" %}
-</section>
+{{ page_head(APP_TITLE, eyebrow="Bienvenue, " ~ current_user.display_name, lead=APP_TAGLINE) }}
+
+<nav class="hub stagger" aria-label="Sections des archives">
+  {% for section in SECTIONS %}
+  {% set count = section_counts.get(section.key, 0) %}
+  <a class="hub-card" href="/mj/articles?section={{ section.key }}" data-section="{{ section.key }}">
+    <span class="hub-card__icon">{{ section_icon(section.key) }}</span>
+    <h2 class="hub-card__title">{{ section.label }}</h2>
+    <p class="hub-card__desc">{{ section.description }}</p>
+    <span class="hub-card__count">{{ count }} fiche{{ "s" if count != 1 }}</span>
+  </a>
+  {% endfor %}
+</nav>
+
+<div class="hub-aside">
+  <section class="panel reveal reveal-delay-2" aria-labelledby="synchro-titre">
+    <h2 class="panel__title" id="synchro-titre">Synchronisation World Anvil</h2>
+    {% include "dm/_sync_status.html" %}
+  </section>
+  <section class="panel reveal reveal-delay-3" aria-labelledby="registre-titre">
+    <h2 class="panel__title" id="registre-titre">Registre</h2>
+    <dl class="ledger">
+      <div><dt>Fiches</dt><dd>{{ stats.articles }}</dd></div>
+      <div><dt>Partageables</dt><dd>{{ stats.visible }}</dd></div>
+      <div><dt>Joueurs</dt><dd>{{ stats.players }}</dd></div>
+      <div><dt>Personnages</dt><dd>{{ stats.characters }}</dd></div>
+    </dl>
+    <div class="quick-links">
+      <a class="btn" href="/mj/articles">{{ ui("scroll") }}Toutes les archives</a>
+      <a class="btn" href="/mj/joueurs">{{ ui("users") }}Joueurs</a>
+      <a class="btn" href="/mj/personnages">{{ ui("mask") }}Personnages joués</a>
+    </div>
+  </section>
+</div>
 {% endblock %}

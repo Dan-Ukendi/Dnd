@@ -1,18 +1,23 @@
 {% extends "base.html" %}
-{% from "macros.html" import type_badge %}
-{% block title %}Mes articles{% endblock %}
+{% from "components/ui.html" import page_head, card, empty_state, breadcrumb %}
+{% block title %}Mes fiches{% endblock %}
 {% block content %}
-<h1>Mes articles</h1>
-{% if articles %}
-<ul class="list">
-  {% for article in articles %}
-  <li class="list-item">
-    <a class="list-title" href="/joueur/articles/{{ article.wa_id }}">{{ article.title }}</a>
-    <div class="badges">{{ type_badge(article) }}</div>
-  </li>
-  {% endfor %}
-</ul>
+{{ breadcrumb([("Mon personnage", "/joueur"), ("Mes fiches", "")]) }}
+{{ page_head("Mes fiches", eyebrow="Archives partagées", lead="Les pages des archives que votre MJ a choisi de vous confier.") }}
+{% set groups = articles | group_by_section %}
+{% if groups %}
+{% for key, items in groups %}
+{% set section = SECTIONS_BY_KEY[key] %}
+<section class="section-group" data-section="{{ key }}" aria-labelledby="groupe-{{ key }}">
+  <h2 class="section-group__title" id="groupe-{{ key }}">{{ section.label }}<span>{{ items | length }}</span></h2>
+  <ul class="card-grid stagger">
+    {% for article in items %}
+    <li>{{ card(article, "/joueur/articles/" ~ article.wa_id, True) }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
 {% else %}
-<p>Aucun article n'a encore été partagé avec vous.</p>
+{{ empty_state("Aucune fiche partagée", "Votre MJ n'a encore partagé aucune page avec vous.", "scroll") }}
 {% endif %}
 {% endblock %}

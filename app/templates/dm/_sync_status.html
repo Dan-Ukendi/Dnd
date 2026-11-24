@@ -1,36 +1,44 @@
-<div id="sync-status" class="stack"
+{% from "components/icons.html" import ui %}
+<div id="sync-status" class="sync-status"
   {% if running %}hx-get="/mj/synchronisation" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
-  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
   {% if not world_anvil_configured %}
-  <div class="alert alert-error">Les clés World Anvil ne sont pas configurées sur le serveur.</div>
+  <div class="alert alert--error">Les clés World Anvil ne sont pas configurées sur le serveur.</div>
   {% endif %}
   {% if run %}
-  <dl class="meta">
-    <dt>Dernière synchronisation</dt>
-    <dd>{{ run.started_at | datetime_fr }} ({{ "complète" if run.full else "incrémentale" }}, {{ "bouton" if run.trigger == "ui" else "ligne de commande" }})</dd>
-    <dt>État</dt>
-    <dd>
-      {% if run.status == "running" %}<span class="badge badge-warn">En cours…</span>
-      {% elif run.status == "success" %}<span class="badge badge-ok">Réussie</span>
-      {% else %}<span class="badge badge-danger">Échec</span>{% endif %}
-    </dd>
+  <dl>
+    <div>
+      <dt>Dernière synchronisation</dt>
+      <dd>{{ run.started_at | datetime_fr }} · {{ "complète" if run.full else "incrémentale" }} · {{ "depuis l'interface" if run.trigger == "ui" else "en ligne de commande" }}</dd>
+    </div>
+    <div>
+      <dt>État</dt>
+      <dd>
+        {% if run.status == "running" %}<span class="pill pill--warn">{{ ui("sync", "icon spin") }}En cours…</span>
+        {% elif run.status == "success" %}<span class="pill pill--ok">Réussie</span>
+        {% else %}<span class="pill pill--danger">Échec</span>{% endif %}
+      </dd>
+    </div>
     {% if run.status != "running" %}
-    <dt>Résultat</dt>
-    <dd>{{ run.created_count }} créé(s), {{ run.updated_count }} mis à jour, {{ run.unchanged_count }} inchangé(s), {{ run.removed_count }} retiré(s)</dd>
+    <div>
+      <dt>Résultat</dt>
+      <dd>{{ run.created_count }} créée(s), {{ run.updated_count }} mise(s) à jour, {{ run.unchanged_count }} inchangée(s), {{ run.removed_count }} retirée(s)</dd>
+    </div>
     {% endif %}
-    {% if run.error %}<dt>Erreur</dt><dd class="error-text">{{ run.error }}</dd>{% endif %}
+    {% if run.error %}<div><dt>Erreur</dt><dd class="error-text">{{ run.error }}</dd></div>{% endif %}
   </dl>
   {% else %}
-  <p>Aucune synchronisation n'a encore été lancée.</p>
+  <p class="muted">Aucune synchronisation n'a encore été lancée.</p>
   {% endif %}
   {% if not running %}
   <form method="post" action="/mj/synchroniser" hx-post="/mj/synchroniser" hx-target="#sync-status" hx-swap="outerHTML" class="row">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <select name="mode" aria-label="Mode de synchronisation">
+    <label class="visually-hidden" for="sync-mode">Mode de synchronisation</label>
+    <select id="sync-mode" name="mode" class="sync-mode">
       <option value="incremental">Incrémentale</option>
       <option value="full">Complète</option>
     </select>
-    <button type="submit" class="button primary">Synchroniser</button>
+    <button type="submit" class="btn btn--primary">{{ ui("sync") }}Synchroniser</button>
   </form>
   {% endif %}
 </div>

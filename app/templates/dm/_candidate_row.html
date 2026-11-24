@@ -1,8 +1,13 @@
-{% from "macros.html" import type_badge, visibility_badge %}
-<li class="list-item candidate">
-  <div>
-    <a class="list-title" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>
-    <div class="badges">{{ type_badge(article) }} {{ visibility_badge(article) }}</div>
+{% set row_section = article | section_of %}
+<li class="candidate" data-section="{{ row_section.key }}">
+  <div class="candidate__info">
+    <a class="ledger-list__title" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>
+    <div class="chips">
+      <span class="pill">{{ row_section.label }}</span>
+      <span class="pill pill--muted">{{ article.template_type | template_label }}</span>
+      {% if article.removed_at %}<span class="pill pill--danger">Supprimée</span>
+      {% elif not article.player_visible %}<span class="pill pill--warn" title="{{ article.visibility_reason or '' }}">Invisible pour les joueurs</span>{% endif %}
+    </div>
   </div>
   <form method="post" action="/mj/personnages/{{ character.id }}/articles"
     hx-post="/mj/personnages/{{ character.id }}/articles" hx-target="closest li" hx-swap="outerHTML">
@@ -10,10 +15,10 @@
     <input type="hidden" name="article_id" value="{{ article.wa_id }}">
     {% if shared %}
     <input type="hidden" name="shared" value="0">
-    <button type="submit" class="button danger">Retirer</button>
+    <button type="submit" class="btn btn--danger">Retirer</button>
     {% else %}
     <input type="hidden" name="shared" value="1">
-    <button type="submit" class="button">Partager</button>
+    <button type="submit" class="btn">Partager</button>
     {% endif %}
   </form>
 </li>

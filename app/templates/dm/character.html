@@ -1,61 +1,78 @@
 {% extends "base.html" %}
-{% from "macros.html" import visibility_badge %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import page_head, breadcrumb, empty_state %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
-<p><a href="/mj/personnages">← Tous les personnages</a></p>
-<h1>{{ character.name }}</h1>
-<section class="card">
-  <h2>Fiche</h2>
-  <form method="post" action="/mj/personnages/{{ character.id }}" class="stack">
+{{ breadcrumb([("Accueil", "/mj"), ("Personnages joués", "/mj/personnages"), (character.name, "")]) }}
+{{ page_head(character.name, eyebrow="Personnage joué") }}
+
+<section class="panel reveal reveal-delay-1" aria-labelledby="fiche-perso">
+  <h2 class="panel__title" id="fiche-perso">Fiche</h2>
+  <form method="post" action="/mj/personnages/{{ character.id }}" class="form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Nom
-      <input type="text" name="name" value="{{ character.name }}" required maxlength="200">
-    </label>
-    <label>Joueur
-      <select name="player_id" required>
+    <div class="field">
+      <label for="name">Nom</label>
+      <input id="name" type="text" name="name" value="{{ character.name }}" required maxlength="200" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="player_id">Joueur</label>
+      <select id="player_id" name="player_id" required>
         {% for player in players %}<option value="{{ player.id }}" {% if player.id == character.player_id %}selected{% endif %}>{{ player.display_name }}</option>{% endfor %}
       </select>
-    </label>
-    <label>Article principal
+    </div>
+    <div class="field">
+      <label for="main_article_id">Fiche principale</label>
       {% set selected_main = character.main_article_id or "" %}
       {% include "dm/_main_article_select.html" %}
-    </label>
+    </div>
     {% if character.main_article and not character.main_article.player_visible %}
-    <p class="alert alert-warn">L'article principal est invisible pour le joueur : {{ character.main_article.visibility_reason or "raison inconnue" }}.</p>
+    <p class="alert alert--warn">La fiche principale est invisible pour le joueur : {{ character.main_article.visibility_reason or "raison inconnue" }}.</p>
     {% endif %}
-    <button type="submit" class="button primary">Enregistrer</button>
+    <div><button type="submit" class="btn btn--primary">Enregistrer</button></div>
   </form>
 </section>
-<section class="card">
-  <h2>Articles partagés avec le joueur</h2>
+
+<section class="panel reveal reveal-delay-2" aria-labelledby="partage">
+  <h2 class="panel__title" id="partage">Fiches partagées avec le joueur</h2>
   {% if shared_articles %}
-  <ul>
+  <div class="chips shared-list">
     {% for article in shared_articles %}
-    <li><a href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a> {{ visibility_badge(article) }}</li>
+    <a class="pill {% if not article.player_visible or article.removed_at %}pill--warn{% endif %}" data-section="{{ (article | section_of).key }}" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}{% if not article.player_visible or article.removed_at %} · invisible{% endif %}</a>
     {% endfor %}
-  </ul>
+  </div>
   {% else %}
-  <p class="muted">Aucun article supplémentaire.</p>
+  <p class="muted">Aucune fiche supplémentaire pour l'instant.</p>
   {% endif %}
-  <h3>Ajouter ou retirer des articles</h3>
-  <form method="get" action="/mj/personnages/{{ character.id }}" class="filters" role="search"
+
+  <h3 class="panel__subtitle">Ajouter ou retirer des fiches</h3>
+  <form method="get" action="/mj/personnages/{{ character.id }}" class="toolbar" role="search"
     hx-get="/mj/personnages/{{ character.id }}" hx-target="#candidate-results" hx-swap="outerHTML"
     hx-trigger="input delay:300ms, change, submit">
-    <input type="search" name="q" value="{{ q }}" placeholder="Rechercher un article" aria-label="Recherche" maxlength="200">
-    <select name="type" aria-label="Type d'article">
-      <option value="">Tous les types</option>
-      {% for value, count in types %}
-      <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }} ({{ count }})</option>
-      {% endfor %}
-    </select>
-    <noscript><button type="submit" class="button">Filtrer</button></noscript>
+    <div class="search-field">
+      {{ ui("search") }}
+      <label class="visually-hidden" for="recherche-fiche">Rechercher une fiche</label>
+      <input id="recherche-fiche" type="search" name="q" value="{{ q }}" placeholder="Rechercher une fiche…" maxlength="200" autocomplete="off">
+    </div>
+    <div>
+      <label class="visually-hidden" for="type-fiche">Type de fiche</label>
+      <select id="type-fiche" name="type">
+        <option value="">Tous les types</option>
+        {% for value, count in types %}
+        <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }} ({{ count }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <noscript><button type="submit" class="btn">Filtrer</button></noscript>
   </form>
   {% include "dm/_character_candidates.html" %}
 </section>
-<section class="card">
+
+<section class="panel panel--gm reveal reveal-delay-3" aria-labelledby="suppression">
+  <h2 class="panel__title" id="suppression">Retirer ce personnage</h2>
+  <p class="muted">Le compte du joueur et les fiches World Anvil ne sont pas touchés.</p>
   <form method="post" action="/mj/personnages/{{ character.id }}/supprimer">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <button type="submit" class="button danger">Supprimer ce personnage</button>
+    <button type="submit" class="btn btn--danger">Supprimer ce personnage</button>
   </form>
 </section>
 {% endblock %}

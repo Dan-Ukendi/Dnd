@@ -1,17 +1,17 @@
-{% from "macros.html" import type_badge, visibility_badge %}
-<section id="article-results">
-  <p class="muted">{{ articles | length }} résultat(s)</p>
-  {% if articles %}
-  <ul class="list">
-    {% for article in articles %}
-    <li class="list-item">
-      <a class="list-title" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>
-      <div class="badges">{{ type_badge(article) }} {{ visibility_badge(article) }}</div>
-      {% if article.content_text %}<p class="excerpt">{{ article.content_text[:180] }}{% if article.content_text | length > 180 %}…{% endif %}</p>{% endif %}
-    </li>
+{% from "components/ui.html" import card, empty_state %}
+{% set results_section = request.query_params.get("section", "") %}
+{% set visible_articles = articles | in_section(results_section) %}
+<section id="article-results" class="results" aria-live="polite">
+  <p class="result-count">{{ visible_articles | length }} fiche{{ "s" if visible_articles | length != 1 }}{% if q %} pour « {{ q }} »{% endif %}</p>
+  {% if visible_articles %}
+  <ul class="card-grid stagger">
+    {% for article in visible_articles %}
+    <li>{{ card(article, "/mj/articles/" ~ article.wa_id) }}</li>
     {% endfor %}
   </ul>
+  {% elif q or selected_type %}
+  {{ empty_state("Rien dans les archives", "Aucune fiche ne correspond à cette recherche. Essayez un autre mot ou retirez le filtre.", "search") }}
   {% else %}
-  <p>Aucun article ne correspond à ces critères.</p>
+  {{ empty_state("Section encore vide", "Aucune fiche n'est rangée ici pour l'instant. Synchronisez World Anvil ou ajustez le classement des sections.") }}
   {% endif %}
 </section>

@@ -1,44 +1,54 @@
 {% extends "base.html" %}
-{% block title %}Personnages{% endblock %}
+{% from "components/ui.html" import page_head, breadcrumb, empty_state %}
+{% block title %}Personnages joués{% endblock %}
 {% block content %}
-<h1>Personnages</h1>
-<section class="card">
-  <h2>Nouveau personnage</h2>
-  {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+{{ breadcrumb([("Accueil", "/mj"), ("Personnages joués", "")]) }}
+{{ page_head("Personnages joués", eyebrow="La tablée", lead="Associez chaque personnage à son joueur et à sa fiche, puis choisissez ce qu'il a le droit de lire.") }}
+
+<section class="panel reveal reveal-delay-1" aria-labelledby="nouveau-personnage">
+  <h2 class="panel__title" id="nouveau-personnage">Nouveau personnage</h2>
+  {% if error %}<div class="alert alert--error" role="alert">{{ error }}</div>{% endif %}
   {% if not players %}
-  <p>Créez d'abord un <a href="/mj/joueurs">joueur</a>.</p>
+  <p class="muted">Créez d'abord un <a href="/mj/joueurs">joueur</a>.</p>
   {% else %}
-  <form method="post" action="/mj/personnages" class="stack">
+  <form method="post" action="/mj/personnages" class="form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Nom
-      <input type="text" name="name" value="{{ form.name or '' }}" required maxlength="200">
-    </label>
-    <label>Joueur
-      <select name="player_id" required>
+    <div class="field">
+      <label for="name">Nom</label>
+      <input id="name" type="text" name="name" value="{{ form.name or '' }}" required maxlength="200" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="player_id">Joueur</label>
+      <select id="player_id" name="player_id" required>
         {% for player in players %}<option value="{{ player.id }}" {% if form.player_id == player.id %}selected{% endif %}>{{ player.display_name }}</option>{% endfor %}
       </select>
-    </label>
-    <label>Article principal
+    </div>
+    <div class="field">
+      <label for="main_article_id">Fiche principale</label>
       {% set selected_main = form.main_article_id or "" %}
       {% include "dm/_main_article_select.html" %}
-    </label>
-    <button type="submit" class="button primary">Créer le personnage</button>
+    </div>
+    <div><button type="submit" class="btn btn--primary">Créer le personnage</button></div>
   </form>
   {% endif %}
 </section>
-<section class="card">
-  <h2>Personnages existants</h2>
+
+<section class="panel reveal reveal-delay-2" aria-labelledby="personnages-existants">
+  <h2 class="panel__title" id="personnages-existants">Personnages</h2>
   {% if characters %}
-  <ul class="list">
+  <ul class="ledger-list">
     {% for character in characters %}
-    <li class="list-item">
-      <a class="list-title" href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>
-      <p class="muted">Joué par {{ character.player.display_name }} · Article : {{ character.main_article.title if character.main_article else "aucun" }}</p>
+    <li>
+      <div class="candidate__info">
+        <a class="ledger-list__title" href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>
+        <span class="muted">Joué par {{ character.player.display_name }} · Fiche : {{ character.main_article.title if character.main_article else "aucune" }}</span>
+      </div>
+      <a class="btn" href="/mj/personnages/{{ character.id }}">Gérer</a>
     </li>
     {% endfor %}
   </ul>
   {% else %}
-  <p>Aucun personnage pour l'instant.</p>
+  {{ empty_state("Aucun personnage", "Les personnages de vos joueurs apparaîtront ici.", "mask") }}
   {% endif %}
 </section>
 {% endblock %}

@@ -1,5 +1,5 @@
-<select name="main_article_id">
-  <option value="">Aucun</option>
+<select id="main_article_id" name="main_article_id">
+  <option value="">Aucune</option>
   {% for article in articles %}
   <option value="{{ article.wa_id }}" {% if article.wa_id == selected_main %}selected{% endif %}>{{ article.title }} · {{ article.template_type | template_label }}{% if not article.player_visible %} (invisible pour le joueur){% endif %}</option>
   {% endfor %}

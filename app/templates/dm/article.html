@@ -1,44 +1,56 @@
 {% extends "base.html" %}
-{% from "macros.html" import type_badge, visibility_badge %}
 {% block title %}{{ article.title }}{% endblock %}
 {% block content %}
-<p><a href="/mj/articles">← Tous les articles</a></p>
-<article class="card">
-  <h1>{{ article.title }}</h1>
-  <div class="badges">
-    {{ type_badge(article) }} {{ visibility_badge(article) }}
-    {% if article.state != "public" %}<span class="badge badge-warn">Privé</span>{% endif %}
-    {% if article.is_draft %}<span class="badge badge-warn">Brouillon</span>{% endif %}
-    {% if article.is_wip %}<span class="badge">En cours de rédaction</span>{% endif %}
-  </div>
-  {% if not article.player_visible and article.visibility_reason %}
-  <p class="alert alert-warn">Invisible pour les joueurs : {{ article.visibility_reason }}.</p>
-  {% endif %}
-  <dl class="meta">
-    <dt>Mis à jour sur World Anvil</dt><dd>{{ article.wa_updated_at | datetime_fr }}</dd>
-    <dt>Synchronisé</dt><dd>{{ article.synced_at | datetime_fr }}</dd>
-    {% if article.url and article.url.startswith("https://") %}<dt>Source</dt><dd><a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Ouvrir sur World Anvil</a></dd>{% endif %}
-    {% if characters %}<dt>Personnage(s)</dt><dd>{% for character in characters %}<a href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
-  </dl>
-  <div class="prose">{{ content_html }}</div>
-</article>
-{% if secrets %}
-<section class="card gm-section">
-  <h2>Secrets rattachés (MJ)</h2>
-  <ul>{% for secret in secrets %}<li>{{ secret }}</li>{% endfor %}</ul>
-</section>
+{% set section = article | section_of %}
+{% set crumbs = [("Accueil", "/mj"), (section.label, "/mj/articles?section=" ~ section.key), (article.title, "")] %}
+
+{% set pills = [] %}
+{% if article.removed_at %}
+{% set _ = pills.append(("Supprimée de World Anvil", "danger")) %}
+{% elif article.player_visible %}
+{% set _ = pills.append(("Partageable", "ok")) %}
+{% else %}
+{% set _ = pills.append(("Invisible pour les joueurs", "warn")) %}
 {% endif %}
-{% for label, value in extra_fields %}
-<section class="card gm-section">
-  <h2>{{ label }}</h2>
-  <div class="prose">{{ value }}</div>
-</section>
+{% if article.is_wip %}{% set _ = pills.append(("En rédaction", "muted")) %}{% endif %}
+
+{% set visibility %}{% if article.player_visible and not article.removed_at %}Partageable avec les joueurs{% else %}Invisible : {{ article.visibility_reason or "raison inconnue" }}{% endif %}{% endset %}
+{% set status %}{{ "Public" if article.state == "public" else "Privé" }}{% if article.is_draft %}, brouillon{% endif %}{% if article.is_wip %}, en rédaction{% endif %}{% endset %}
+{% set facts = [
+  ("Section", section.label),
+  ("Type", article.template_type | template_label),
+  ("Visibilité", visibility),
+  ("Statut sur World Anvil", status),
+  ("Mise à jour", article.wa_updated_at | datetime_fr),
+  ("Synchronisée", article.synced_at | datetime_fr),
+] %}
+{% if characters %}
+{% set played %}{% for character in characters %}<a href="/mj/personnages/{{ character.id }}">{{ character.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endset %}
+{% set _ = facts.append(("Personnage joué", played)) %}
+{% endif %}
+{% if article.url and article.url.startswith("https://") %}
+{% set source %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Ouvrir sur World Anvil</a>{% endset %}
+{% set _ = facts.append(("Source", source)) %}
+{% endif %}
+
+{% set gm_sections = [] %}
+{% if secrets %}
+{% set secret_list %}<ul>{% for secret in secrets %}<li>{{ secret }}</li>{% endfor %}</ul>{% endset %}
+{% set _ = gm_sections.append(("Secrets rattachés", secret_list)) %}
+{% endif %}
+{% for label, value in extra_fields %}{% set _ = gm_sections.append((label, value)) %}{% endfor %}
+
+{% set related = [] %}
+{% set seen = [] %}
+{% for item in linked + backlinks %}
+{% if item.wa_id not in seen and item.wa_id != article.wa_id %}
+{% set _ = seen.append(item.wa_id) %}
+{% set _ = related.append((item, "/mj/articles/" ~ item.wa_id)) %}
+{% endif %}
 {% endfor %}
-<section class="card">
-  <h2>Liens</h2>
-  <h3>Articles cités</h3>
-  {% if linked %}<ul>{% for item in linked %}<li><a href="/mj/articles/{{ item.wa_id }}">{{ item.title }}</a></li>{% endfor %}</ul>{% else %}<p class="muted">Aucun.</p>{% endif %}
-  <h3>Cité par</h3>
-  {% if backlinks %}<ul>{% for item in backlinks %}<li><a href="/mj/articles/{{ item.wa_id }}">{{ item.title }}</a></li>{% endfor %}</ul>{% else %}<p class="muted">Aucun.</p>{% endif %}
-</section>
+
+{% set notice = "Cette fiche a été supprimée de World Anvil ; elle reste consultable ici pour mémoire." if article.removed_at else "" %}
+{% set body_html = content_html %}
+{% set player_mode = False %}
+{% include "components/fiche.html" %}
 {% endblock %}

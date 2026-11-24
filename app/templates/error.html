@@ -1,9 +1,15 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import emblem, divider_ornament, ui %}
 {% block title %}{{ title }}{% endblock %}
-{% block content %}
-<section class="card narrow">
-  <h1>{{ title }}</h1>
-  <p>{{ message }}</p>
-  <p><a class="button" href="/">Retour à l'accueil</a></p>
-</section>
+{% block body %}
+<main id="contenu" class="screen">
+  <div class="screen__emblem" aria-hidden="true">{{ emblem("") }}</div>
+  <div class="screen__content screen__content--wide">
+    <p class="screen__code reveal" aria-hidden="true">{{ status_code }}</p>
+    <h1 class="screen__title screen__title--small reveal reveal--slow">{{ title }}</h1>
+    <div class="reveal reveal-delay-1">{{ divider_ornament() }}</div>
+    <p class="screen__tagline reveal reveal-delay-1">{{ message }}</p>
+    <p class="reveal reveal-delay-2 screen__actions"><a class="btn btn--primary" href="/">{{ ui("back") }}Retour à l'accueil</a></p>
+  </div>
+</main>
 {% endblock %}

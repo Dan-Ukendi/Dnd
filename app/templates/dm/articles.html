@@ -1,18 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Articles{% endblock %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import page_head, breadcrumb, skeleton_cards %}
+{% set section_key = request.query_params.get("section", "") %}
+{% set section = SECTIONS_BY_KEY.get(section_key) %}
+{% block title %}{{ section.label if section else "Archives" }}{% endblock %}
+{% block main_attrs %}{% if section %}data-section="{{ section.key }}"{% endif %}{% endblock %}
 {% block content %}
-<h1>Articles</h1>
-<form method="get" action="/mj/articles" class="filters" role="search"
+{{ breadcrumb([("Accueil", "/mj"), (section.label if section else "Toutes les archives", "")]) }}
+{% if section %}
+{{ page_head(section.label, eyebrow="Archives", lead=section.description) }}
+{% else %}
+{{ page_head("Toutes les archives", eyebrow="Archives", lead="Chaque fiche synchronisée depuis World Anvil, toutes sections confondues.") }}
+{% endif %}
+
+<form method="get" action="/mj/articles" class="toolbar reveal reveal-delay-1" role="search"
   hx-get="/mj/articles" hx-target="#article-results" hx-swap="outerHTML" hx-push-url="true"
-  hx-trigger="input delay:300ms, change, submit">
-  <input type="search" name="q" value="{{ q }}" placeholder="Rechercher dans le titre et le texte" aria-label="Recherche" maxlength="200">
-  <select name="type" aria-label="Type d'article">
-    <option value="">Tous les types</option>
-    {% for value, count in types %}
-    <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }} ({{ count }})</option>
-    {% endfor %}
-  </select>
-  <noscript><button type="submit" class="button">Filtrer</button></noscript>
+  hx-trigger="input delay:300ms, change, submit" hx-indicator="#search-zone">
+  {% if section %}<input type="hidden" name="section" value="{{ section.key }}">{% endif %}
+  <div class="search-field">
+    {{ ui("search") }}
+    <label class="visually-hidden" for="recherche">Rechercher</label>
+    <input id="recherche" type="search" name="q" value="{{ q }}" placeholder="Rechercher un nom, un lieu, un mot du texte…" maxlength="200" autocomplete="off">
+  </div>
+  <div>
+    <label class="visually-hidden" for="filtre-type">Type de fiche</label>
+    <select id="filtre-type" name="type">
+      <option value="">Tous les types</option>
+      {% for value in section_types(types, section_key, articles) %}
+      <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <noscript><button type="submit" class="btn">Filtrer</button></noscript>
 </form>
-{% include "dm/_article_results.html" %}
+
+<div id="search-zone" class="search-zone">
+  {{ skeleton_cards(6) }}
+  {% include "dm/_article_results.html" %}
+</div>
 {% endblock %}

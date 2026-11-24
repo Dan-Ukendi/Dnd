@@ -1,5 +1,6 @@
 {% set data = invitation if invitation is defined and invitation else {"player": player, "invitation_url": invitation_url, "ttl_hours": ttl_hours} %}
-<div class="alert alert-success invite">
+<div class="alert alert--success invite" role="status">
   <p>Lien d'invitation pour <strong>{{ data.player.display_name }}</strong>, valable {{ data.ttl_hours }} heures et utilisable une seule fois. Il ne sera plus affiché : transmettez-le maintenant.</p>
-  <input type="text" readonly value="{{ data.invitation_url }}" aria-label="Lien d'invitation" class="copy-field">
+  <label class="visually-hidden" for="invite-url-{{ data.player.id }}">Lien d'invitation</label>
+  <input id="invite-url-{{ data.player.id }}" type="text" readonly value="{{ data.invitation_url }}" class="copy-field">
 </div>
