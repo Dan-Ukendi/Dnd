@@ -599,3 +599,112 @@ class LoreEntry(Base):
 
     article: Mapped[WaArticle | None] = relationship(foreign_keys=[wa_article_id])
     event: Mapped[TimelineEvent | None] = relationship()
+
+
+PLACE_KINDS = (
+    "territoire",
+    "region",
+    "ville",
+    "quartier",
+    "batiment",
+    "terre",
+    "niveau",
+    "piece",
+    "lieu",
+)
+STRUCTURE_VISIBILITIES = ("mj", "joueurs")
+STRUCTURE_STATUSES = ("etabli", "a_valider")
+
+
+class Place(Base):
+    __tablename__ = "places"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('territoire', 'region', 'ville', 'quartier', 'batiment', 'terre', "
+            "'niveau', 'piece', 'lieu')",
+            name="ck_places_kind",
+        ),
+        CheckConstraint("parent_id IS NULL OR parent_id <> id", name="ck_places_parent"),
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_places_visibility"),
+        CheckConstraint("status IN ('etabli', 'a_valider')", name="ck_places_status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    kind: Mapped[str] = mapped_column(String(20))
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("places.id", ondelete="SET NULL"), index=True
+    )
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), unique=True
+    )
+    owner_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    location: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    source_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    source_anchor: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
+    status: Mapped[str] = mapped_column(String(10), default="a_valider", server_default="a_valider")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+class Position(Base):
+    __tablename__ = "positions"
+    __table_args__ = (
+        CheckConstraint(
+            "num_nonnulls(organisation_id, place_id) = 1", name="ck_positions_attachment"
+        ),
+        CheckConstraint("superior_id IS NULL OR superior_id <> id", name="ck_positions_superior"),
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_positions_visibility"),
+        CheckConstraint("status IN ('etabli', 'a_valider')", name="ck_positions_status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), unique=True)
+    organisation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), index=True
+    )
+    place_id: Mapped[int | None] = mapped_column(
+        ForeignKey("places.id", ondelete="CASCADE"), index=True
+    )
+    person_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    title: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    scope: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    superior_id: Mapped[int | None] = mapped_column(
+        ForeignKey("positions.id", ondelete="SET NULL"), index=True
+    )
+    site_id: Mapped[int | None] = mapped_column(
+        ForeignKey("places.id", ondelete="SET NULL"), index=True
+    )
+    is_head: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    is_group: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    in_hierarchy: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    source_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    source_anchor: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
+    status: Mapped[str] = mapped_column(String(10), default="a_valider", server_default="a_valider")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )

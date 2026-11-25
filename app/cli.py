@@ -25,6 +25,12 @@ from app.services.imports import (
     import_media,
     load_manifest,
 )
+from app.services.structure_import import (
+    StructureError,
+    import_structures,
+    load_structure_file,
+    structure_files,
+)
 from app.services.sync import SyncAlreadyRunningError, sync_world
 from app.worldanvil.client import WorldAnvilClient, WorldAnvilError
 
@@ -168,6 +174,25 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
     return _print_report(lines)
 
 
+def cmd_import_structures(args: argparse.Namespace) -> int:
+    files = structure_files(Path(path) for path in args.paths)
+    if not files:
+        logger.error("No .toml structure file found in %s", ", ".join(args.paths))
+        return 1
+    try:
+        documents = [(path.name, load_structure_file(path)) for path in files]
+    except StructureError as exc:
+        logger.error("%s", exc)
+        return 1
+    with get_session_factory()() as db:
+        status = _print_report(
+            import_structures(db, documents, dry_run=args.dry_run, prune=args.prune)
+        )
+    if args.dry_run:
+        print("Dry run: nothing was written")
+    return status
+
+
 def cmd_load_timeline(args: argparse.Namespace) -> int:
     with get_session_factory()() as db:
         try:
@@ -223,6 +248,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Also replace relations that the DM edited in the app",
     )
     dossiers.set_defaults(handler=cmd_import_dossiers)
+
+    structures = commands.add_parser(
+        "import-structures",
+        help="Import the places and positions of the Organisation and Monde sections",
+    )
+    structures.add_argument("paths", nargs="+", help="Folders or .toml files to import")
+    structures.add_argument(
+        "--dry-run", action="store_true", help="Check and report without writing anything"
+    )
+    structures.add_argument(
+        "--prune",
+        action="store_true",
+        help="Also delete the places and positions whose key is no longer in the files",
+    )
+    structures.set_defaults(handler=cmd_import_structures)
 
     timeline = commands.add_parser(
         "load-timeline", help="Insert the chronology events of the versioned dataset"
