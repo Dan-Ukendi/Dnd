@@ -282,43 +282,51 @@ usual 404, and never appears in lists, searches, filters, year groups or linked 
 
 ## Lore and artefacts
 
-The Lore section (`/mj/articles?section=lore`, `/joueur/articles?section=lore`) has two tabs, plus a
-third one for the other Lore fiches when there are any:
+The Lore home (`/mj/articles?section=lore`, `/joueur/articles?section=lore`) shows two halves side by
+side, stacked on narrow screens: **Légendes** on the left and **Artefacts** on the right (title, one
+line, count, preview), with a smaller full-width **Ouvrages** block below. Its header links to the
+**Frise chronologique** (`&vue=frise`) and to the **Autres fiches** of the Lore section (`&vue=fiches`);
+the DM also gets **Réglages** (`/mj/lore/reglages`).
 
-- **Frise**: a vertical timeline of Lore entries, sorted and grouped by the eras of the chronology
-  (same configuration as the *Chronologie*, names included), then a *Non daté* list. Chips filter by
-  element type (artefact, lieu, personnage, organisation, divinité, événement); the DM also gets an
-  *À vérifier* chip. A click opens the entry (`/mj/lore/<id>`, `/joueur/lore/<id>`).
-- **Artefacts**: the World Anvil articles of the *Item* template. Their fiche now shows only the
-  characteristics (one-line description, type, rarity, attunement, charges, recharge, constraint or
-  curse, current holder, location, status, mechanical properties and bonuses) and a *Lore associé*
-  block (title, date and link of each linked entry). The World Anvil text itself is no longer shown
-  on these fiches; the DM keeps the *Ouvrir sur World Anvil* link and `wa_articles.content` is kept
-  untouched.
+- **Légendes** (`&vue=legendes`): three levels, the first optional: a *regroupement* (for example
+  « Malvaar ») > a *récit* > its ordered *parts*. Chips filter by legend type, a search box matches the
+  title, and the list sorts chronologically or alphabetically (`&type=<id>`, `&q=`, `&tri=alpha`).
+  Legend types are rows of `lore_types` (Mythe, Conte, Légende, Histoire by default), edited on the
+  settings page, never hard-coded. A récit opens on `/…/lore/recits/<id>` with the list of its parts
+  and previous/next links (`/parties/<n>`). Its date is its own (year, range, era only, or nothing,
+  with *approximatif*) or, when empty, read from its parts and their chronology events.
+- **Ouvrages** (`&vue=ouvrages`, `/…/lore/ouvrages/<id>`): books found in the world, in-world
+  sources that may be wrong. Same reading model, with optional header sections of the article and
+  optional links to a legend and an artefact.
+- **Artefacts** (`&vue=artefacts`): a card grid (image, name, type, rarity) filtered by rarity or type
+  and searched by name. The fiche shows the characteristics, the characteristic sections and the
+  physical description, never a narrated history; the DM also sees the *Notes du MJ* sections.
+- **Frise chronologique**: an overview of the dated legends only, grouped by era.
 
-**Where the data lives.** Characteristics (`artefacts`) and Lore entries (`lore_entries`) are app
-tables, edited by the DM only; nothing is written to World Anvil. An entry has a title, an element
-type, a narrative text (World Anvil BBCode), an optional link to a fiche and an optional link to a
-chronology event, and a date: a year, a range, an era only, or nothing (*Non daté*), with an
-*approximatif* flag. An entry linked to an event reads its date from the event. Years before An 0 are
-negative; the global sort key orders entries by era first, so periods known only by their era sort
-correctly. The current holder comes from the dossier inventories (`character_items`); the manual
-field is used only when no inventory carries the item.
+**One source.** Parts and fiche sections are `lore_entries` rows that render their World Anvil
+section live (`source_article_id` + `source_section`: a heading, or a bold label paragraph, see
+`app/services/lore_sections.py`); the stored `text` is shown only when the section is missing.
+Secrets, *Pistes pour la suite* and *Événements de la session 1* never render outside DM notes.
+Grouping, order, types and links (`lore_groups`, `lore_stories`, `lore_types`, `artefacts`) belong to
+the app: the sync updates the World Anvil text and never touches them. A legend or a book points to
+its artefact (`artefact_id`) and a book to its legend (`legend_id`); the cards *Légende associée*,
+*Artefact associé* and *Ouvrage associé* are derived both ways from these single links.
 
-**Initial split and sync.** Migration 0010 splits the cached Item articles (`wa_articles`, no
-network): the *Fiche rapide* lines *Type*, *Autre(s) nom(s)* and *État*, the italic subtitle and the
-whole *Statistiques (D&D 5e)* block go to the fiche, verbatim; every other heading becomes a Lore
-entry linked to the artefact, verbatim. Unclear cases carry an *À vérifier* note (DM only; *Marquer
-vérifié* clears it) and are logged by the migration. Each sync applies the same pure split to new
-Item articles that have no fiche yet, with every entry marked *À vérifier*; an existing fiche is never
-overwritten. The rules for Le Gage d'Arès and Le Joug de Malvaar (MJ-only sections, dates, links to
-chronology events A1–A4) are in `app/services/artefact_split.py`.
+**Curation.** The sync never creates a Lore entry, a récit or an artefact. The DM adds a synced
+article with *Ajouter au Lore* on its fiche, as a Légende (one part per narrative section), an
+Artefact (characteristics, physical description and DM notes) or an Ouvrage; everything it creates is
+*MJ seulement* until the DM shares it. Migration 0015 builds the validated Lore from the entries of
+migration 0010 without deleting anything: the Joug history becomes the récit « Le Joug de Malvaar »
+(regroupement « Malvaar », 7 parts, parts keep their flags), the other entries of both artefacts move
+to their fiche (physical description, characteristics, DM notes), and it adds « L'Empire d'Ébène et
+les Échos », « La fondation de l'Héliopolis » and the book « Les Feuillets du Dompteur », all *MJ
+seulement*, with *À vérifier* notes.
 
-**Players.** A player sees an entry only if it is not *MJ seulement* and the element it is linked to
-is already accessible to them (a shared fiche, or a revealed chronology event); an entry linked to
-nothing stays with the DM. An entry dated by a chronology event the player cannot see appears in
-*Non daté*, without the event link. *À vérifier* notes and editing forms are never rendered for a
-player. On an artefact fiche a player sees as holders only their own characters.
+**Players.** A player sees a récit or a book only if it is not *MJ seulement* and its source article
+is accessible to them; a part also needs its own flag off; an artefact needs its flag off and its
+article accessible; a fiche section needs its flag off, and DM notes never reach players. A part dated
+by a chronology event the player cannot see shows no date and no event link. *À vérifier* notes and
+editing forms are never rendered for a player, and the DM routes answer 404 to players.
 
 ## Personnage tags
 
