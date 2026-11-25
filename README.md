@@ -92,9 +92,9 @@ default) that password is all players need. When it is on, a player who signs in
 
 Each played character's fiche has five tabs: **Fiche** (the World Anvil article), **Actions** (what the
 character can do on their combat turn), **Relations**, **Histoire** (backstory, then the important
-events session after session) and **Inventaire**. Only the DM and the character's own player see the
-last four tabs; another player who was shared the article
-only sees the Fiche.
+events session after session, with links to the character's adventure journal) and **Inventaire**.
+Only the DM and the character's own player see the last four tabs; another player who was shared the
+article only sees the Fiche.
 
 Dossiers are written as one TOML file per character (keep them out of git, e.g. in
 `source/dossiers/`) and imported with:
@@ -167,10 +167,31 @@ equipped = false                      # optional
 article = "Le Gage d'Arès"            # optional
 text = "Description..."
 gm_notes = "Ce que le joueur ignore"  # optional, shown to the DM only
+
+[[journal]]                           # the adventure journal, one entry per episode
+episode = 1                           # positive whole number, unique per character
+title = "L'amulette du marché noir"
+days = "Jours 1 et 2"                 # optional
+text = """
+Ce que le personnage a vécu, de son seul point de vue...
+"""
+encounters = ["[b]Jean-Charles[/b] : patron du Troll qui Rit."]   # optional lists of lines:
+items = ["Une licence de rang B."]                                # Rencontres, Objets et argent,
+quests = ["Déloger le troll de Sophie."]                          # Quêtes et engagements,
+leads = ["Où l'amulette a-t-elle été forgée ?"]                   # Pistes et questions
 ```
 
 `gm_notes` and the aliases follow the dossier rules: the aliases are shown to the DM and the
 character's player, `gm_notes` only to the DM (they are never part of a player's page).
+
+### Adventure journal
+
+Each `[[journal]]` entry is written from the character's own point of view. Players find their
+journal under **Mon journal** on the *Aventure* page (latest episode first); each episode opens on
+its own page (`/joueur/journal/<character id>/<episode>`) with the narrative and the four lists.
+The DM sees every character's journal on the DM *Aventure* page (`/mj/journal/...`) and in the
+Histoire tab of each character's fiche. A journal is never shown to another player, even one who
+was shared the character's article. Re-importing a file replaces that character's journal.
 
 ### Editing relations in the app
 
