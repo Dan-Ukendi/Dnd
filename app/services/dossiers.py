@@ -16,13 +16,14 @@ from app.models import (
     CharacterAction,
     CharacterEvent,
     CharacterItem,
+    CharacterJournalEntry,
     CharacterProfile,
     CharacterRelation,
     WaArticle,
     utcnow,
 )
 from app.services.media import find_article
-from app.worldanvil.bbcode import RenderContext, render_bbcode
+from app.worldanvil.bbcode import RenderContext, render_bbcode, to_plain_text
 
 RELATION_CATEGORIES: tuple[tuple[str, str], ...] = (
     ("famille", "Famille"),
@@ -84,8 +85,19 @@ COMBAT_FIELDS: tuple[tuple[str, str], ...] = (
     ("spell_save_dc", "DD des sorts"),
     ("spell_attack", "Attaque des sorts"),
 )
+JOURNAL_LISTS: tuple[tuple[str, str], ...] = (
+    ("encounters", "Rencontres"),
+    ("items", "Objets et argent"),
+    ("quests", "Quêtes et engagements"),
+    ("leads", "Pistes et questions"),
+)
 MAX_TEXT_LENGTH = 50_000
 MAX_CATEGORY_LENGTH = 40
+MAX_JOURNAL_LINE_LENGTH = 2_000
+MAX_JOURNAL_LINES = 100
+MAX_EXCERPT_LENGTH = 220
+PARAGRAPH_BREAK_RE = re.compile(r"\n\s*\n|\[/p\]")
+SINGLE_PARAGRAPH_RE = re.compile(r"^<p>((?:(?!</?p>).)*)</p>$", re.S)
 
 
 class DossierError(Exception):
@@ -141,6 +153,30 @@ class ItemView:
 
 
 @dataclass(frozen=True)
+class JournalListView:
+    key: str
+    label: str
+    lines: list[Markup]
+
+
+@dataclass(frozen=True)
+class JournalEntryView:
+    character_id: int
+    episode: int
+    title: str
+    days: str | None
+    html: Markup
+    lists: list[JournalListView]
+    excerpt: str
+
+
+@dataclass(frozen=True)
+class JournalShelf:
+    character: Character
+    entries: list[JournalEntryView]
+
+
+@dataclass(frozen=True)
 class Dossier:
     character: Character
     backstory: Markup
@@ -151,6 +187,7 @@ class Dossier:
     resources: list["ResourceView"] = field(default_factory=list)
     action_groups: list["ActionGroup"] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)
+    journal: list[JournalEntryView] = field(default_factory=list)
     source_file: str | None = None
     dm: bool = False
     relations_edited_at: datetime | None = None
@@ -346,6 +383,43 @@ def _aliases(data: dict[str, Any]) -> list[dict[str, str | None]]:
     return aliases
 
 
+def _journal_lines(entry: dict[str, Any], key: str) -> list[str]:
+    value = entry.get(key, [])
+    if not isinstance(value, list) or not all(isinstance(line, str) for line in value):
+        raise DossierError(f"journal '{key}' must be a list of text lines", key)
+    if len(value) > MAX_JOURNAL_LINES:
+        raise DossierError(f"journal '{key}' has too many lines", key)
+    lines = [" ".join(line.split()) for line in value]
+    if any(not line for line in lines):
+        raise DossierError(f"journal '{key}' has an empty line", key)
+    if any(len(line) > MAX_JOURNAL_LINE_LENGTH for line in lines):
+        raise DossierError(f"a journal '{key}' line is too long", key)
+    return lines
+
+
+def _journal(data: dict[str, Any]) -> list[CharacterJournalEntry]:
+    entries = []
+    seen: set[int] = set()
+    for entry in _entries(data, "journal"):
+        episode = entry.get("episode")
+        if not isinstance(episode, int) or isinstance(episode, bool) or episode < 1:
+            raise DossierError("journal 'episode' must be a positive whole number", "episode")
+        if episode in seen:
+            raise DossierError(f"journal episode {episode} is listed twice", "episode")
+        seen.add(episode)
+        lists = {key: _journal_lines(entry, key) for key, _ in JOURNAL_LISTS}
+        entries.append(
+            CharacterJournalEntry(
+                episode=episode,
+                title=_text(entry, "title", required=True),
+                days=_text(entry, "days", limit=100) or None,
+                text=_text(entry, "text", limit=MAX_TEXT_LENGTH),
+                lists={key: lines for key, lines in lists.items() if lines},
+            )
+        )
+    return sorted(entries, key=lambda item: item.episode)
+
+
 def format_alias(alias: dict[str, Any]) -> str:
     name = str(alias.get("name") or "")
     note = alias.get("note")
@@ -436,6 +510,7 @@ def import_dossier(
     combat = _combat(data)
     actions = _actions(data)
     aliases = _aliases(data)
+    journal = _journal(data)
 
     keep_relations = relations_locked(character) and not replace_relations
     if character.profile is None:
@@ -451,6 +526,9 @@ def import_dossier(
         character.profile.relations_edited_at = None
     character.items = items
     character.actions = actions
+    character.journal = []
+    db.flush()
+    character.journal = journal
     db.commit()
     return character
 
@@ -491,6 +569,53 @@ def load_dossier_file(path: Path) -> dict[str, Any]:
         return tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise DossierError(f"cannot read {path.name}: {exc}") from exc
+
+
+def _inline_html(text: str, context: RenderContext) -> Markup:
+    rendered = str(render_bbcode(text, context)).strip()
+    match = SINGLE_PARAGRAPH_RE.match(rendered)
+    return Markup(match.group(1) if match else rendered)  # noqa: S704
+
+
+def journal_entry_view(entry: CharacterJournalEntry, context: RenderContext) -> JournalEntryView:
+    stored = entry.lists or {}
+    lists = [
+        JournalListView(key, label, [_inline_html(line, context) for line in stored.get(key, [])])
+        for key, label in JOURNAL_LISTS
+        if stored.get(key)
+    ]
+    return JournalEntryView(
+        entry.character_id,
+        entry.episode,
+        entry.title,
+        entry.days,
+        render_bbcode(entry.text, context),
+        lists,
+        _excerpt(entry.text),
+    )
+
+
+def _excerpt(text: str) -> str:
+    first = next((part for part in PARAGRAPH_BREAK_RE.split(text) if part.strip()), "")
+    plain = " ".join(to_plain_text(first).split())
+    if len(plain) <= MAX_EXCERPT_LENGTH:
+        return plain
+    return plain[:MAX_EXCERPT_LENGTH].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+
+
+def journal_shelves(characters: list[Character], context: RenderContext) -> list[JournalShelf]:
+    return [
+        JournalShelf(
+            character,
+            [journal_entry_view(entry, context) for entry in reversed(character.journal)],
+        )
+        for character in characters
+        if character.journal
+    ]
+
+
+def find_journal_entry(character: Character, episode: int) -> CharacterJournalEntry | None:
+    return next((entry for entry in character.journal if entry.episode == episode), None)
 
 
 def _gm_html(notes: str, context: RenderContext, dm: bool) -> Markup | None:
@@ -591,6 +716,7 @@ def build_dossier(
         relation_groups=groups,
         items=items,
         aliases=[format_alias(alias) for alias in (profile.aliases if profile else None) or []],
+        journal=[journal_entry_view(entry, context) for entry in character.journal],
         source_file=profile.source_file if profile else None,
         dm=dm,
         relations_edited_at=profile.relations_edited_at if profile else None,

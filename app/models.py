@@ -192,6 +192,11 @@ class Character(Base):
         passive_deletes=True,
         order_by="CharacterAction.position",
     )
+    journal: Mapped[list["CharacterJournalEntry"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterJournalEntry.episode",
+    )
 
 
 class CharacterProfile(Base):
@@ -289,6 +294,24 @@ class CharacterAction(Base):
     uses: Mapped[str | None] = mapped_column(String(100))
     concentration: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     text: Mapped[str] = mapped_column(Text, default="", server_default="")
+
+
+class CharacterJournalEntry(Base):
+    __tablename__ = "character_journal_entries"
+    __table_args__ = (
+        UniqueConstraint("character_id", "episode", name="uq_character_journal_entries_episode"),
+        CheckConstraint("episode > 0", name="ck_character_journal_entries_episode"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), index=True
+    )
+    episode: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    days: Mapped[str | None] = mapped_column(String(100))
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    lists: Mapped[dict[str, list[str]]] = mapped_column(JSONB, default=dict, server_default="{}")
 
 
 class CharacterArticle(Base):

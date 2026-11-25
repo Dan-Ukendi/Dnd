@@ -156,7 +156,7 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
                     path.name,
                     f"-> {character.name}: {len(character.events)} events, "
                     f"{len(character.relations)} relations, {len(character.items)} items, "
-                    f"{len(character.actions)} actions",
+                    f"{len(character.actions)} actions, {len(character.journal)} journal entries",
                 )
             )
             if relations_locked(character):
