@@ -3479,6 +3479,16 @@ input[type="file"]:focus-visible {
   font-style: italic;
 }
 
+.journal-shelf__groups--named {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 0 1.25rem;
+}
+
+.journal-shelf__groups--named .journal-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .journal-shelf__name {
   margin: 1.5rem 0 0.75rem;
   color: var(--parchment);
