@@ -14,7 +14,7 @@ from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
 from app.config import get_settings
 from app.db import get_engine, ping
 from app.deps import ACCOUNT_SETUP_PATH, NotAuthenticatedError, PasswordChangeRequiredError
-from app.routes import auth, chronology, dm, lore, media, player
+from app.routes import auth, chronology, dm, lore, media, personnage, player
 from app.security import LoginRateLimiter, csrf_protect
 from app.services.media_processing import MAX_UPLOAD_BYTES
 from app.templating import STATIC_DIR, is_htmx, render
@@ -211,6 +211,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(chronology.dm_router)
     app.include_router(lore.dm_router)
+    app.include_router(personnage.dm_router)
     app.include_router(dm.router)
     app.include_router(chronology.player_router)
     app.include_router(lore.player_router)

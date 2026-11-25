@@ -4,6 +4,7 @@
   hx-get="/mj/articles" hx-target="#article-results" hx-swap="outerHTML" hx-push-url="true"
   hx-trigger="input delay:300ms, change, submit" hx-indicator="#search-zone">
   {% if section %}<input type="hidden" name="section" value="{{ section.key }}">{% endif %}
+  {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
   <div class="search-field">
     {{ ui("search") }}
     <label class="visually-hidden" for="recherche">Rechercher</label>

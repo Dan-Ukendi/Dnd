@@ -4146,3 +4146,294 @@ input[type="file"]:focus-visible {
   align-self: center;
   color: var(--gold);
 }
+
+/* Personnage: tag badges, tiles and tag bar */
+
+.pill--lore,
+.tag-tile--lore,
+.tag-chip--lore {
+  --tag: var(--section-lore);
+  --tag-text: var(--section-lore-text);
+}
+
+.pill--character,
+.tag-tile--character,
+.tag-chip--character {
+  --tag: var(--section-personnage);
+  --tag-text: var(--section-personnage-text);
+}
+
+.pill--encounter,
+.tag-tile--encounter,
+.tag-chip--encounter {
+  --tag: var(--section-monde);
+  --tag-text: var(--section-monde-text);
+}
+
+.pill--lien,
+.tag-tile--liens,
+.tag-tile--group,
+.tag-chip--liens {
+  --tag: var(--gold);
+  --tag-text: var(--gold);
+}
+
+.pill--lore,
+.pill--character,
+.pill--encounter,
+.pill--lien {
+  border-color: color-mix(in srgb, var(--tag) 60%, transparent);
+  background: color-mix(in srgb, var(--tag) 16%, transparent);
+  color: var(--tag-text);
+}
+
+.pill--lien {
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+.tag-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+}
+
+.tag-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-tile {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.1rem 0.75rem;
+  height: 100%;
+  padding: clamp(1.25rem, 3vw, 1.85rem);
+  overflow: hidden;
+  border: 1px solid var(--gold-hair);
+  border-radius: var(--radius);
+  background:
+    var(--corner-tl) left 8px top 8px / 22px no-repeat,
+    var(--corner-br) right 8px bottom 8px / 22px no-repeat,
+    radial-gradient(ellipse 90% 110% at 0% 0%, color-mix(in srgb, var(--tag) 20%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--ebony-2), var(--ebony-1));
+  color: var(--parchment);
+  text-decoration: none;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.tag-tile::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--tag), transparent);
+  opacity: 0.7;
+  content: "";
+}
+
+.tag-tile:hover,
+.tag-tile:focus-visible {
+  border-color: var(--gold-line);
+  color: var(--parchment);
+  box-shadow: var(--shadow-lift), var(--glow-gold);
+  transform: translateY(-3px);
+}
+
+.tag-tile.is-empty {
+  background:
+    var(--corner-tl) left 8px top 8px / 22px no-repeat,
+    var(--corner-br) right 8px bottom 8px / 22px no-repeat,
+    linear-gradient(180deg, var(--ebony-1), var(--ebony-0));
+  box-shadow: none;
+}
+
+.tag-faces {
+  display: flex;
+  grid-column: 1 / -1;
+  min-height: 4.25rem;
+  padding-left: 0.6rem;
+}
+
+.tag-face {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  margin-left: -0.6rem;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--tag) 70%, var(--ebony-0));
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--tag) 30%, var(--ebony-2)), var(--ebony-1));
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.9);
+  color: var(--tag-text);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0;
+}
+
+.tag-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.tag-faces--empty {
+  align-items: center;
+  color: color-mix(in srgb, var(--tag-text) 55%, transparent);
+}
+
+.tag-faces--empty svg {
+  width: 3.25rem;
+  height: 3.25rem;
+  stroke-width: 1.1;
+}
+
+.tag-tile__body {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+
+.tag-tile__title {
+  color: var(--parchment);
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+  letter-spacing: var(--tracking-display);
+}
+
+.tag-tile__desc {
+  color: var(--parchment-dim);
+  line-height: 1.45;
+}
+
+.tag-tile__count {
+  color: var(--tag-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-small);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tag-tile.is-empty .tag-tile__count {
+  color: var(--parchment-faint);
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.tag-tile__chevron {
+  align-self: center;
+  color: var(--tag-text);
+  transition: transform var(--duration) var(--ease);
+}
+
+.tag-tile:hover .tag-tile__chevron {
+  transform: translateX(3px);
+}
+
+.tag-chip::before {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--tag);
+  content: "";
+}
+
+.tag-bar--pj {
+  margin-top: -0.5rem;
+}
+
+.card--stub {
+  cursor: default;
+}
+
+a.card--stub {
+  cursor: pointer;
+}
+
+div.card--stub:hover {
+  border-color: var(--gold-hair);
+  box-shadow: var(--shadow-soft);
+  transform: none;
+}
+
+.placeholder--initial span {
+  position: relative;
+  color: var(--accent-text);
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  letter-spacing: 0;
+}
+
+.person-tags {
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--gold-hair);
+}
+
+.person-tags__title {
+  color: var(--gold-bright);
+  font-size: 1.05rem;
+  letter-spacing: var(--tracking-display);
+}
+
+.person-tags__links {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.person-tags__links legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+  color: var(--parchment-dim);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.person-tags__links[disabled] {
+  opacity: 0.6;
+}
+
+.person-tags .check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  min-height: 2.5rem;
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.person-tags .check input {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--gold);
+}
+
+.person-tags .check small {
+  display: block;
+}

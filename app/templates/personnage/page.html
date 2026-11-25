@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import section_icon, ui %}
+{% from "components/ui.html" import page_head, breadcrumb, empty_state, map_banner, person_card, faces %}
+{% set section = SECTIONS_BY_KEY["personnage"] %}
+{% set section_key = section.key %}
+{% set section_href = base ~ "/articles?section=personnage" %}
+{% set current = tiles | selectattr("key", "equalto", tag) | first if tag else none %}
+{% block title %}{{ current.label ~ " · " ~ section.label if current else section.label }}{% endblock %}
+{% block main_attrs %}data-section="personnage"{% endblock %}
+{% block content %}
+{% set crumbs = [("Accueil", "/mj")] if dm else [("Mon personnage", "/joueur")] %}
+{% if current %}
+{% set _ = crumbs.append((section.label, section_href)) %}
+{% if group is defined %}
+{% set _ = crumbs.append((current.label, current.href)) %}
+{% set _ = crumbs.append((group.character.name, "")) %}
+{% else %}
+{% set _ = crumbs.append((current.label, "")) %}
+{% endif %}
+{% else %}
+{% set _ = crumbs.append((section.label, "")) %}
+{% endif %}
+{{ breadcrumb(crumbs) }}
+{% if dm %}
+{{ page_head(current.label if current else section.label, eyebrow="Archives · " ~ section.label if current else "Archives", lead=current.description if current else "Les personnes du monde, rangées par tag : Lore, Character, Liens et Rencontre campagne.") }}
+{% else %}
+{{ page_head(current.label if current else section.label, eyebrow="Archives partagées · " ~ section.label if current else "Archives partagées", lead=current.description if current else "Votre personnage et les personnes liées à son histoire.") }}
+{% endif %}
+{% if banner and not current %}{{ map_banner(banner) }}{% endif %}
+
+{% if view == "tiles" %}
+<nav class="tag-tiles stagger" aria-label="Tags de la section {{ section.label }}">
+  {% for tile in tiles %}
+  <a class="tag-tile tag-tile--{{ tile.key }}{% if not tile.count %} is-empty{% endif %}" href="{{ tile.href }}">
+    {% if tile.previews %}{{ faces(tile.previews) }}{% else %}<span class="tag-faces tag-faces--empty" aria-hidden="true">{{ section_icon("personnage") }}</span>{% endif %}
+    <span class="tag-tile__body">
+      <span class="tag-tile__title">{{ tile.label }}</span>
+      <span class="tag-tile__desc">{{ tile.description }}</span>
+      <span class="tag-tile__count">{% if tile.count %}{{ tile.count }} fiche{{ "s" if tile.count > 1 }}{% else %}Aucune fiche pour l'instant{% endif %}</span>
+    </span>
+    <span class="tag-tile__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+  </a>
+  {% endfor %}
+</nav>
+{% else %}
+<nav class="lore-filters tag-bar reveal reveal-delay-1" aria-label="Changer de tag">
+  {% for tile in tiles %}
+  <a class="lore-filter tag-chip tag-chip--{{ tile.key }}" href="{{ tile.href }}"{% if tile.key == tag %} aria-current="true"{% endif %}>{{ tile.label }}<span>{{ tile.count }}</span></a>
+  {% endfor %}
+</nav>
+
+{% if view == "list" and dm %}
+{% include "dm/_article_search.html" %}
+{% elif view == "list" %}
+{% if entries %}
+<ul class="card-grid stagger">
+  {% for entry in entries %}
+  <li>{{ person_card(entry, True) }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+{{ empty_state("Aucun personnage", "Votre MJ ne vous a pas encore confié la fiche de votre personnage.", "mask") }}
+{% endif %}
+{% elif view == "liens" %}
+{% if groups %}
+<ul class="tag-groups stagger">
+  {% for item in groups %}
+  <li>
+    <a class="tag-tile tag-tile--group{% if not item.entries %} is-empty{% endif %}" href="{{ item.href }}">
+      {% if item.previews %}{{ faces(item.previews) }}{% else %}<span class="tag-faces tag-faces--empty" aria-hidden="true">{{ ui("mask") }}</span>{% endif %}
+      <span class="tag-tile__body">
+        <span class="tag-tile__title">{{ item.character.name }}</span>
+        <span class="tag-tile__count">{% if item.entries %}{{ item.entries | length }} lien{{ "s" if item.entries | length > 1 }}{% else %}Aucun lien pour l'instant{% endif %}</span>
+      </span>
+      <span class="tag-tile__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% elif dm %}
+{{ empty_state("Aucun personnage joué", "Créez d'abord un personnage joué : ses relations de dossier formeront ses liens.", "mask") }}
+{% else %}
+{{ empty_state("Aucun personnage", "Votre MJ ne vous a pas encore confié de personnage.", "mask") }}
+{% endif %}
+{% elif view == "lien" %}
+{% if groups | length > 1 %}
+<nav class="lore-filters tag-bar tag-bar--pj" aria-label="Changer de personnage joué">
+  {% for item in groups %}
+  <a class="lore-filter" href="{{ item.href }}"{% if item.character.id == group.character.id %} aria-current="true"{% endif %}>{{ item.character.name }}<span>{{ item.entries | length }}</span></a>
+  {% endfor %}
+</nav>
+{% endif %}
+<p class="result-count">{{ group.entries | length }} lien{{ "s" if group.entries | length != 1 }} pour {{ group.character.name }}</p>
+{% if group.entries %}
+<ul class="card-grid stagger">
+  {% for entry in group.entries %}
+  <li>{{ person_card(entry, not dm) }}</li>
+  {% endfor %}
+</ul>
+{% elif dm %}
+{{ empty_state("Aucun lien", "Aucune relation du dossier de ce personnage ne pointe vers une fiche de la section Personnage. Cochez ce personnage sur une fiche pour l'y rattacher.", "mask") }}
+{% else %}
+{{ empty_state("Aucun lien", "Aucune personne n'est encore rattachée à l'histoire de votre personnage.", "mask") }}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

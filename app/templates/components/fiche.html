@@ -7,6 +7,7 @@
 {% set map = article | article_media("map") %}
 {% set sheet = article | article_media("sheet") %}
 {% set image = article | world_anvil_image(player_mode) %}
+{% set hero_badges = person_badges.get(article.wa_id, []) if person_badges is defined and section.key == "personnage" else none %}
 {% set tagline = (artefact_fiche.artefact.tagline if artefact_fiche.artefact else "") if artefact_mode else article | tagline %}
 <div data-section="{{ section.key }}">
   {{ breadcrumb(crumbs) }}
@@ -30,7 +31,11 @@
       <h1 class="fiche-hero__title">{{ article.title }}</h1>
       {% if tagline %}<p class="fiche-hero__tagline">{{ tagline }}</p>{% endif %}
       <div class="fiche-hero__pills">
+        {% if hero_badges is not none %}
+        {% for badge in hero_badges %}<span class="pill pill--{{ badge.kind }}">{{ badge.label }}</span>{% else %}<span class="pill">{{ article.template_type | template_label }}</span>{% endfor %}
+        {% else %}
         <span class="pill">{{ article.template_type | template_label }}</span>
+        {% endif %}
         {% for label, kind in pills %}<span class="pill pill--{{ kind }}">{{ label }}</span>{% endfor %}
       </div>
     </div>
@@ -53,6 +58,7 @@
           <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
           {% endfor %}
         </dl>
+        {% if person_tags is defined and person_tags %}{% include "dm/_person_tags.html" %}{% endif %}
       </div>
     </details>
 
@@ -120,7 +126,7 @@
     </div>
     <ul class="card-grid stagger">
       {% for item, href in related %}
-      <li>{{ card(item, href, player_mode) }}</li>
+      <li>{{ card(item, href, player_mode, person_badges.get(item.wa_id, []) if person_badges is defined else none) }}</li>
       {% endfor %}
     </ul>
   </section>

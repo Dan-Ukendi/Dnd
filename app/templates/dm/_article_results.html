@@ -8,11 +8,13 @@
   {% if visible_articles %}
   <ul class="card-grid stagger">
     {% for article in visible_articles %}
-    <li>{{ card(article, "/mj/articles/" ~ article.wa_id) }}</li>
+    <li>{{ card(article, "/mj/articles/" ~ article.wa_id, False, person_badges.get(article.wa_id, []) if person_badges is defined else none) }}</li>
     {% endfor %}
   </ul>
   {% elif q or selected_type %}
   {{ empty_state("Rien dans les archives", "Aucune fiche ne correspond à cette recherche. Essayez un autre mot ou retirez le filtre.", "search") }}
+  {% elif tag %}
+  {{ empty_state("Aucune fiche pour ce tag", "Aucune fiche de la section Personnage ne porte ce tag pour l'instant. Changez le tag d'une fiche depuis sa page.", "mask") }}
   {% else %}
   {{ empty_state("Section encore vide", "Aucune fiche n'est rangée ici pour l'instant. Synchronisez World Anvil ou ajustez le classement des sections.") }}
   {% endif %}

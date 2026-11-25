@@ -39,7 +39,8 @@
         {% else %}
         <a href="/joueur" {% if path == "/joueur" %}aria-current="page"{% endif %}>{{ ui("mask") }}Mon personnage</a>
         <a href="/joueur/articles?section={{ ADVENTURE_KEY }}" {% if path == "/joueur/articles" and request.query_params.get("section") == ADVENTURE_KEY %}aria-current="page"{% endif %}>{{ ui("compass") }}{{ SECTIONS_BY_KEY[ADVENTURE_KEY].label }}</a>
-        <a href="/joueur/articles" {% if path.startswith("/joueur/articles") and request.query_params.get("section") != ADVENTURE_KEY %}aria-current="page"{% endif %}>{{ ui("scroll") }}Mes fiches</a>
+        <a href="/joueur/articles?section=personnage" {% if path == "/joueur/articles" and request.query_params.get("section") == "personnage" %}aria-current="page"{% endif %}>{{ ui("users") }}{{ SECTIONS_BY_KEY["personnage"].label }}</a>
+        <a href="/joueur/articles" {% if path.startswith("/joueur/articles") and request.query_params.get("section") not in (ADVENTURE_KEY, "personnage") %}aria-current="page"{% endif %}>{{ ui("scroll") }}Mes fiches</a>
         <a href="/joueur/chronologie" {% if path.startswith("/joueur/chronologie") %}aria-current="page"{% endif %}>{{ ui("hourglass") }}Chronologie</a>
         {% if player_password_change_enabled() %}<a href="/joueur/mot-de-passe" {% if path == "/joueur/mot-de-passe" %}aria-current="page"{% endif %}>{{ ui("key") }}Mot de passe</a>{% endif %}
         {% endif %}

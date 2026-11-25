@@ -286,6 +286,35 @@ nothing stays with the DM. An entry dated by a chronology event the player canno
 *Non daté*, without the event link. *À vérifier* notes and editing forms are never rendered for a
 player. On an artefact fiche a player sees as holders only their own characters.
 
+## Personnage tags
+
+Each fiche of the Personnage section carries one tag: **Lore** (people tied to the history of the
+world or very well known), **Character** (the fiches of the played characters) or **Rencontre
+campagne** (people met during the campaign). The tag lives in the app table `article_categories`
+(keyed by the World Anvil article id); sync never changes it. A new person article gets *Rencontre
+campagne* on its first sync, and the row is kept if the article is later removed. Migration 0011 tagged
+the main articles of the active players' characters as *Character* and every other person fiche as
+*Rencontre campagne*.
+
+**Liens** are the existing dossier relations that point to a Personnage fiche (one source of truth):
+a person appears under *Liens* for each played character whose dossier links to them, with a *Lien
+<character>* badge, on top of their own tag. A relation to a *Character* fiche is left out of *Liens*
+but kept in the dossier.
+
+**DM.** `/mj/articles?section=personnage` opens on four tiles (Lore, Character, Liens, Rencontre
+campagne) with their counts and up to four portraits. A tile opens the card list of that tag
+(`&tag=lore|character|encounter`, with search) or, for *Liens*, the list of played characters and then
+the people linked to the chosen one (`&tag=liens&pj=<character id>`); a tag bar switches tags. On a
+person fiche the *Tags* form sets the tag and the linked played characters: ticking a character adds a
+minimal relation (*Autres*, named after the fiche) to their dossier, unticking removes it only while
+it is still empty; a relation with a role, status, text or DM notes stays and its box is locked (edit
+it in the dossier). A *Character* fiche has no links; its relations are kept.
+
+**Players.** `/joueur/articles?section=personnage` shows two tiles only: *Character* (their own
+character) and *Liens* (their own character's links). A linked person whose fiche is not shared with
+the player shows as a name (and the relation's role) without link, portrait or content, as in the
+dossier. Players never see the other tags, nor the links of other characters.
+
 ## Useful commands
 
 | Command | Purpose |

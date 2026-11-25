@@ -1,0 +1,28 @@
+<form method="post" action="/mj/articles/{{ article.wa_id }}/tags" class="form person-tags" aria-labelledby="tags-titre">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2 class="person-tags__title" id="tags-titre">Tags</h2>
+  <div class="field">
+    <label for="tag-categorie">Catégorie</label>
+    <select id="tag-categorie" name="category">
+      {% for value, label in person_tags.options %}
+      <option value="{{ value }}" {% if value == person_tags.category %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <fieldset class="person-tags__links"{% if not person_tags.links_enabled %} disabled{% endif %}>
+    <legend>Liens avec les personnages joués</legend>
+    {% if not person_tags.links_enabled %}
+    <p class="field__hint">Une fiche Character n'a pas de lien. Ses relations de dossier restent intactes.</p>
+    {% elif not person_tags.choices %}
+    <p class="field__hint">Aucun personnage joué pour l'instant.</p>
+    {% endif %}
+    {% for choice in person_tags.choices %}
+    <label class="check">
+      <input type="checkbox" name="pj" value="{{ choice.character.id }}"{% if choice.checked %} checked{% endif %}{% if choice.locked %} disabled{% endif %}>
+      <span>{{ choice.character.name }}{% if choice.locked %} <small class="field__hint">à modifier dans le dossier</small>{% endif %}</span>
+    </label>
+    {% endfor %}
+    {% if person_tags.links_enabled and person_tags.choices %}<p class="field__hint">Cocher ajoute une relation « Autres » au dossier du personnage joué ; décocher retire une relation encore vide.</p>{% endif %}
+  </fieldset>
+  <button type="submit" class="btn btn--primary">Enregistrer les tags</button>
+</form>

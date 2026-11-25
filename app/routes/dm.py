@@ -26,11 +26,13 @@ from app.models import (
     WaArticle,
 )
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
+from app.routes.personnage import PERSON_SECTION, dm_page_context
 from app.sections import ADVENTURE_KEY, section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
 from app.services import dossiers as dossier_service
 from app.services import media as media_service
+from app.services import person_tags as person_service
 from app.services.access import dm_render_context
 from app.services.accounts import (
     AccountError,
@@ -162,17 +164,31 @@ def article_list(
     dm: CurrentDm,
     q: Annotated[str, Query(max_length=200)] = "",
     type: Annotated[str, Query(max_length=50)] = "",
+    section: Annotated[str, Query(max_length=30)] = "",
+    tag: Annotated[str, Query(max_length=20)] = "",
+    pj: Annotated[str, Query(max_length=12)] = "",
 ) -> Response:
+    articles = article_service.search_articles(db, query=q, template_type=type)
+    tag = tag if section == PERSON_SECTION else ""
+    if tag in person_service.CATEGORY_LABELS:
+        articles = person_service.dm_articles_in(db, articles, tag)
     context = {
-        "articles": article_service.search_articles(db, query=q, template_type=type),
+        "articles": articles,
         "q": q,
         "selected_type": type,
         "types": article_service.template_type_counts(db),
+        "tag": tag,
+        "person_badges": person_service.dm_badge_index(db),
     }
     if is_htmx(request) and request.headers.get("hx-target") == "article-results":
         return render(request, "dm/_article_results.html", context)
-    section = request.query_params.get("section", "")
     banner = media_service.section_banner(db, section)
+    if section == PERSON_SECTION:
+        return render(
+            request,
+            "personnage/page.html",
+            {**context, "banner": banner, **dm_page_context(db, tag, pj)},
+        )
     if section == LORE_SECTION:
         return render(
             request,
@@ -243,6 +259,8 @@ def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -
             "relation_categories": dossier_service.RELATION_CATEGORIES,
             "relation_articles": article_service.all_available_articles(db) if characters else [],
             "artefact_fiche": artefact_fiche(db, article, render_context, dm=True),
+            "person_badges": person_service.dm_badge_index(db),
+            "person_tags": person_service.fiche_tags(db, article),
         },
     )
 

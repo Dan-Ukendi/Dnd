@@ -7,7 +7,11 @@
 </div>
 {%- endmacro %}
 
-{% macro card(article, href, player_mode=False) -%}
+{% macro badge_pills(badges, fallback) -%}
+{% for badge in badges %}<span class="pill pill--{{ badge.kind }}">{{ badge.label }}</span>{% else %}<span class="pill">{{ fallback }}</span>{% endfor %}
+{%- endmacro %}
+
+{% macro card(article, href, player_mode=False, badges=none) -%}
 {% set section = article | section_of %}
 {% set image = article | article_image(player_mode) %}
 {% set tagline = article | tagline %}
@@ -24,12 +28,42 @@
     <h3 class="card__title">{{ article.title }}</h3>
     <p class="card__subtitle">{{ tagline or (article.template_type | template_label) }}</p>
     <div class="card__meta">
+      {% if badges is not none and section.key == "personnage" %}
+      {{ badge_pills(badges, section.label) }}
+      {% else %}
       <span class="pill">{{ section.label }}</span>
       {% if tagline %}<span class="pill pill--muted">{{ article.template_type | template_label }}</span>{% endif %}
+      {% endif %}
       {% if caller is defined %}{{ caller() }}{% endif %}
     </div>
   </div>
 </a>
+{%- endmacro %}
+
+{% macro person_card(entry, player_mode=False) -%}
+{% if entry.article %}
+{{ card(entry.article, entry.href, player_mode, entry.badges) }}
+{% else %}
+{% set tag_name = "a" if entry.href else "div" %}
+<{{ tag_name }} class="card card--stub"{% if entry.href %} href="{{ entry.href }}"{% endif %} data-section="personnage">
+  <div class="card__media">
+    <div class="placeholder placeholder--initial" aria-hidden="true"><span>{{ (entry.name | trim)[:1] | upper }}</span></div>
+  </div>
+  <div class="card__body">
+    <h3 class="card__title">{{ entry.name }}</h3>
+    {% if entry.role %}<p class="card__subtitle">{{ entry.role }}</p>{% endif %}
+    <div class="card__meta">{{ badge_pills(entry.badges, "Personnage") }}</div>
+  </div>
+</{{ tag_name }}>
+{% endif %}
+{%- endmacro %}
+
+{% macro faces(previews) -%}
+<span class="tag-faces" aria-hidden="true">
+  {% for preview in previews %}
+  <span class="tag-face">{% if preview.image %}<img src="{{ preview.image }}" alt="" loading="lazy" decoding="async">{% else %}{{ preview.initial }}{% endif %}</span>
+  {% endfor %}
+</span>
 {%- endmacro %}
 
 {% macro breadcrumb(items) -%}

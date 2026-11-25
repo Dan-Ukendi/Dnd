@@ -1,13 +1,14 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse, Response
 
 from app.config import get_settings
 from app.deps import CurrentPlayer, DbSession, log_in
 from app.models import Character, WaArticle
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
+from app.routes.personnage import PERSON_SECTION, player_page_context
 from app.sections import ADVENTURE_KEY
 from app.services.access import (
     accessible_article_ids,
@@ -25,6 +26,7 @@ from app.services.dossiers import (
     journal_shelves,
 )
 from app.services.media import player_section_banner
+from app.services.person_tags import player_badge_index
 from app.templating import flash, render
 from app.worldanvil.bbcode import render_bbcode
 
@@ -52,14 +54,34 @@ def my_character(request: Request, db: DbSession, player: CurrentPlayer) -> Resp
     return render(
         request,
         "player/home.html",
-        {"sheets": sheets, "shared_count": len(player_shared_articles(db, player))},
+        {
+            "sheets": sheets,
+            "shared_count": len(player_shared_articles(db, player)),
+            "person_badges": player_badge_index(db, player),
+        },
     )
 
 
 @router.get("/articles")
-def shared_articles(request: Request, db: DbSession, player: CurrentPlayer) -> Response:
-    section = request.query_params.get("section", "")
+def shared_articles(
+    request: Request,
+    db: DbSession,
+    player: CurrentPlayer,
+    section: Annotated[str, Query(max_length=30)] = "",
+    tag: Annotated[str, Query(max_length=20)] = "",
+    pj: Annotated[str, Query(max_length=12)] = "",
+) -> Response:
     banner = player_section_banner(db, player, section)
+    if section == PERSON_SECTION:
+        return render(
+            request,
+            "personnage/page.html",
+            {
+                "banner": banner,
+                "person_badges": player_badge_index(db, player),
+                **player_page_context(db, player, tag, pj),
+            },
+        )
     if section == LORE_SECTION:
         return render(
             request,
@@ -74,7 +96,12 @@ def shared_articles(request: Request, db: DbSession, player: CurrentPlayer) -> R
     return render(
         request,
         "player/articles.html",
-        {"articles": player_shared_articles(db, player), "banner": banner, "journals": journals},
+        {
+            "articles": player_shared_articles(db, player),
+            "banner": banner,
+            "journals": journals,
+            "person_badges": player_badge_index(db, player),
+        },
     )
 
 
@@ -135,6 +162,7 @@ def shared_article(request: Request, wa_id: str, db: DbSession, player: CurrentP
             "linked": linked,
             "dossier": dossier,
             "artefact_fiche": artefact_fiche(db, article, render_context, dm=False, player=player),
+            "person_badges": player_badge_index(db, player),
         },
     )
 
