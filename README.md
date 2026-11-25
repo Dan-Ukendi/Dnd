@@ -226,7 +226,7 @@ default names, subtitles and colours are defined in `app/chronology.py`.
 
 **Where the data lives.** Titles, dates, places, summaries, importance, origin and "Lié à" links are
 written on World Anvil, in the private timeline "Chronologie de Valhar Molaris" (one history per
-event; its content ends with a `Code :` line such as `E-014`). The app only reads World Anvil:
+event; its content ends with a `Code :` line such as `B3`). The app only reads World Anvil:
 every sync (*Synchroniser* or `python -m app.cli sync`) refreshes these fields, matching events by
 history id then by code, adds new histories as hidden and *à valider*, and hides events removed
 from the timeline. Everything else belongs to the app and is never overwritten by a sync: status

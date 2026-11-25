@@ -1,5 +1,6 @@
 import html
 import json
+import re
 from dataclasses import dataclass
 
 import pytest
@@ -47,7 +48,7 @@ def event_row(code: str, title: str, start: int, end: int | None = None, **extra
         "end_year": end,
         "importance": "majeur",
         "origin": "canon",
-        "place": "Aterna",
+        "place": "Ancien empire",
         "summary": f"Résumé de {title}.",
         "linked": [],
         **extra,
@@ -56,7 +57,7 @@ def event_row(code: str, title: str, start: int, end: int | None = None, **extra
 
 SMALL_DATASET = [
     event_row("B1", "Création de l'Empire", 0, visibility="joueurs", status="etabli"),
-    event_row("H1", "Complot des Patres", 120, linked=["B1"]),
+    event_row("H1", "Complot des Ombres", 120, linked=["B1"]),
     event_row("B7", "Révolte des Échos", 749, visibility="joueurs", linked=["H1"]),
     event_row(
         "S1",
@@ -139,17 +140,20 @@ def test_event_validation_accepts_string_years() -> None:
 
 def test_dataset_is_coherent() -> None:
     events = load_dataset()
-    assert len(events) == 109
+    assert len(events) == 56
     codes = {event.code for event in events}
-    assert len(codes) == 109
+    assert len(codes) == 56
+    assert not any(re.fullmatch(r"E-\d+", code) for code in codes)
     for event in events:
-        assert -1237 <= event.start_year <= 987, event.code
+        assert -523 <= event.start_year <= 987, event.code
         assert event.end_year is None or event.start_year <= event.end_year <= 987, event.code
         assert set(event.linked) <= codes, event.code
         assert event.wa_history_id, event.code
-    assert len({event.wa_history_id for event in events}) == 109
+    assert len({event.wa_history_id for event in events}) == 56
+    assert next(event for event in events if event.code == "B8").linked == ("B7",)
     raw = json.loads(DATASET_PATH.read_text(encoding="utf-8"))
-    assert [row["order"] for row in raw] == list(range(1, 110))
+    orders = [row["order"] for row in raw]
+    assert orders == sorted(set(orders))
     chronicle = [event for event in events if event.chronicle]
     assert {event.code for event in chronicle} == {f"S{number}" for number in range(1, 21)}
     assert all(event.session == 1 and event.day in ("J1", "J2") for event in chronicle)
@@ -157,13 +161,13 @@ def test_dataset_is_coherent() -> None:
 
 def test_initial_load_creates_every_event_and_is_idempotent(db: Session) -> None:
     first = load_seed(db)
-    assert (first.created, first.updated) == (109, 0)
-    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 109
+    assert (first.created, first.updated) == (56, 0)
+    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 56
     expected_links = sum(len(event.linked) for event in load_dataset())
     assert db.scalar(select(func.count()).select_from(TimelineEventLink)) == expected_links
     second = load_seed(db)
-    assert (second.created, second.updated, second.unchanged) == (0, 0, 109)
-    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 109
+    assert (second.created, second.updated, second.unchanged) == (0, 0, 56)
+    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 56
     assert db.scalar(select(func.count()).select_from(TimelineEventLink)) == expected_links
 
 
@@ -248,7 +252,7 @@ def dm_actions(chrono: Chrono) -> list[tuple[str, dict[str, str]]]:
             f"/mj/chronologie/evenements/{hidden}/liens",
             {"target_id": str(event_id(chrono, "S2"))},
         ),
-        (f"/mj/chronologie/evenements/{hidden}/fiches", {"title": "Le Collège des Patres"}),
+        (f"/mj/chronologie/evenements/{hidden}/fiches", {"title": "Le Collège des Ombres"}),
         (
             "/mj/chronologie/eres/tumultes",
             {"name": "Les Temps Brisés", "subtitle": "Trois nations.", "color": "#336655"},
@@ -275,11 +279,11 @@ def test_anonymous_is_redirected_and_cannot_act(
 
 def test_player_only_receives_revealed_events(client: TestClient, chrono: Chrono) -> None:
     login(client, "alice")
-    hidden_titles = ["Complot des Patres", "Le secret du troll", "Long sommeil du Joug"]
+    hidden_titles = ["Complot des Ombres", "Le secret du troll", "Long sommeil du Joug"]
     pages = [
         "/joueur/chronologie",
         "/joueur/chronologie?vue=chronique",
-        "/joueur/chronologie?q=patres",
+        "/joueur/chronologie?q=ombres",
         "/joueur/chronologie?q=troll",
         "/joueur/chronologie?ere=ascension&importance=majeur",
         "/joueur/chronologie?statut=a_valider&origine=canon",
@@ -315,25 +319,25 @@ def test_player_gets_the_standard_404_for_hidden_events(client: TestClient, chro
         headers={"HX-Request": "true", "HX-Target": "chrono-panel"},
     )
     assert panel.status_code == 200
-    assert "Complot des Patres" not in panel.text
+    assert "Complot des Ombres" not in panel.text
 
 
 def test_player_sees_a_sober_empty_state_until_something_is_revealed(
     client: TestClient, db: Session
 ) -> None:
     make_user(db, "alice")
-    load_seed(db, [validate_event_data(event_row("H1", "Complot des Patres", 120))])
+    load_seed(db, [validate_event_data(event_row("H1", "Complot des Ombres", 120))])
     login(client, "alice")
     page = client.get("/joueur/chronologie").text
     assert "Les annales sont encore scellées" in page
-    assert "Complot des Patres" not in page
+    assert "Complot des Ombres" not in page
 
 
 def test_player_cannot_use_dm_actions(client: TestClient, chrono: Chrono, db: Session) -> None:
     removable = TimelineEventLink(
         source_id=event_id(chrono, "B1"), target_id=event_id(chrono, "S1"), origin="mj"
     )
-    fiche = TimelineEventFiche(event_id=event_id(chrono, "B1"), title="Aterna")
+    fiche = TimelineEventFiche(event_id=event_id(chrono, "B1"), title="Khaanat")
     db.add_all([removable, fiche])
     db.commit()
     login(client, "alice")
@@ -364,7 +368,7 @@ def test_player_cannot_use_dm_actions(client: TestClient, chrono: Chrono, db: Se
 def test_dm_can_reach_every_page_and_use_every_action(
     client: TestClient, chrono: Chrono, db: Session
 ) -> None:
-    article = make_article(db, "Aterna", template_type="settlement")
+    article = make_article(db, "Khaanat", template_type="settlement")
     login(client, "maitre")
     for path in dm_pages(chrono):
         assert client.get(path).status_code == 200, path
@@ -389,7 +393,7 @@ def test_dm_can_reach_every_page_and_use_every_action(
             select(TimelineEventFiche.title).where(TimelineEventFiche.event_id == hidden_id)
         ).all()
     )
-    assert titles == {"Le Collège des Patres", "Aterna"}
+    assert titles == {"Le Collège des Ombres", "Khaanat"}
     era = db.get(TimelineEra, "tumultes")
     assert (era.name, era.color) == ("Les Temps Brisés", "#336655")
     page = client.get(f"/mj/chronologie/evenements/{hidden_id}").text
@@ -435,7 +439,7 @@ def test_dm_sees_hidden_events_and_world_anvil_link(
     db.commit()
     login(client, "maitre")
     page = client.get(f"/mj/chronologie?evenement={event_id(chrono, 'H1')}").text
-    assert "Complot des Patres" in page
+    assert "Complot des Ombres" in page
     assert "Long sommeil du Joug" in page
     assert "à valider" in page
     assert (

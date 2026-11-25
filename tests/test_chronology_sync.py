@@ -30,7 +30,7 @@ def content(
     summary: str,
     code: str | None,
     *,
-    place: str = "Aterna",
+    place: str = "Ancien empire",
     origin: str = "canon",
     status: str = "à valider",
     linked: str = "",
@@ -145,7 +145,7 @@ def seeded(db: Session) -> dict[str, TimelineEvent]:
             "importance": "majeur",
             "origin": "canon",
             "summary": "Fondation.",
-            "place": "Aterna",
+            "place": "Ancien empire",
             "order": 10,
             "wa_history_id": H1,
         },
@@ -156,7 +156,7 @@ def seeded(db: Session) -> dict[str, TimelineEvent]:
             "importance": "notable",
             "origin": "canon",
             "summary": "Dispute.",
-            "place": "Aterna",
+            "place": "Ancien empire",
             "chronicle": True,
             "session": 1,
             "day": "J1",
@@ -169,7 +169,7 @@ def seeded(db: Session) -> dict[str, TimelineEvent]:
             "importance": "mineur",
             "origin": "canon",
             "summary": "Fuite.",
-            "place": "Aterna",
+            "place": "Ancien empire",
             "linked": ["S1"],
             "chronicle": True,
             "session": 1,
@@ -242,7 +242,7 @@ def test_sync_updates_content_but_keeps_app_owned_fields(
     db.commit()
     source.put(
         H1,
-        "Fondation d'Aterna",
+        "Fondation de la capitale",
         "-3",
         content(
             "Une colline en Italie.",
@@ -259,7 +259,7 @@ def test_sync_updates_content_but_keeps_app_owned_fields(
     result = run(db, source)
     assert result.events_updated == 1
     event = by_code(db, "B1")
-    assert (event.title, event.start_year, event.end_year) == ("Fondation d'Aterna", -3, 2)
+    assert (event.title, event.start_year, event.end_year) == ("Fondation de la capitale", -3, 2)
     assert (event.summary, event.place, event.origin) == (
         "Une colline en Italie.",
         "Latium",
@@ -276,9 +276,9 @@ def test_sync_inserts_new_histories_hidden_and_pending(
 ) -> None:
     source.put(
         H4,
-        "Grand Triomphe de l'Unité",
+        "Fête des moissons",
         "347",
-        content("Une colonne.", "E-029", origin="ajout", status="établi"),
+        content("Une colonne.", "N-1", origin="ajout", status="établi"),
         significance=3,
     )
     source.put(
@@ -289,7 +289,7 @@ def test_sync_inserts_new_histories_hidden_and_pending(
     )
     result = run(db, source)
     assert result.events_created == 2
-    triumph = by_code(db, "E-029")
+    triumph = by_code(db, "N-1")
     assert (triumph.visibility, triumph.status, triumph.wa_history_id) == ("mj", "a_valider", H4)
     assert (triumph.importance, triumph.origin, triumph.start_year) == ("notable", "ajout", 347)
     assert triumph.sort_order == 11
