@@ -1,0 +1,27 @@
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import skeleton_cards %}
+<form method="get" action="/mj/articles" class="toolbar reveal reveal-delay-1" role="search"
+  hx-get="/mj/articles" hx-target="#article-results" hx-swap="outerHTML" hx-push-url="true"
+  hx-trigger="input delay:300ms, change, submit" hx-indicator="#search-zone">
+  {% if section %}<input type="hidden" name="section" value="{{ section.key }}">{% endif %}
+  <div class="search-field">
+    {{ ui("search") }}
+    <label class="visually-hidden" for="recherche">Rechercher</label>
+    <input id="recherche" type="search" name="q" value="{{ q }}" placeholder="Rechercher un nom, un lieu, un mot du texte…" maxlength="200" autocomplete="off">
+  </div>
+  <div>
+    <label class="visually-hidden" for="filtre-type">Type de fiche</label>
+    <select id="filtre-type" name="type">
+      <option value="">Tous les types</option>
+      {% for value in section_types(types, section_key, articles) %}
+      <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <noscript><button type="submit" class="btn">Filtrer</button></noscript>
+</form>
+
+<div id="search-zone" class="search-zone">
+  {{ skeleton_cards(6) }}
+  {% include "dm/_article_results.html" %}
+</div>

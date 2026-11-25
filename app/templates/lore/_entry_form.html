@@ -1,0 +1,67 @@
+{% macro entry_fields(options, id, entry=None, preset_article="", preset_type="") %}
+{% set event_id = entry.timeline_event_id if entry else none %}
+{% set article_id = entry.wa_article_id if entry else preset_article %}
+{% set element_type = entry.element_type if entry else (preset_type or "artefact") %}
+<div class="lore-form__grid">
+  <div class="field lore-form__wide">
+    <label for="{{ id }}-title">Titre</label>
+    <input id="{{ id }}-title" type="text" name="title" value="{{ entry.title if entry else '' }}" required maxlength="300" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-type">Type d'élément</label>
+    <select id="{{ id }}-type" name="element_type" required>
+      {% for value, label in options.element_types %}<option value="{{ value }}" {% if value == element_type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="{{ id }}-article">Fiche liée</label>
+    <select id="{{ id }}-article" name="article_id">
+      <option value="">Aucune fiche</option>
+      {% for item in options.articles %}<option value="{{ item.wa_id }}" {% if item.wa_id == article_id %}selected{% endif %}>{{ item.title }}</option>{% endfor %}
+    </select>
+  </div>
+</div>
+<fieldset class="lore-form__date">
+  <legend>Position chronologique</legend>
+  <p class="field__hint">Année seule, plage (début et fin), ère seule, ou rien pour « Non daté ». Avant l'An 0, les années sont négatives. Une entrée liée à un événement de la Chronologie lit sa date sur l'événement.</p>
+  <div class="lore-form__grid">
+    <div class="field">
+      <label for="{{ id }}-start">Année (début)</label>
+      <input id="{{ id }}-start" type="number" name="start_year" value="{{ entry.start_year if entry and entry.start_year is not none else '' }}" step="1" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label for="{{ id }}-end">Année de fin</label>
+      <input id="{{ id }}-end" type="number" name="end_year" value="{{ entry.end_year if entry and entry.end_year is not none else '' }}" step="1" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label for="{{ id }}-era">Ère seule</label>
+      <select id="{{ id }}-era" name="era">
+        <option value="">—</option>
+        {% for era in options.eras %}<option value="{{ era.slug }}" {% if entry and entry.era == era.slug %}selected{% endif %}>{{ era.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="{{ id }}-event">Événement de la Chronologie</label>
+      <select id="{{ id }}-event" name="event_id">
+        <option value="">Aucun</option>
+        {% for option in options.events %}<option value="{{ option.event.id }}" {% if option.event.id == event_id %}selected{% endif %}>{{ option.event.code }} · {{ span_label(option.event.start_year, option.event.end_year) }} · {{ option.event.title }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="{{ id }}-order">Ordre à date égale</label>
+      <input id="{{ id }}-order" type="number" name="sort_order" value="{{ entry.sort_order if entry else 0 }}" step="1" inputmode="numeric">
+    </div>
+    <label class="check lore-form__check"><input type="checkbox" name="approximate" value="1" {% if entry and entry.approximate %}checked{% endif %}> Date approximative</label>
+  </div>
+</fieldset>
+<div class="field">
+  <label for="{{ id }}-text">Texte narratif</label>
+  <textarea id="{{ id }}-text" name="text" rows="10">{{ entry.text if entry else '' }}</textarea>
+  <p class="field__hint">BBCode World Anvil accepté. Aucune statistique de jeu : elles vont sur la fiche de l'artefact.</p>
+</div>
+<label class="check"><input type="checkbox" name="gm_only" value="1" {% if entry and entry.gm_only %}checked{% endif %}> Réservée au MJ (jamais montrée aux joueurs)</label>
+<div class="field field--gm">
+  <label for="{{ id }}-review">À vérifier <span class="field__hint">note du MJ, jamais montrée aux joueurs</span></label>
+  <textarea id="{{ id }}-review" name="review_note" rows="3">{{ entry.review_note if entry else '' }}</textarea>
+</div>
+{% endmacro %}

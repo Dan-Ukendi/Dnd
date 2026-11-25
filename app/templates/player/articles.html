@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/ui.html" import page_head, card, empty_state, breadcrumb, map_banner, chronology_entry %}
+{% from "components/ui.html" import page_head, card, empty_state, breadcrumb, map_banner %}
 {% from "components/journal.html" import journal_shelf %}
 {% set section_key = request.query_params.get("section", "") %}
 {% set section = SECTIONS_BY_KEY.get(section_key) %}
@@ -14,7 +14,6 @@
 {{ page_head("Mes fiches", eyebrow="Archives partagées", lead="Les pages des archives que votre MJ a choisi de vous confier.") }}
 {% endif %}
 {% if banner %}{{ map_banner(banner) }}{% endif %}
-{% if section and section.key == "lore" %}{{ chronology_entry("/joueur/chronologie") }}{% endif %}
 {% if journals %}{{ journal_shelf(journals, "/joueur/journal", "Mon journal", "Ce que votre personnage a vécu, épisode après épisode, de son seul point de vue.", journals | length > 1) }}{% endif %}
 {% set groups = (articles | in_section(section_key)) | group_by_section %}
 {% if groups %}

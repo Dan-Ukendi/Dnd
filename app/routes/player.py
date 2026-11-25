@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse, Response
 from app.config import get_settings
 from app.deps import CurrentPlayer, DbSession, log_in
 from app.models import Character, WaArticle
+from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
 from app.sections import ADVENTURE_KEY
 from app.services.access import (
     accessible_article_ids,
@@ -59,6 +60,12 @@ def my_character(request: Request, db: DbSession, player: CurrentPlayer) -> Resp
 def shared_articles(request: Request, db: DbSession, player: CurrentPlayer) -> Response:
     section = request.query_params.get("section", "")
     banner = player_section_banner(db, player, section)
+    if section == LORE_SECTION:
+        return render(
+            request,
+            "lore/page.html",
+            {"banner": banner, **lore_page_context(request, db, dm=False, player=player)},
+        )
     journals = (
         journal_shelves(characters_of(db, player), player_render_context(db, player))
         if section == ADVENTURE_KEY
@@ -127,6 +134,7 @@ def shared_article(request: Request, wa_id: str, db: DbSession, player: CurrentP
             "content_html": render_bbcode(article.content, render_context),
             "linked": linked,
             "dossier": dossier,
+            "artefact_fiche": artefact_fiche(db, article, render_context, dm=False, player=player),
         },
     )
 

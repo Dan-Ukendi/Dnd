@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import breadcrumb %}
+{% from "lore/_entry_form.html" import entry_fields %}
+{% set entry = view.entry %}
+{% block title %}{{ entry.title }}{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{% if dm %}
+{{ breadcrumb([("Accueil", "/mj"), ("Lore", "/mj/articles?section=lore#frise"), (entry.title, "")]) }}
+{% else %}
+{{ breadcrumb([("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles"), ("Lore", "/joueur/articles?section=lore#frise"), (entry.title, "")]) }}
+{% endif %}
+<article class="lore-entry panel reveal"{% if view.era %} data-color="{{ view.era.color }}"{% endif %}>
+  <header class="lore-entry__head">
+    <p class="eyebrow">Lore · {{ view.element_label }}</p>
+    <h1 class="lore-entry__title">{{ entry.title }}</h1>
+    <p class="lore-entry__date">{{ view.label }}{% if view.era and view.date.start is not none %}<span class="lore-entry__era"> · {{ view.era.name }}</span>{% endif %}</p>
+    <div class="chips">
+      {% if view.date.approximate and view.date.dated %}<span class="pill pill--muted">Date approximative</span>{% endif %}
+      {% if dm and entry.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
+    </div>
+  </header>
+
+  {% if view.article_href or view.event_href %}
+  <dl class="facts lore-entry__links">
+    {% if view.article_href %}<div><dt>Élément concerné</dt><dd><a href="{{ view.article_href }}">{{ entry.article.title }}</a></dd></div>{% endif %}
+    {% if view.event_href %}<div><dt>Chronologie</dt><dd><a href="{{ view.event_href }}">{{ view.event.title }}</a></dd></div>{% endif %}
+  </dl>
+  {% endif %}
+
+  {% if dm and entry.review_note | trim %}
+  <div class="review-note">
+    <p class="review-note__label">À vérifier</p>
+    <p class="review-note__text">{{ entry.review_note }}</p>
+    <form method="post" action="/mj/lore/{{ entry.id }}/verifie">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">Marquer vérifié</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if text_html | trim %}
+  <div class="prose prose--story">{{ text_html }}</div>
+  {% else %}
+  <p class="muted">Cette entrée n'a pas encore de texte.</p>
+  {% endif %}
+</article>
+
+{% if dm %}
+<div class="lore-entry__admin">
+  <details class="relation-edit">
+    <summary class="btn">Modifier l'entrée</summary>
+    <form method="post" action="/mj/lore/{{ entry.id }}" class="form relation-form lore-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ entry_fields(entry_form, "lore-" ~ entry.id, entry) }}
+      <div class="row">
+        <button type="submit" class="btn btn--primary">Enregistrer</button>
+      </div>
+    </form>
+    <form method="post" action="/mj/lore/{{ entry.id }}/supprimer" class="relation-edit__delete" data-confirm="Supprimer l'entrée « {{ entry.title }} » du Lore ?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn btn--danger">Supprimer cette entrée</button>
+    </form>
+  </details>
+  {% if entry.source_article_id %}<p class="field__hint">Découpée depuis l'article World Anvil d'origine, section « {{ entry.source_section }} ».</p>{% endif %}
+</div>
+{% endif %}
+<p class="chrono-page__back"><a class="btn" href="{{ base }}/articles?section=lore#frise">{{ ui("hourglass") }}Retour à la frise</a></p>
+{% endblock %}

@@ -25,6 +25,7 @@ from app.models import (
     User,
     WaArticle,
 )
+from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
 from app.sections import ADVENTURE_KEY, section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
@@ -172,6 +173,12 @@ def article_list(
         return render(request, "dm/_article_results.html", context)
     section = request.query_params.get("section", "")
     banner = media_service.section_banner(db, section)
+    if section == LORE_SECTION:
+        return render(
+            request,
+            "lore/page.html",
+            {**context, "banner": banner, **lore_page_context(request, db, dm=True)},
+        )
     journals = (
         dossier_service.journal_shelves(
             list(db.scalars(select(Character).order_by(Character.name)).all()),
@@ -235,6 +242,7 @@ def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -
             else None,
             "relation_categories": dossier_service.RELATION_CATEGORIES,
             "relation_articles": article_service.all_available_articles(db) if characters else [],
+            "artefact_fiche": artefact_fiche(db, article, render_context, dm=True),
         },
     )
 

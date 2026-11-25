@@ -1,11 +1,13 @@
 {% from "components/icons.html" import section_icon, ui %}
 {% from "components/ui.html" import breadcrumb, card, placeholder, media_viewer %}
+{% from "components/tabs.html" import tabs, tab_panel %}
+{% set artefact_mode = artefact_fiche is defined and artefact_fiche %}
 {% set section = article | section_of %}
 {% set portrait = article | article_media("portrait") %}
 {% set map = article | article_media("map") %}
 {% set sheet = article | article_media("sheet") %}
 {% set image = article | world_anvil_image(player_mode) %}
-{% set tagline = article | tagline %}
+{% set tagline = (artefact_fiche.artefact.tagline if artefact_fiche.artefact else "") if artefact_mode else article | tagline %}
 <div data-section="{{ section.key }}">
   {{ breadcrumb(crumbs) }}
   <header class="fiche-hero{% if portrait %} fiche-hero--portrait{% endif %} reveal">
@@ -67,6 +69,9 @@
       </section>
       {{ media_viewer("visionneuse-" ~ map.id, map) }}
       {% endif %}
+      {% if artefact_mode %}
+      {% include "components/artefact.html" %}
+      {% else %}
       {% set body = body_html | fiche_body(article.title) %}
       {% if body | trim %}
       <div class="prose">{{ body }}</div>
@@ -77,6 +82,7 @@
         <p>Cette fiche n'a pas encore de contenu.</p>
       </div>
       {% endif %}
+      {% endif %}
       {% for title, html in gm_sections %}
       <section class="panel panel--gm prose-panel">
         <h2 class="panel__title">{{ title }}</h2>
@@ -85,20 +91,20 @@
       {% endfor %}
       {% if media_admin %}{% include "dm/_media_admin.html" %}{% endif %}
       {% endset %}
-      {% if dossier is defined and dossier %}
-      {% set prefix = "dossier-" ~ dossier.character.id %}
-      <div class="tabs" data-tabs>
-        <div class="tabs__list" role="tablist" aria-label="Dossier de {{ dossier.character.name }}">
-          {% for key, label, count in [("fiche", "Fiche", 0), ("actions", "Actions", dossier.action_count), ("relations", "Relations", dossier.relation_count), ("histoire", "Histoire", dossier.events | length + dossier.journal | length), ("inventaire", "Inventaire", dossier.items | length)] %}
-          <button type="button" class="tabs__tab" role="tab" id="{{ prefix }}-tab-{{ key }}" aria-controls="{{ prefix }}-{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab="{{ key }}">{{ label }}{% if count %}<span class="tabs__count">{{ count }}</span>{% endif %}</button>
-          {% endfor %}
-        </div>
-        <section class="tabs__panel tabs__panel--fiche" id="{{ prefix }}-fiche" role="tabpanel" aria-labelledby="{{ prefix }}-tab-fiche" tabindex="0">
-          <h2 class="tabs__heading">Fiche</h2>
+      {% set fiche_tabs = [] %}
+      {% set has_dossier = dossier is defined and dossier %}
+      {% if has_dossier %}
+      {% set tabs_prefix = "dossier-" ~ dossier.character.id %}
+      {% set tabs_label = "Dossier de " ~ dossier.character.name %}
+      {% set _ = fiche_tabs.extend([("actions", "Actions", dossier.action_count), ("relations", "Relations", dossier.relation_count), ("histoire", "Histoire", dossier.events | length + dossier.journal | length), ("inventaire", "Inventaire", dossier.items | length)]) %}
+      {% endif %}
+      {% if fiche_tabs %}
+      {% call tabs(tabs_prefix, tabs_label, [("fiche", "Fiche", 0)] + fiche_tabs) %}
+      {% call tab_panel(tabs_prefix, "fiche", "Fiche", "fiche") %}
 {{ fiche_content }}
-        </section>
-        {% include "components/dossier.html" %}
-      </div>
+      {% endcall %}
+      {% if has_dossier %}{% include "components/dossier.html" %}{% endif %}
+      {% endcall %}
       {% else %}
 {{ fiche_content }}
       {% endif %}

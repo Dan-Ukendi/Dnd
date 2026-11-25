@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import page_head, breadcrumb, card, empty_state, map_banner, chronology_entry %}
+{% from "components/tabs.html" import tabs, tab_panel %}
+{% set section = SECTIONS_BY_KEY["lore"] %}
+{% set section_key = section.key %}
+{% block title %}{{ section.label }}{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{% if dm %}
+{{ breadcrumb([("Accueil", "/mj"), (section.label, "")]) }}
+{{ page_head(section.label, eyebrow="Archives", lead="L'histoire du monde, entrée par entrée, et les artefacts tels qu'on les joue.") }}
+{% else %}
+{{ breadcrumb([("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles"), (section.label, "")]) }}
+{{ page_head(section.label, eyebrow="Archives partagées", lead="L'histoire du monde telle que votre personnage la connaît, et les artefacts qu'il a croisés.") }}
+{% endif %}
+{% if banner %}{{ map_banner(banner) }}{% endif %}
+{{ chronology_entry(base ~ "/chronologie") }}
+
+{% set lore_tabs = [("frise", "Frise", entry_total), ("artefacts", "Artefacts", artefact_cards | length)] %}
+{% if dm %}
+{% set _ = lore_tabs.append(("fiches", "Autres fiches", 0)) %}
+{% elif other_articles %}
+{% set _ = lore_tabs.append(("fiches", "Autres fiches", other_articles | length)) %}
+{% endif %}
+<div class="lore-tabs reveal reveal-delay-1">
+{% call tabs("lore", "Sections du Lore", lore_tabs) %}
+{% call tab_panel("lore", "frise", "Frise chronologique") %}
+{% include "lore/_frise.html" %}
+{% endcall %}
+{% call tab_panel("lore", "artefacts", "Artefacts") %}
+{% if artefact_cards %}
+<ul class="card-grid stagger">
+  {% for article, artefact in artefact_cards %}
+  <li>{% call card(article, base ~ "/articles/" ~ article.wa_id, not dm) %}{% if artefact and artefact.rarity %}<span class="pill pill--muted">{{ artefact.rarity | truncate(40) }}</span>{% endif %}{% if dm and artefact and artefact.review_note | trim %}<span class="pill pill--warn">À vérifier</span>{% endif %}{% endcall %}</li>
+  {% endfor %}
+</ul>
+{% elif dm %}
+{{ empty_state("Aucun artefact", "Les articles World Anvil de modèle Objet apparaîtront ici après la synchronisation.", "scroll") }}
+{% else %}
+{{ empty_state("Aucun artefact", "Votre MJ ne vous a encore confié aucune fiche d'artefact.", "scroll") }}
+{% endif %}
+{% endcall %}
+{% if dm %}
+{% call tab_panel("lore", "fiches", "Autres fiches") %}
+{% include "dm/_article_search.html" %}
+{% endcall %}
+{% elif other_articles %}
+{% call tab_panel("lore", "fiches", "Autres fiches") %}
+<ul class="card-grid stagger">
+  {% for article in other_articles | natural_order %}
+  <li>{{ card(article, "/joueur/articles/" ~ article.wa_id, True) }}</li>
+  {% endfor %}
+</ul>
+{% endcall %}
+{% endif %}
+{% endcall %}
+</div>
+{% endblock %}

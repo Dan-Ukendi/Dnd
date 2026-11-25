@@ -246,6 +246,46 @@ DATABASE_URL=... DATABASE_URL_UNPOOLED=... SECRET_KEY=... python -m app.cli load
 Players see an event only after the DM chose *Révéler aux joueurs*; any other event answers with the
 usual 404, and never appears in lists, searches, filters, year groups or linked events.
 
+## Lore and artefacts
+
+The Lore section (`/mj/articles?section=lore`, `/joueur/articles?section=lore`) has two tabs, plus a
+third one for the other Lore fiches when there are any:
+
+- **Frise**: a vertical timeline of Lore entries, sorted and grouped by the eras of the chronology
+  (same configuration as the *Chronologie*, names included), then a *Non daté* list. Chips filter by
+  element type (artefact, lieu, personnage, organisation, divinité, événement); the DM also gets an
+  *À vérifier* chip. A click opens the entry (`/mj/lore/<id>`, `/joueur/lore/<id>`).
+- **Artefacts**: the World Anvil articles of the *Item* template. Their fiche now shows only the
+  characteristics (one-line description, type, rarity, attunement, charges, recharge, constraint or
+  curse, current holder, location, status, mechanical properties and bonuses) and a *Lore associé*
+  block (title, date and link of each linked entry). The World Anvil text itself is no longer shown
+  on these fiches; the DM keeps the *Ouvrir sur World Anvil* link and `wa_articles.content` is kept
+  untouched.
+
+**Where the data lives.** Characteristics (`artefacts`) and Lore entries (`lore_entries`) are app
+tables, edited by the DM only; nothing is written to World Anvil. An entry has a title, an element
+type, a narrative text (World Anvil BBCode), an optional link to a fiche and an optional link to a
+chronology event, and a date: a year, a range, an era only, or nothing (*Non daté*), with an
+*approximatif* flag. An entry linked to an event reads its date from the event. Years before An 0 are
+negative; the global sort key orders entries by era first, so periods known only by their era sort
+correctly. The current holder comes from the dossier inventories (`character_items`); the manual
+field is used only when no inventory carries the item.
+
+**Initial split and sync.** Migration 0010 splits the cached Item articles (`wa_articles`, no
+network): the *Fiche rapide* lines *Type*, *Autre(s) nom(s)* and *État*, the italic subtitle and the
+whole *Statistiques (D&D 5e)* block go to the fiche, verbatim; every other heading becomes a Lore
+entry linked to the artefact, verbatim. Unclear cases carry an *À vérifier* note (DM only; *Marquer
+vérifié* clears it) and are logged by the migration. Each sync applies the same pure split to new
+Item articles that have no fiche yet, with every entry marked *À vérifier*; an existing fiche is never
+overwritten. The rules for Le Gage d'Arès and Le Joug de Malvaar (MJ-only sections, dates, links to
+chronology events A1–A4) are in `app/services/artefact_split.py`.
+
+**Players.** A player sees an entry only if it is not *MJ seulement* and the element it is linked to
+is already accessible to them (a shared fiche, or a revealed chronology event); an entry linked to
+nothing stays with the DM. An entry dated by a chronology event the player cannot see appears in
+*Non daté*, without the event link. *À vérifier* notes and editing forms are never rendered for a
+player. On an artefact fiche a player sees as holders only their own characters.
+
 ## Useful commands
 
 | Command | Purpose |

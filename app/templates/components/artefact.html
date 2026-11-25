@@ -1,0 +1,129 @@
+{% from "components/icons.html" import ui %}
+{% set artefact = artefact_fiche.artefact %}
+{% set editable = not player_mode %}
+<div class="artefact">
+  {% if artefact %}
+  {% if editable and artefact.review_note | trim %}
+  <div class="review-note">
+    <p class="review-note__label">À vérifier</p>
+    <p class="review-note__text">{{ artefact.review_note }}</p>
+    <form method="post" action="/mj/artefacts/{{ article.wa_id }}/verifie">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">Marquer vérifié</button>
+    </form>
+  </div>
+  {% endif %}
+  {% set holder = artefact_fiche.holders | join(", ") if artefact_fiche.holders else artefact.holder %}
+  {% set rows = [
+    ("Type d'objet", artefact.object_type),
+    ("Autres noms", artefact.other_names),
+    ("Rareté", artefact.rarity),
+    ("Harmonisation", artefact.attunement),
+    ("Charges", artefact.charges),
+    ("Recharge", artefact.recharge),
+    ("Contrainte ou malédiction", artefact.curse),
+    ("Détenteur actuel", holder),
+    ("Localisation actuelle", artefact.location),
+    ("Statut", artefact.status),
+  ] %}
+  <section class="artefact-sheet" aria-labelledby="caracteristiques">
+    <h2 class="artefact-sheet__title" id="caracteristiques">Caractéristiques</h2>
+    {% set filled = rows | selectattr(1) | list %}
+    {% if filled %}
+    <dl class="artefact-stats">
+      {% for label, value in filled %}
+      <div class="artefact-stats__row"><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+      {% endfor %}
+    </dl>
+    {% endif %}
+    {% if artefact_fiche.properties_html | trim %}
+    <section class="artefact-block" aria-labelledby="proprietes">
+      <h3 class="artefact-block__title" id="proprietes">Propriétés et effets</h3>
+      <div class="prose">{{ artefact_fiche.properties_html }}</div>
+    </section>
+    {% endif %}
+    {% if artefact_fiche.bonuses_html | trim %}
+    <section class="artefact-block" aria-labelledby="bonus">
+      <h3 class="artefact-block__title" id="bonus">Bonus</h3>
+      <div class="prose">{{ artefact_fiche.bonuses_html }}</div>
+    </section>
+    {% endif %}
+    {% if not filled and not artefact_fiche.properties_html | trim and not artefact_fiche.bonuses_html | trim %}
+    <p class="muted">Aucune caractéristique n'est encore renseignée.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <div class="empty-state">
+    {{ ui("candle") }}
+    <h2 class="empty-state__title">Caractéristiques à établir</h2>
+    <p>La fiche de cet artefact n'a pas encore été séparée de son histoire.</p>
+    {% if editable %}
+    <form method="post" action="/mj/artefacts/{{ article.wa_id }}/creer">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn btn--primary">Créer la fiche depuis l'article World Anvil</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <section class="lore-links" aria-labelledby="lore-associe">
+    <h2 class="artefact-sheet__title" id="lore-associe">Lore associé</h2>
+    {% if artefact_fiche.lore %}
+    <ol class="lore-links__list">
+      {% for view in artefact_fiche.lore %}
+      <li>
+        <a class="lore-link" href="{{ view.href }}">
+          <span class="lore-link__date">{{ view.label }}</span>
+          <span class="lore-link__title">{{ view.entry.title }}</span>
+          {{ ui("chevron", "icon lore-link__chevron") }}
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="muted">Aucune entrée de Lore n'est liée à cet artefact.</p>
+    {% endif %}
+    {% if editable %}<a class="btn" href="/mj/articles?section=lore&amp;fiche={{ article.wa_id }}#frise">Ajouter une entrée de Lore</a>{% endif %}
+  </section>
+
+  {% if editable and artefact %}
+  <details class="relation-edit">
+    <summary class="btn">Modifier les caractéristiques</summary>
+    <form method="post" action="/mj/artefacts/{{ article.wa_id }}" class="form relation-form lore-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="artefact-tagline">Description (une ligne)</label>
+        <input id="artefact-tagline" type="text" name="tagline" value="{{ artefact.tagline }}" maxlength="300" autocomplete="off">
+      </div>
+      <div class="lore-form__grid">
+        {% for name, label, size in [("object_type", "Type d'objet", 300), ("other_names", "Autres noms", 500), ("rarity", "Rareté", 300), ("attunement", "Harmonisation", 300), ("charges", "Charges", 100), ("recharge", "Recharge", 200), ("holder", "Détenteur (si aucun inventaire ne le porte)", 200), ("location", "Localisation actuelle", 300), ("status", "Statut", 200)] %}
+        <div class="field">
+          <label for="artefact-{{ name }}">{{ label }}</label>
+          <input id="artefact-{{ name }}" type="text" name="{{ name }}" value="{{ artefact[name] }}" maxlength="{{ size }}" autocomplete="off">
+        </div>
+        {% endfor %}
+      </div>
+      <div class="field">
+        <label for="artefact-curse">Contrainte ou malédiction</label>
+        <textarea id="artefact-curse" name="curse" rows="2">{{ artefact.curse }}</textarea>
+      </div>
+      <div class="field">
+        <label for="artefact-properties">Propriétés et effets mécaniques</label>
+        <textarea id="artefact-properties" name="properties" rows="12">{{ artefact.properties }}</textarea>
+        <p class="field__hint">BBCode World Anvil accepté. Aucune histoire ici : elle va dans le Lore.</p>
+      </div>
+      <div class="field">
+        <label for="artefact-bonuses">Bonus</label>
+        <textarea id="artefact-bonuses" name="bonuses" rows="3">{{ artefact.bonuses }}</textarea>
+      </div>
+      <div class="field field--gm">
+        <label for="artefact-review">À vérifier <span class="field__hint">note du MJ, jamais montrée aux joueurs</span></label>
+        <textarea id="artefact-review" name="review_note" rows="3">{{ artefact.review_note }}</textarea>
+      </div>
+      <div class="row">
+        <button type="submit" class="btn btn--primary">Enregistrer</button>
+      </div>
+    </form>
+  </details>
+  {% endif %}
+</div>
