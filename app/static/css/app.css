@@ -1009,6 +1009,42 @@ p {
   font-size: 0.9em;
 }
 
+.prose li > ul,
+.prose li > ol {
+  margin: 0.35em 0 0.5em;
+  padding-left: 1.3em;
+}
+
+.prose li li {
+  margin: 0.2em 0;
+}
+
+.prose li > ul > li::marker {
+  color: var(--gold-deep);
+  content: "\25C7  ";
+}
+
+.prose li li > ul > li::marker {
+  content: "\2013  ";
+  font-size: 0.85em;
+}
+
+.prose li > ol {
+  list-style-type: lower-alpha;
+}
+
+.prose li li > ol {
+  list-style-type: lower-roman;
+}
+
+.prose :is(h2, h3, h4, h5, h6) + :is(h3, h4, h5, h6) {
+  margin-top: 0.4em;
+}
+
+.prose > :last-child {
+  margin-bottom: 0;
+}
+
 .prose blockquote {
   position: relative;
   margin: 1.6em 0;

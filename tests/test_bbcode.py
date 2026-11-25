@@ -68,6 +68,68 @@ def test_plutarch_dash_lists(player: RenderContext) -> None:
     assert "<ol><li>Premier</li><li>Second</li></ol>" in html
 
 
+def test_double_dash_lines_become_nested_lists(player: RenderContext) -> None:
+    html = render_bbcode(
+        "[ul]\n- [b]Spécialité[/b] : Droit\n- [b]Monuments[/b] :\n-- L'Académie\n"
+        "-- Le Théâtre\n--- La scène\n- [b]Particularité[/b] : débats\n[/ul]",
+        player,
+    )
+    assert html == (
+        "<ul><li><strong>Spécialité</strong> : Droit</li>"
+        "<li><strong>Monuments</strong> :<ul><li>L'Académie</li>"
+        "<li>Le Théâtre<ul><li>La scène</li></ul></li></ul></li>"
+        "<li><strong>Particularité</strong> : débats</li></ul>"
+    )
+    assert "--" not in html
+
+
+def test_double_dash_lines_nest_in_ordered_lists(player: RenderContext) -> None:
+    html = render_bbcode(
+        "[ol]\n- Le Rex (1)\n- Les Duces (4) :\n-- Dux Hastae\n-- Dux Legis\n---- Trop profond\n"
+        "- Les Comites (50)\n[/ol]",
+        player,
+    )
+    assert html == (
+        "<ol><li>Le Rex (1)</li><li>Les Duces (4) :<ol><li>Dux Hastae</li>"
+        "<li>Dux Legis<ol><li>Trop profond</li></ol></li></ol></li>"
+        "<li>Les Comites (50)</li></ol>"
+    )
+
+
+def test_nested_list_without_parent_starts_at_the_first_level(player: RenderContext) -> None:
+    html = render_bbcode("[ul]\n-- orphelin\n- suite\n[/ul][ul]\n\n[/ul]", player)
+    assert html == "<ul><li>orphelin</li><li>suite</li></ul>"
+
+
+def test_nested_list_items_stay_sanitised_and_hide_secrets(
+    dm: RenderContext, player: RenderContext
+) -> None:
+    source = (
+        "[ul]\n- Parent\n-- <script>alert(1)</script> [secret]Le traître[/secret]\n"
+        f"-- [url:javascript:alert(1)]clic[/url] @[Taverne](location:{KNOWN})\n[/ul]"
+    )
+    html = render_bbcode(source, player)
+    assert "<script" not in html and "&lt;script&gt;" in html
+    assert "javascript" not in html
+    assert "Le traître" not in html
+    assert f'<a class="internal" href="/x/{KNOWN}"' in html
+    assert html.startswith("<ul><li>Parent<ul><li>")
+    assert "Le traître" in render_bbcode(source, dm)
+
+
+def test_headings_drop_redundant_bold_and_empty_paragraphs_vanish(player: RenderContext) -> None:
+    html = render_bbcode(
+        "[h2|x][b]Le Principe[/b][/h2]\n[h3][b]1. KHAN (Pluriel : [/b][i][b]Khanlar[/b][/i]"
+        "[b]) | ~5 titres[/b][/h3]\n[p][b]Gras[/b] conservé[/p][p][br][/p][p] [/p]\n\n[br]\n",
+        player,
+    )
+    assert "<h3>Le Principe</h3>" in html
+    assert "<h4>1. KHAN (Pluriel : <em>Khanlar</em>) | ~5 titres</h4>" in html
+    assert "<strong>Gras</strong> conservé" in html
+    assert "<p><br></p>" not in html and "<p></p>" not in html
+    assert html.count("<p>") == 1
+
+
 def test_classic_list_items(player: RenderContext) -> None:
     html = render_bbcode("[ul][li]un[/li][li]deux[/li][/ul][ul][*]trois[*]quatre[/ul]", player)
     assert "<li>un</li><li>deux</li>" in html
@@ -190,6 +252,8 @@ def test_plain_text_extraction() -> None:
     assert "Un texte." in text
     assert "point un" in text
     assert "[" not in text
+    nested = to_plain_text("[ul]\n- parent\n-- enfant\n[/ul]")
+    assert nested.splitlines() == ["parent", "enfant"]
 
 
 def test_link_and_image_extraction() -> None:

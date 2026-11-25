@@ -169,6 +169,19 @@ def test_inaccessible_fiche_stays_plain_text_for_players() -> None:
     assert html.count("aria-label") == 1
 
 
+def test_names_in_nested_list_items_are_linked() -> None:
+    html = render("[ul]\n- La cour\n-- Kratéros sert Arès\n-- Bob\n[/ul]", accessible={BOB, ARES})
+    assert links_in(html) == [("Arès", f"/x/{ARES}"), ("Bob", f"/x/{BOB}")]
+    assert html.startswith("<ul><li>La cour<ul><li>Kratéros sert <a")
+    assert "<li>--" not in html
+
+
+def test_bold_in_headings_never_receives_links() -> None:
+    html = render("[h2][b]Bob et Arès[/b][/h2][p]Bob[/p]")
+    assert "<h3>Bob et Arès</h3>" in html
+    assert links_in(html) == [("Bob", f"/x/{BOB}")]
+
+
 def test_existing_links_headings_and_code_are_untouched() -> None:
     html = render(
         f"[h2]Bob[/h2][p]Voir @[Bob le voleur](person:{new_id()}) et "

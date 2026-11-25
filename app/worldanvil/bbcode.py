@@ -12,9 +12,11 @@ from app.worldanvil.linking import Matcher
 MENTION_PATTERN = r"@\[([^\[\]\n]+)\]\(([A-Za-z]+):([0-9A-Fa-f-]{36})\)"
 TAG_PATTERN = r"\[(/?)([A-Za-z][A-Za-z0-9]*)((?:[:|=][^\[\]\n]*)?)\]"
 TOKEN_RE = re.compile(f"{MENTION_PATTERN}|{TAG_PATTERN}")
-LIST_MARKER_RE = re.compile(r"^\s*[-*•]\s+")
+LIST_MARKER_RE = re.compile(r"^\s*(-+|[*•])\s+")
+MAX_LIST_DEPTH = 3
 IMAGE_ID_RE = re.compile(r"^\s*(\d+)")
 _TAG_ONLY_RE = re.compile(r"<[^>]+>")
+_BLANK_HTML_RE = re.compile(r"^(?:\s|<br>)*$")
 PARAGRAPH_RE = re.compile(r"\n[ \t]*\n")
 
 HEADINGS = {"h": "h2", "h1": "h2", "h2": "h3", "h3": "h4", "h4": "h5", "h5": "h6", "h6": "h6"}
@@ -273,6 +275,7 @@ class _Renderer:
         self.context = context
         self.linked: set[str] = set()
         self.verbatim = 0
+        self.heading = False
 
     def text(self, value: str) -> str:
         matcher = self.context.matcher
@@ -321,12 +324,14 @@ class _Renderer:
                 return
             for paragraph in re.split(r"\n[ \t]*\n", fragment):
                 if paragraph.strip():
-                    output.append(f"<p>{_with_breaks(paragraph)}</p>")
+                    output.append(_paragraph(_with_breaks(paragraph)))
 
         for child in children:
             if _is_block(child):
                 flush()
-                output.append(self.node(child))
+                rendered = self.node(child)
+                if rendered:
+                    output.append(rendered)
             else:
                 run.append(child)
         flush()
@@ -381,15 +386,20 @@ class _Renderer:
             return f'<div class="gm-only">{self.block(node.children)}</div>'
         if name in HEADINGS:
             tag = HEADINGS[name]
-            content = _with_breaks(self.verbatim_inline(node.children))
+            self.heading = True
+            try:
+                content = _with_breaks(self.verbatim_inline(node.children))
+            finally:
+                self.heading = False
             self.linked.clear()
             return f"<{tag}>{content}</{tag}>" if _TAG_ONLY_RE.sub("", content).strip() else ""
         if name in INLINE:
             tag = INLINE[name]
+            if tag == "strong" and self.heading:
+                return self.inline(node.children)
             return f"<{tag}>{self.inline(node.children)}</{tag}>"
         if name == "p":
-            content = _with_breaks(self.inline(node.children))
-            return f"<p>{content}</p>" if content else ""
+            return _paragraph(_with_breaks(self.inline(node.children)))
         if name == "center":
             return f'<div class="center">{self.block(node.children)}</div>'
         if name == "code":
@@ -398,9 +408,7 @@ class _Renderer:
             tag = BLOCKS[name]
             return f"<{tag}>{self.block(node.children)}</{tag}>"
         if name in LISTS:
-            tag = LISTS[name]
-            items = "".join(f"<li>{item}</li>" for item in self.list_items(node.children))
-            return f"<{tag}>{items}</{tag}>"
+            return _nested_list(LISTS[name], self.list_items(node.children))
         if name == "li":
             return f"<li>{_with_breaks(self.inline(node.children))}</li>"
         if name == "url":
@@ -469,12 +477,12 @@ class _Renderer:
             return self.block(children)
         return _with_breaks(self.inline(children))
 
-    def list_items(self, children: list[Node]) -> list[str]:
-        items: list[list[Node]] = []
+    def list_items(self, children: list[Node]) -> list[tuple[int, str]]:
+        items: list[tuple[int, list[Node]]] = []
         current: list[Node] | None = None
         for child in children:
             if isinstance(child, Element) and child.name == "li":
-                items.append(child.children)
+                items.append((1, child.children))
                 current = None
                 continue
             if isinstance(child, Text):
@@ -487,17 +495,17 @@ class _Renderer:
                             continue
                         marker = LIST_MARKER_RE.match(part)
                         current = []
-                        items.append(current)
+                        items.append((_list_depth(marker), current))
                         current.append(Text(part[marker.end() :] if marker else stripped))
                     elif part:
                         current.append(Text(part))
                 continue
             if current is None:
                 current = []
-                items.append(current)
+                items.append((1, current))
             current.append(child)
-        rendered = [_with_breaks(self.inline(item)) for item in items]
-        return [item for item in rendered if item]
+        rendered = [(depth, _with_breaks(self.inline(item))) for depth, item in items]
+        return [(depth, item) for depth, item in rendered if not _BLANK_HTML_RE.match(item)]
 
     def link(self, node: Element) -> str:
         href = _arg_value(node.arg) or _text_of(node.children).strip()
@@ -512,6 +520,39 @@ class _Renderer:
         if scheme in {"http", "https", "mailto"}:
             return f'<a class="external" target="_blank" href="{_escape(href)}">{label}</a>'
         return label
+
+
+def _paragraph(content: str) -> str:
+    return "" if _BLANK_HTML_RE.match(content) else f"<p>{content}</p>"
+
+
+def _list_depth(marker: re.Match[str] | None) -> int:
+    if marker is None or not marker.group(1).startswith("-"):
+        return 1
+    return min(len(marker.group(1)), MAX_LIST_DEPTH)
+
+
+def _nested_list(tag: str, items: list[tuple[int, str]]) -> str:
+    if not items:
+        return ""
+    parts = [f"<{tag}>"]
+    level = 1
+    item_open = False
+    for depth, content in items:
+        depth = min(depth, level + 1 if item_open else level)
+        if depth > level:
+            parts.append(f"<{tag}>")
+            level = depth
+        else:
+            while level > depth:
+                parts.append(f"</li></{tag}>")
+                level -= 1
+            if item_open:
+                parts.append("</li>")
+        parts.append(f"<li>{content}")
+        item_open = True
+    parts.append(f"</li></{tag}>" * level)
+    return "".join(parts)
 
 
 def _is_blank(node: Node) -> bool:
@@ -602,7 +643,7 @@ def to_plain_text(source: str | None) -> str:
 
     walk(parse(source).children)
     text = "".join(parts)
-    text = re.sub(r"^\s*-\s+", "", text, flags=re.M)
+    text = re.sub(r"^\s*-+\s+", "", text, flags=re.M)
     return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
