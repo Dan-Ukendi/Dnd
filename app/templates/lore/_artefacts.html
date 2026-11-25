@@ -1,0 +1,62 @@
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import card, empty_state %}
+{% set list_base = view_href.artefacts %}
+{% set query_param = "&q=" ~ (filters.query | urlencode) if filters.query else "" %}
+<div class="lore-toolbar reveal reveal-delay-1">
+  <form class="lore-search" method="get" action="{{ base }}/articles" role="search">
+    <input type="hidden" name="section" value="lore">
+    <input type="hidden" name="vue" value="artefacts">
+    {% if filters.rarity %}<input type="hidden" name="rarete" value="{{ filters.rarity }}">{% endif %}
+    {% if filters.type %}<input type="hidden" name="type" value="{{ filters.type }}">{% endif %}
+    <label class="visually-hidden" for="artefact-q">Chercher un artefact</label>
+    <input id="artefact-q" type="search" name="q" value="{{ filters.query }}" placeholder="Nom, autre nom, type…" maxlength="200" autocomplete="off">
+    <button type="submit" class="btn">{{ ui("search") }}Chercher</button>
+  </form>
+</div>
+<nav class="lore-filters" aria-label="Filtrer par rareté">
+  <a class="lore-filter" href="{{ list_base }}{{ query_param }}" {% if not filters.rarity and not filters.type and not filters.review %}aria-current="true"{% endif %}>Tous<span>{{ artefact_total }}</span></a>
+  {% for key, label, count in rarities if count %}
+  <a class="lore-filter" href="{{ list_base }}&amp;rarete={{ key }}{{ query_param }}" {% if filters.rarity == key %}aria-current="true"{% endif %}>{{ label }}<span>{{ count }}</span></a>
+  {% endfor %}
+  {% if object_types | length > 1 %}
+  {% for key, (label, count) in object_types %}
+  <a class="lore-filter" href="{{ list_base }}&amp;type={{ key | urlencode }}{{ query_param }}" {% if filters.type == key %}aria-current="true"{% endif %}>{{ label }}<span>{{ count }}</span></a>
+  {% endfor %}
+  {% endif %}
+  {% if dm %}
+  <a class="lore-filter lore-filter--review" href="{{ list_base }}&amp;a_verifier=1" {% if filters.review %}aria-current="true"{% endif %}>À vérifier<span>{{ reviews.artefacts }}</span></a>
+  {% endif %}
+</nav>
+
+{% if cards %}
+<ul class="card-grid stagger">
+  {% for item in cards %}
+  <li>{% call card(item.article, base ~ "/articles/" ~ item.article.wa_id, not dm) %}{% if item.type_label %}<span class="pill pill--muted">{{ item.type_label | truncate(30) }}</span>{% endif %}{% if item.artefact.rarity %}<span class="pill pill--lore">{{ item.artefact.rarity | truncate(40) }}</span>{% endif %}{% if dm and item.artefact.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}{% if dm and item.artefact.review_note | trim %}<span class="pill pill--warn">À vérifier</span>{% endif %}{% endcall %}</li>
+  {% endfor %}
+</ul>
+{% elif artefact_total %}
+{{ empty_state("Aucun artefact", "Aucun artefact ne correspond à ce filtre.", "search") }}
+{% elif dm %}
+{{ empty_state("Aucun artefact", "Utilisez « Ajouter au Lore » depuis une fiche synchronisée pour créer une fiche d'artefact.", "pouch") }}
+{% else %}
+{{ empty_state("Aucun artefact", "Votre MJ ne vous a encore confié aucune fiche d'artefact.", "pouch") }}
+{% endif %}
+
+{% if dm and uncurated_items %}
+<section class="panel panel--gm lore-unplaced" aria-labelledby="objets-hors-lore">
+  <h2 class="panel__title" id="objets-hors-lore">Objets synchronisés hors du Lore</h2>
+  <p class="field__hint">Articles World Anvil de modèle Objet qui n'ont pas encore de fiche d'artefact. La synchronisation n'en crée jamais : à vous de les ajouter.</p>
+  <ul class="lore-links__list">
+    {% for article in uncurated_items %}
+    <li class="lore-add-row">
+      <a class="lore-link" href="/mj/articles/{{ article.wa_id }}"><span class="lore-link__title">{{ article.title }}</span>{{ ui("chevron", "icon lore-link__chevron") }}</a>
+      <form method="post" action="/mj/lore/ajouter/{{ article.wa_id }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="genre" value="artefact">
+        <button type="submit" class="btn btn--compact">Ajouter au Lore</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}

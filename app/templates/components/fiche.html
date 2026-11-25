@@ -95,6 +95,7 @@
         <div class="prose">{{ html }}</div>
       </section>
       {% endfor %}
+      {% if lore_add is defined and lore_add and not player_mode %}{% include "lore/_add.html" %}{% endif %}
       {% if media_admin %}{% include "dm/_media_admin.html" %}{% endif %}
       {% endset %}
       {% set fiche_tabs = [] %}

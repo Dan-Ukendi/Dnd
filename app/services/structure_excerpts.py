@@ -8,6 +8,8 @@ from app.worldanvil.bbcode import to_plain_text
 FORBIDDEN_SECTIONS = ("secrets", "pistes pour la suite", "evenements de la session 1")
 BOLD_RE = re.compile(r"\[b\](?P<label>.*?)\[/b\]", re.S)
 UNIT_PREFIX_RE = re.compile(r"(?:\[p\]|\[br\])\s*$")
+LABEL_PARAGRAPH_PREFIX_RE = re.compile(r"\[p\]\s*$")
+LABEL_PARAGRAPH_SUFFIX_RE = re.compile(r"\s*\[/p\]")
 LIST_PREFIX_RE = re.compile(r"^\s*(?P<dashes>-+)\s*$")
 LIST_LINE_RE = re.compile(r"^\s*(?P<dashes>-+)\s*")
 SEGMENT_END_RE = re.compile(r"\[br\]|\[/p\]")
@@ -54,8 +56,8 @@ def _headings(content: str) -> list[_Heading]:
     ]
 
 
-def _is_forbidden(title: str) -> bool:
-    return any(title.startswith(name) for name in FORBIDDEN_SECTIONS)
+def _is_forbidden(title: str, forbidden: tuple[str, ...]) -> bool:
+    return any(title.startswith(name) for name in forbidden)
 
 
 def _ancestors(headings: list[_Heading], position: int) -> list[_Heading]:
@@ -69,8 +71,10 @@ def _ancestors(headings: list[_Heading], position: int) -> list[_Heading]:
     return chain
 
 
-def _forbidden_at(headings: list[_Heading], position: int) -> bool:
-    return any(_is_forbidden(heading.title) for heading in _ancestors(headings, position))
+def _forbidden_at(headings: list[_Heading], position: int, forbidden: tuple[str, ...]) -> bool:
+    return any(
+        _is_forbidden(heading.title, forbidden) for heading in _ancestors(headings, position)
+    )
 
 
 def _heading_excerpt(content: str, headings: list[_Heading], index: int) -> str:
@@ -125,7 +129,38 @@ def _labelled_units(content: str) -> list[tuple[str, int, str]]:
     return units
 
 
-def find_excerpt(content: str | None, anchor: str) -> Excerpt:
+def _label_paragraphs(content: str) -> list[tuple[str, int, int]]:
+    paragraphs = []
+    for match in BOLD_RE.finditer(content):
+        prefix = LABEL_PARAGRAPH_PREFIX_RE.search(content, 0, match.start())
+        suffix = LABEL_PARAGRAPH_SUFFIX_RE.match(content, match.end())
+        if prefix is None or prefix.end() != match.start() or suffix is None:
+            continue
+        label = anchor_key(to_plain_text(match.group("label")))
+        if label:
+            paragraphs.append((label, prefix.start(), suffix.end()))
+    return paragraphs
+
+
+def _label_block(content: str, headings: list[_Heading], wanted: str) -> tuple[int, str] | None:
+    paragraphs = _label_paragraphs(content)
+    for index, (label, start, end) in enumerate(paragraphs):
+        if label != wanted:
+            continue
+        stops = [item[1] for item in paragraphs[index + 1 :]]
+        stops += [heading.start for heading in headings if heading.start >= end]
+        stop = min(stops, default=len(content))
+        return start, content[end:stop].strip()
+    return None
+
+
+def find_excerpt(
+    content: str | None,
+    anchor: str,
+    *,
+    forbidden: tuple[str, ...] = FORBIDDEN_SECTIONS,
+    blocks: bool = False,
+) -> Excerpt:
     source = content or ""
     wanted = anchor_key(anchor)
     if not wanted:
@@ -133,12 +168,18 @@ def find_excerpt(content: str | None, anchor: str) -> Excerpt:
     headings = _headings(source)
     for index, heading in enumerate(headings):
         if heading.title == wanted:
-            if _forbidden_at(headings, heading.start + 1):
+            if _forbidden_at(headings, heading.start + 1, forbidden):
                 return Excerpt(AnchorStatus.FORBIDDEN)
             return Excerpt(AnchorStatus.FOUND, _heading_excerpt(source, headings, index))
+    block = _label_block(source, headings, wanted) if blocks else None
+    if block is not None:
+        position, excerpt = block
+        if _forbidden_at(headings, position, forbidden):
+            return Excerpt(AnchorStatus.FORBIDDEN)
+        return Excerpt(AnchorStatus.FOUND, excerpt)
     for label, position, excerpt in _labelled_units(source):
         if label == wanted:
-            if _forbidden_at(headings, position):
+            if _forbidden_at(headings, position, forbidden):
                 return Excerpt(AnchorStatus.FORBIDDEN)
             return Excerpt(AnchorStatus.FOUND, excerpt)
     return Excerpt(AnchorStatus.MISSING)

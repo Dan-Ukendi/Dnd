@@ -597,6 +597,7 @@ class Artefact(Base):
     location: Mapped[str] = mapped_column(String(300), default="", server_default="")
     status: Mapped[str] = mapped_column(String(200), default="", server_default="")
     review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
+    gm_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
     )
@@ -607,7 +608,88 @@ class Artefact(Base):
     article: Mapped[WaArticle] = relationship()
 
 
+class LoreType(Base):
+    __tablename__ = "lore_types"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    label: Mapped[str] = mapped_column(String(60), unique=True)
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+
+class LoreGroup(Base):
+    __tablename__ = "lore_groups"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(300), unique=True)
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+LORE_STORY_KINDS = ("legende", "ouvrage")
+
+
+class LoreStory(Base):
+    __tablename__ = "lore_stories"
+    __table_args__ = (
+        CheckConstraint("kind IN ('legende', 'ouvrage')", name="ck_lore_stories_kind"),
+        CheckConstraint(
+            "end_year IS NULL OR (start_year IS NOT NULL AND end_year >= start_year)",
+            name="ck_lore_stories_years",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(10))
+    title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    intro_sections: Mapped[str] = mapped_column(Text, default="", server_default="")
+    type_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lore_types.id", ondelete="SET NULL"), index=True
+    )
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lore_groups.id", ondelete="SET NULL"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    start_year: Mapped[int | None] = mapped_column(Integer)
+    end_year: Mapped[int | None] = mapped_column(Integer)
+    era: Mapped[str | None] = mapped_column(String(30))
+    approximate: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    artefact_id: Mapped[int | None] = mapped_column(
+        ForeignKey("artefacts.id", ondelete="SET NULL"), index=True
+    )
+    legend_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lore_stories.id", ondelete="SET NULL"), index=True
+    )
+    gm_only: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+    type: Mapped[LoreType | None] = relationship()
+    group: Mapped[LoreGroup | None] = relationship()
+    article: Mapped[WaArticle | None] = relationship()
+    artefact: Mapped[Artefact | None] = relationship()
+    legend: Mapped["LoreStory | None"] = relationship(remote_side="LoreStory.id")
+
+
 LORE_ELEMENT_TYPES = ("artefact", "lieu", "personnage", "organisation", "divinite", "evenement")
+LORE_PLACEMENTS = ("part", "physical", "characteristic", "dm_note")
 
 
 class LoreEntry(Base):
@@ -621,6 +703,10 @@ class LoreEntry(Base):
         CheckConstraint(
             "end_year IS NULL OR (start_year IS NOT NULL AND end_year >= start_year)",
             name="ck_lore_entries_years",
+        ),
+        CheckConstraint(
+            "placement IN ('part', 'physical', 'characteristic', 'dm_note')",
+            name="ck_lore_entries_placement",
         ),
     )
 
@@ -644,6 +730,10 @@ class LoreEntry(Base):
         ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
     )
     source_section: Mapped[str | None] = mapped_column(String(300))
+    story_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lore_stories.id", ondelete="CASCADE"), index=True
+    )
+    placement: Mapped[str] = mapped_column(String(20), default="part", server_default="part")
     gm_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(
@@ -654,7 +744,9 @@ class LoreEntry(Base):
     )
 
     article: Mapped[WaArticle | None] = relationship(foreign_keys=[wa_article_id])
+    source: Mapped[WaArticle | None] = relationship(foreign_keys=[source_article_id])
     event: Mapped[TimelineEvent | None] = relationship()
+    story: Mapped[LoreStory | None] = relationship()
 
 
 PLACE_KINDS = (

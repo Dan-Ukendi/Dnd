@@ -1,82 +1,37 @@
 {% from "components/ui.html" import empty_state %}
-{% from "lore/_entry_form.html" import entry_fields %}
-{% macro entry_card(view, dm) -%}
-{% set entry = view.entry %}
-<a class="chrono-card lore-card{% if dm and entry.review_note | trim %} is-pending{% endif %}" href="{{ view.href }}">
-  <span class="chrono-card__mark{% if view.date.end is not none and view.date.end != view.date.start %} chrono-card__mark--range{% endif %}" aria-hidden="true"></span>
-  <span class="chrono-card__years">{{ view.label }}</span>
-  <span class="chrono-card__title">{{ entry.title }}</span>
-  {% if entry.article and view.article_href %}<span class="chrono-card__place">{{ entry.article.title }}</span>{% endif %}
-  <span class="chrono-card__meta">
-    <span class="pill pill--muted">{{ view.element_label }}</span>
-    {% if view.date.approximate and view.date.dated %}<span class="pill pill--muted">Approximatif</span>{% endif %}
-    {% if dm %}
-    {% if entry.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
-    {% if entry.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
-    {% endif %}
-  </span>
-</a>
-{%- endmacro %}
-{% set frise_base = base ~ "/articles?section=lore" %}
-<nav class="lore-filters" aria-label="Filtrer la frise par type d'élément">
-  <a class="lore-filter" href="{{ frise_base }}#frise" {% if not filters.element and not filters.review %}aria-current="true"{% endif %}>Tout<span>{{ entry_total }}</span></a>
-  {% for key, label in element_labels.items() if element_counts[key] %}
-  <a class="lore-filter" href="{{ frise_base }}&amp;element={{ key }}#frise" {% if filters.element == key %}aria-current="true"{% endif %}>{{ label }}<span>{{ element_counts[key] }}</span></a>
-  {% endfor %}
-  {% if dm %}
-  <a class="lore-filter lore-filter--review" href="{{ frise_base }}&amp;a_verifier=1#frise" {% if filters.review %}aria-current="true"{% endif %}>À vérifier<span>{{ review_total }}</span></a>
-  {% endif %}
-</nav>
-{% if dm and artefact_reviews %}<p class="field__hint lore-filters__hint">Fiches d'artefact à vérifier : {{ artefact_reviews }} (onglet Artefacts).</p>{% endif %}
-
-{% if dm %}
-{% set preset = request.query_params.get("fiche", "") %}
-<details class="relation-edit relation-edit--new lore-new"{% if preset %} open{% endif %}>
-  <summary class="btn">Nouvelle entrée de Lore</summary>
-  <form method="post" action="/mj/lore" class="form relation-form lore-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    {{ entry_fields(entry_form, "lore-new", none, preset, "artefact" if preset else "") }}
-    <div class="row">
-      <button type="submit" class="btn btn--primary">Ajouter au Lore</button>
-    </div>
-  </form>
-</details>
-{% endif %}
-
-{% if groups or undated %}
+<p class="lore-intro reveal reveal-delay-1">Vue d'ensemble : seules les légendes datées y figurent, rangées par ère. Les récits non datés restent dans la liste des légendes.</p>
+{% if groups %}
 <div class="lore-frise">
   {% for group in groups %}
   <section class="era-group" data-color="{{ group.era.color }}" aria-labelledby="lore-ere-{{ group.era.slug }}">
     <header class="era-group__head">
-      <h3 class="era-group__name" id="lore-ere-{{ group.era.slug }}">{{ group.era.name }}</h3>
-      <p class="era-group__range">{{ group.era.range_label }} · {{ group.views | length }} entrée{{ "s" if group.views | length != 1 }}</p>
+      <h2 class="era-group__name" id="lore-ere-{{ group.era.slug }}">{{ group.era.name }}</h2>
+      <p class="era-group__range">{{ group.era.range_label }} · {{ group.views | length }} récit{{ "s" if group.views | length != 1 }}</p>
     </header>
     <p class="era-group__subtitle">{{ group.era.subtitle }}</p>
     <ol class="chrono-cards">
-      {% for view in group.views %}
-      <li>{{ entry_card(view, dm) }}</li>
+      {% for item in group.views %}
+      {% set story = item.story %}
+      <li>
+        <a class="chrono-card lore-card{% if dm and story.review_note | trim %} is-pending{% endif %}" href="{{ item.href }}">
+          <span class="chrono-card__mark{% if item.date.end is not none and item.date.end != item.date.start %} chrono-card__mark--range{% endif %}" aria-hidden="true"></span>
+          <span class="chrono-card__years">{{ item.label }}</span>
+          <span class="chrono-card__title">{{ story.title }}</span>
+          {% if item.group %}<span class="chrono-card__place">{{ item.group.title }}</span>{% endif %}
+          <span class="chrono-card__meta">
+            {% if item.type_label %}<span class="pill pill--muted">{{ item.type_label }}</span>{% endif %}
+            {% if dm and story.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
+            {% if dm and story.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
+          </span>
+        </a>
+      </li>
       {% endfor %}
     </ol>
   </section>
   {% endfor %}
-  {% if undated %}
-  <section class="era-group lore-undated" aria-labelledby="lore-non-date">
-    <header class="era-group__head">
-      <h3 class="era-group__name" id="lore-non-date">Non daté</h3>
-      <p class="era-group__range">{{ undated | length }} entrée{{ "s" if undated | length != 1 }}</p>
-    </header>
-    <ol class="chrono-cards">
-      {% for view in undated %}
-      <li>{{ entry_card(view, dm) }}</li>
-      {% endfor %}
-    </ol>
-  </section>
-  {% endif %}
 </div>
-{% elif entry_total %}
-{{ empty_state("Rien sur la frise", "Aucune entrée ne correspond à ce filtre.", "search") }}
 {% elif dm %}
-{{ empty_state("Frise encore vide", "Ajoutez une entrée ou synchronisez les articles d'artefacts de World Anvil.", "hourglass") }}
+{{ empty_state("Frise encore vide", "Datez une légende, ou liez ses parties à des événements de la Chronologie.", "hourglass") }}
 {% else %}
-{{ empty_state("Les récits sont encore scellés", "Votre MJ n'a encore partagé aucun pan de l'histoire de votre monde.", "hourglass") }}
+{{ empty_state("Les récits sont encore scellés", "Votre MJ n'a encore partagé aucune légende datée.", "hourglass") }}
 {% endif %}

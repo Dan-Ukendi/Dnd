@@ -1,0 +1,96 @@
+{% macro story_fields(options, id, story=None, kind="legende") %}
+<div class="lore-form__grid">
+  <div class="field lore-form__wide">
+    <label for="{{ id }}-title">Titre</label>
+    <input id="{{ id }}-title" type="text" name="title" value="{{ story.title if story else '' }}" required maxlength="300" autocomplete="off">
+  </div>
+  {% if kind == "legende" %}
+  <div class="field">
+    <label for="{{ id }}-type">Type</label>
+    <select id="{{ id }}-type" name="type_id">
+      <option value="">—</option>
+      {% for lore_type in options.lore_types %}<option value="{{ lore_type.id }}" {% if story and story.type_id == lore_type.id %}selected{% endif %}>{{ lore_type.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="{{ id }}-group">Regroupement</label>
+    <select id="{{ id }}-group" name="group_id">
+      <option value="">Aucun</option>
+      {% for group in options.groups %}<option value="{{ group.id }}" {% if story and story.group_id == group.id %}selected{% endif %}>{{ group.title }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="{{ id }}-new-group">Ou nouveau regroupement</label>
+    <input id="{{ id }}-new-group" type="text" name="new_group" value="" maxlength="300" autocomplete="off">
+  </div>
+  {% endif %}
+  <div class="field">
+    <label for="{{ id }}-article">Article source (World Anvil)</label>
+    <select id="{{ id }}-article" name="article_id">
+      <option value="">Aucun</option>
+      {% for item in options.articles %}<option value="{{ item.wa_id }}" {% if story and story.wa_article_id == item.wa_id %}selected{% endif %}>{{ item.title }}</option>{% endfor %}
+    </select>
+    <p class="field__hint">Un joueur ne voit le récit que s'il a accès à cet article.</p>
+  </div>
+  <div class="field">
+    <label for="{{ id }}-artefact">{{ "Artefact associé" }}</label>
+    <select id="{{ id }}-artefact" name="artefact_id">
+      <option value="">Aucun</option>
+      {% for artefact_id, title in options.artefacts %}<option value="{{ artefact_id }}" {% if story and story.artefact_id == artefact_id %}selected{% endif %}>{{ title }}</option>{% endfor %}
+    </select>
+  </div>
+  {% if kind == "ouvrage" %}
+  <div class="field">
+    <label for="{{ id }}-legend">Légende associée</label>
+    <select id="{{ id }}-legend" name="legend_id">
+      <option value="">Aucune</option>
+      {% for legend in options.legends %}<option value="{{ legend.id }}" {% if story and story.legend_id == legend.id %}selected{% endif %}>{{ legend.title }}</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="field">
+    <label for="{{ id }}-position">Ordre</label>
+    <input id="{{ id }}-position" type="number" name="position" value="{{ story.position if story else 0 }}" step="1" inputmode="numeric">
+  </div>
+</div>
+{% if kind == "legende" %}
+<fieldset class="lore-form__date">
+  <legend>Position chronologique</legend>
+  <p class="field__hint">Année, plage, ère seule ou rien. Laissée vide, la date du récit se lit sur ses parties (événements de la Chronologie). Une date inconnue reste vide.</p>
+  <div class="lore-form__grid">
+    <div class="field">
+      <label for="{{ id }}-start">Année (début)</label>
+      <input id="{{ id }}-start" type="number" name="start_year" value="{{ story.start_year if story and story.start_year is not none else '' }}" step="1" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label for="{{ id }}-end">Année de fin</label>
+      <input id="{{ id }}-end" type="number" name="end_year" value="{{ story.end_year if story and story.end_year is not none else '' }}" step="1" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label for="{{ id }}-era">Ère seule</label>
+      <select id="{{ id }}-era" name="era">
+        <option value="">—</option>
+        {% for era in options.eras %}<option value="{{ era.slug }}" {% if story and story.era == era.slug %}selected{% endif %}>{{ era.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <label class="check lore-form__check"><input type="checkbox" name="approximate" value="1" {% if story and story.approximate %}checked{% endif %}> Date approximative</label>
+  </div>
+</fieldset>
+{% endif %}
+<div class="field">
+  <label for="{{ id }}-description">Description</label>
+  <textarea id="{{ id }}-description" name="description" rows="3">{{ story.description if story else '' }}</textarea>
+  <p class="field__hint">Facultative, BBCode accepté. Le texte des parties vient de World Anvil.</p>
+</div>
+{% if kind == "ouvrage" %}
+<div class="field">
+  <label for="{{ id }}-intro">Sections d'en-tête de l'article (une par ligne)</label>
+  <textarea id="{{ id }}-intro" name="intro_sections" rows="2">{{ story.intro_sections if story else '' }}</textarea>
+</div>
+{% endif %}
+<label class="check"><input type="checkbox" name="gm_only" value="1" {% if not story or story.gm_only %}checked{% endif %}> Réservé au MJ (jamais montré aux joueurs)</label>
+<div class="field field--gm">
+  <label for="{{ id }}-review">À vérifier <span class="field__hint">note du MJ, jamais montrée aux joueurs</span></label>
+  <textarea id="{{ id }}-review" name="review_note" rows="3">{{ story.review_note if story else '' }}</textarea>
+</div>
+{% endmacro %}

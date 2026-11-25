@@ -1,0 +1,40 @@
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import empty_state %}
+{% from "lore/_story_form.html" import story_fields %}
+<p class="lore-intro reveal reveal-delay-1">Ce qu'on lit dans les livres du monde : des sources en jeu, écrites par des mains du monde, pas forcément exactes.</p>
+{% if dm %}
+<details class="relation-edit relation-edit--new lore-new">
+  <summary class="btn">Nouvel ouvrage</summary>
+  <form method="post" action="/mj/lore/recits" class="form relation-form lore-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="kind" value="ouvrage">
+    {{ story_fields(story_form, "book-new", none, "ouvrage") }}
+    <div class="row"><button type="submit" class="btn btn--primary">Créer l'ouvrage</button></div>
+  </form>
+</details>
+{% endif %}
+{% if books %}
+<ol class="lore-shelf stagger">
+  {% for item in books %}
+  {% set story = item.story %}
+  <li>
+    <a class="lore-book{% if dm and story.review_note | trim %} is-pending{% endif %}" href="{{ item.href }}">
+      <span class="lore-book__spine" aria-hidden="true">{{ ui("scroll") }}</span>
+      <span class="lore-book__body">
+        <span class="lore-book__title">{{ story.title }}</span>
+        <span class="lore-book__meta">
+          <span class="pill pill--muted">{{ item.parts | length }} partie{{ "s" if item.parts | length != 1 }}</span>
+          {% if dm and story.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
+          {% if dm and story.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
+        </span>
+      </span>
+      <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+{% elif dm %}
+{{ empty_state("Aucun ouvrage", "Ajoutez un ouvrage, ou utilisez « Ajouter au Lore » depuis la fiche d'un livre.", "scroll") }}
+{% else %}
+{{ empty_state("Aucun ouvrage", "Votre personnage n'a encore lu aucun livre que votre MJ a partagé.", "scroll") }}
+{% endif %}

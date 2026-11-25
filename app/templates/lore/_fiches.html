@@ -1,0 +1,14 @@
+{% from "components/ui.html" import card, empty_state %}
+{% if dm %}
+<p class="lore-intro">Toutes les fiches synchronisées : ouvrez-en une pour l'« Ajouter au Lore » comme légende, artefact ou ouvrage.</p>
+{% set search_view = "fiches" %}
+{% include "dm/_article_search.html" %}
+{% elif other_articles %}
+<ul class="card-grid stagger">
+  {% for article in other_articles | natural_order %}
+  <li>{{ card(article, "/joueur/articles/" ~ article.wa_id, True) }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+{{ empty_state("Aucune autre fiche", "Votre MJ ne vous a partagé aucune autre fiche du Lore.", "scroll") }}
+{% endif %}

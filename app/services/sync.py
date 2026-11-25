@@ -12,7 +12,6 @@ from app.models import SyncRun, SyncStatus, WaArticle, WaImage, utcnow
 from app.services import linking
 from app.services.chronology import ChronologyError
 from app.services.chronology_sync import sync_timeline
-from app.services.lore import ensure_artefacts
 from app.services.person_tags import ensure_categories
 from app.worldanvil.bbcode import (
     extract_image_ids,
@@ -182,7 +181,6 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
                 run.removed_count += 1
         db.flush()
         _refresh_links(db)
-        created_fiches = ensure_artefacts(db)
         categorised = ensure_categories(db)
         _sync_images(db, source, full=run.full)
         sync_timeline(db, source, world_id, run)
@@ -202,8 +200,6 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
             run.events_updated,
             run.events_removed,
         )
-        if created_fiches:
-            logger.info("Sync %d created %d artefact fiches", run_id, len(created_fiches))
         if categorised:
             logger.info("Sync %d tagged %d new person fiches as encounter", run_id, categorised)
     except Exception as exc:

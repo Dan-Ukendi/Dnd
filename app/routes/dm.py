@@ -27,7 +27,7 @@ from app.models import (
     User,
     WaArticle,
 )
-from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
+from app.routes.lore import LORE_SECTION, artefact_fiche, lore_add_panel, lore_page_context
 from app.routes.personnage import PERSON_SECTION, dm_page_context
 from app.routes.structures import territory_response
 from app.sections import ADVENTURE_KEY, section_counts
@@ -288,6 +288,7 @@ def article_detail(
             "relation_categories": dossier_service.RELATION_CATEGORIES,
             "relation_articles": article_service.all_available_articles(db) if characters else [],
             "artefact_fiche": artefact_fiche(db, article, render_context, dm=True),
+            "lore_add": lore_add_panel(db, article),
             "person_badges": person_service.dm_badge_index(db),
             "person_tags": person_service.fiche_tags(db, article),
             "structure": build_structure(db, article, Viewer(dm=True), render_context, lieu),

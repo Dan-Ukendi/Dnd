@@ -1,0 +1,52 @@
+{% from "components/icons.html" import ui %}
+<div class="lore-halves stagger">
+  <a class="lore-half lore-half--legendes{% if not legend_total %} is-empty{% endif %}" href="{{ view_href.legendes }}">
+    <span class="lore-half__eyebrow">Récits du monde</span>
+    <span class="lore-half__title">Légendes</span>
+    <span class="lore-half__desc">Mythes, contes, légendes et histoires, partie par partie.</span>
+    <span class="lore-half__preview">
+      {% for item in legend_preview %}
+      <span class="lore-scroll"{% if item.era %} data-color="{{ item.era.color }}"{% endif %}>
+        <span class="lore-scroll__mark" aria-hidden="true"></span>
+        <span class="lore-scroll__title">{{ item.story.title }}</span>
+        <span class="lore-scroll__meta">{{ item.type_label or "Récit" }} · {{ item.label }}</span>
+      </span>
+      {% else %}
+      <span class="lore-half__placeholder" aria-hidden="true">{{ ui("quill") }}</span>
+      {% endfor %}
+    </span>
+    <span class="lore-half__foot">
+      <span class="lore-half__count">{% if legend_total %}{{ legend_total }} récit{{ "s" if legend_total > 1 }}{% else %}Aucun récit pour l'instant{% endif %}</span>
+      {% if dm and reviews.legendes %}<span class="pill pill--warn">À vérifier · {{ reviews.legendes }}</span>{% endif %}
+      <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+    </span>
+  </a>
+  <a class="lore-half lore-half--artefacts{% if not artefact_total %} is-empty{% endif %}" href="{{ view_href.artefacts }}">
+    <span class="lore-half__eyebrow">Objets de pouvoir</span>
+    <span class="lore-half__title">Artefacts</span>
+    <span class="lore-half__desc">Leurs caractéristiques telles qu'on les joue, sans leur histoire.</span>
+    <span class="lore-half__preview lore-half__preview--faces">
+      {% for card in artefact_preview %}
+      {% set image = card.article | article_image(not dm) %}
+      <span class="lore-gem">{% if image %}<img src="{{ image }}" alt="" loading="lazy" decoding="async">{% else %}{{ (card.article.title | trim)[:1] | upper }}{% endif %}</span>
+      {% else %}
+      <span class="lore-half__placeholder" aria-hidden="true">{{ ui("pouch") }}</span>
+      {% endfor %}
+    </span>
+    <span class="lore-half__foot">
+      <span class="lore-half__count">{% if artefact_total %}{{ artefact_total }} artefact{{ "s" if artefact_total > 1 }}{% else %}Aucun artefact pour l'instant{% endif %}</span>
+      {% if dm and reviews.artefacts %}<span class="pill pill--warn">À vérifier · {{ reviews.artefacts }}</span>{% endif %}
+      <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+    </span>
+  </a>
+</div>
+<a class="lore-books{% if not book_total %} is-empty{% endif %} reveal reveal-delay-2" href="{{ view_href.ouvrages }}">
+  <span class="lore-books__icon" aria-hidden="true">{{ ui("scroll") }}</span>
+  <span class="lore-books__body">
+    <span class="lore-books__title">Ouvrages</span>
+    <span class="lore-books__desc">Les livres trouvés dans le monde : des sources en jeu, pas forcément exactes.</span>
+    {% if book_preview %}<span class="lore-books__list">{% for item in book_preview %}<span>{{ item.story.title }}</span>{% endfor %}</span>{% endif %}
+  </span>
+  <span class="lore-books__count">{% if book_total %}{{ book_total }} ouvrage{{ "s" if book_total > 1 }}{% else %}Aucun ouvrage{% endif %}{% if dm and reviews.ouvrages %} · {{ reviews.ouvrages }} à vérifier{% endif %}</span>
+  <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+</a>

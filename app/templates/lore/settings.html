@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import breadcrumb, page_head %}
+{% block title %}Réglages du Lore{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{{ breadcrumb([("Accueil", "/mj"), ("Lore", lore_home), ("Réglages", "")]) }}
+{{ page_head("Réglages du Lore", eyebrow="Archives · Lore", lead="Les types de légendes et les regroupements de récits. Ces données vivent dans l'app ; la synchronisation World Anvil n'y touche jamais.") }}
+
+<section class="panel lore-settings" aria-labelledby="types-legendes">
+  <h2 class="panel__title" id="types-legendes">Types de légendes</h2>
+  <ul class="lore-settings__list">
+    {% for lore_type in lore_types %}
+    <li class="lore-settings__row">
+      <form method="post" action="/mj/lore/types/{{ lore_type.id }}" class="lore-settings__form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="visually-hidden" for="type-{{ lore_type.id }}-label">Nom du type</label>
+        <input id="type-{{ lore_type.id }}-label" type="text" name="label" value="{{ lore_type.label }}" required maxlength="60" autocomplete="off">
+        <label class="visually-hidden" for="type-{{ lore_type.id }}-position">Ordre</label>
+        <input id="type-{{ lore_type.id }}-position" class="lore-settings__order" type="number" name="position" value="{{ lore_type.position }}" step="1" inputmode="numeric">
+        <span class="lore-settings__usage">{{ usage.get(lore_type.id, 0) }} récit{{ "s" if usage.get(lore_type.id, 0) != 1 }}</span>
+        <button type="submit" class="btn btn--compact">Enregistrer</button>
+      </form>
+      {% if not usage.get(lore_type.id) %}
+      <form method="post" action="/mj/lore/types/{{ lore_type.id }}/supprimer" data-confirm="Supprimer le type « {{ lore_type.label }} » ?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn--compact btn--danger">Supprimer</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <form method="post" action="/mj/lore/types" class="lore-settings__form lore-settings__new">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="type-new">Nouveau type</label>
+    <input id="type-new" type="text" name="label" required maxlength="60" autocomplete="off">
+    <button type="submit" class="btn btn--primary">Ajouter</button>
+  </form>
+</section>
+
+<section class="panel lore-settings" aria-labelledby="regroupements">
+  <h2 class="panel__title" id="regroupements">Regroupements</h2>
+  <p class="field__hint">Un regroupement se crée depuis le formulaire d'un récit. Le supprimer garde ses récits.</p>
+  {% if groups %}
+  <ul class="lore-settings__list">
+    {% for group in groups %}
+    <li class="lore-settings__row lore-settings__row--wide">
+      <form method="post" action="/mj/lore/regroupements/{{ group.id }}" class="lore-settings__form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="visually-hidden" for="group-{{ group.id }}-title">Titre</label>
+        <input id="group-{{ group.id }}-title" type="text" name="title" value="{{ group.title }}" required maxlength="300" autocomplete="off">
+        <label class="visually-hidden" for="group-{{ group.id }}-position">Ordre</label>
+        <input id="group-{{ group.id }}-position" class="lore-settings__order" type="number" name="position" value="{{ group.position }}" step="1" inputmode="numeric">
+        <label class="visually-hidden" for="group-{{ group.id }}-description">Description</label>
+        <input id="group-{{ group.id }}-description" type="text" name="description" value="{{ group.description }}" placeholder="Description (facultative)" maxlength="2000" autocomplete="off">
+        <span class="lore-settings__usage">{{ group_usage.get(group.id, 0) }} récit{{ "s" if group_usage.get(group.id, 0) != 1 }}</span>
+        <button type="submit" class="btn btn--compact">Enregistrer</button>
+      </form>
+      <form method="post" action="/mj/lore/regroupements/{{ group.id }}/supprimer" data-confirm="Supprimer le regroupement « {{ group.title }} » ? Ses récits sont conservés.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn--compact btn--danger">Supprimer</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Aucun regroupement.</p>
+  {% endif %}
+</section>
+<p class="chrono-page__back"><a class="btn" href="{{ lore_home }}">{{ ui("back") }}Retour au Lore</a></p>
+{% endblock %}

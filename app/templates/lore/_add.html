@@ -1,0 +1,28 @@
+{% from "components/icons.html" import ui %}
+<section class="panel panel--gm lore-add" aria-labelledby="ajouter-au-lore">
+  <h2 class="panel__title" id="ajouter-au-lore">Lore</h2>
+  {% if lore_add.stories or lore_add.artefact %}
+  <ul class="lore-add__links">
+    {% if lore_add.artefact %}<li><span class="pill pill--lore">Artefact</span> Fiche d'artefact{% if lore_add.artefact.gm_only %} <span class="pill pill--danger">MJ seulement</span>{% endif %}</li>{% endif %}
+    {% for item in lore_add.stories %}
+    <li><span class="pill pill--lore">{{ "Ouvrage" if item.story.kind == "ouvrage" else "Légende" }}</span> <a href="{{ item.href }}">{{ item.story.title }}</a>{% if item.story.gm_only %} <span class="pill pill--danger">MJ seulement</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="field__hint">Cette fiche n'est pas dans le Lore. La synchronisation n'y ajoute jamais rien : c'est vous qui choisissez.</p>
+  {% endif %}
+  {% if lore_add.available %}
+  <form method="post" action="/mj/lore/ajouter/{{ article.wa_id }}" class="lore-add__form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <fieldset class="lore-add__choices">
+      <legend>Ajouter au Lore comme</legend>
+      {% set choice = namespace(done=false) %}
+      {% for value, label, taken in lore_add.genres %}
+      <label class="check"><input type="radio" name="genre" value="{{ value }}"{% if taken %} disabled{% elif not choice.done %} checked{% set choice.done = true %}{% endif %}> {{ label }}{% if taken %} (déjà fait){% endif %}</label>
+      {% endfor %}
+    </fieldset>
+    <button type="submit" class="btn btn--primary">{{ ui("quill") }}Ajouter au Lore</button>
+    <p class="field__hint">L'entrée créée est réservée au MJ ; son texte reste lu en direct sur World Anvil.</p>
+  </form>
+  {% endif %}
+</section>

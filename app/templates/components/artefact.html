@@ -1,6 +1,22 @@
 {% from "components/icons.html" import ui %}
+{% from "components/ui.html" import empty_state %}
 {% set artefact = artefact_fiche.artefact %}
 {% set editable = not player_mode %}
+{% macro fiche_section(item, editable, status, gm=False) -%}
+{% set entry = item.entry %}
+<section class="artefact-block{% if gm %} panel panel--gm prose-panel{% endif %}" aria-labelledby="section-{{ entry.id }}">
+  <h3 class="{{ 'panel__title' if gm else 'artefact-block__title' }}" id="section-{{ entry.id }}">{{ entry.title }}</h3>
+  {% if item.text.html | trim %}<div class="prose">{{ item.text.html }}</div>{% else %}<p class="muted">Texte introuvable dans l'article World Anvil.</p>{% endif %}
+  {% if editable %}
+  <p class="artefact-block__tools">
+    {% if entry.gm_only and not gm %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
+    {% if entry.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
+    {% if item.text.status == status.STORED and entry.source_article_id %}<span class="field__hint">Section introuvable : texte enregistré affiché.</span>{% endif %}
+    <a class="btn btn--compact" href="/mj/lore/{{ entry.id }}">Modifier</a>
+  </p>
+  {% endif %}
+</section>
+{%- endmacro %}
 <div class="artefact">
   {% if artefact %}
   {% if editable and artefact.review_note | trim %}
@@ -13,6 +29,7 @@
     </form>
   </div>
   {% endif %}
+  {% if editable and artefact.gm_only %}<p class="alert alert--warn">Fiche réservée au MJ : les joueurs ne la voient pas dans le Lore.</p>{% endif %}
   {% set holder = artefact_fiche.holders | join(", ") if artefact_fiche.holders else artefact.holder %}
   {% set rows = [
     ("Type d'objet", artefact.object_type),
@@ -48,45 +65,71 @@
       <div class="prose">{{ artefact_fiche.bonuses_html }}</div>
     </section>
     {% endif %}
-    {% if not filled and not artefact_fiche.properties_html | trim and not artefact_fiche.bonuses_html | trim %}
+    {% for item in artefact_fiche.characteristics %}{{ fiche_section(item, editable, artefact_fiche.text_status) }}{% endfor %}
+    {% if not filled and not artefact_fiche.properties_html | trim and not artefact_fiche.bonuses_html | trim and not artefact_fiche.characteristics %}
     <p class="muted">Aucune caractéristique n'est encore renseignée.</p>
     {% endif %}
   </section>
-  {% else %}
-  <div class="empty-state">
-    {{ ui("candle") }}
-    <h2 class="empty-state__title">Caractéristiques à établir</h2>
-    <p>La fiche de cet artefact n'a pas encore été séparée de son histoire.</p>
-    {% if editable %}
-    <form method="post" action="/mj/artefacts/{{ article.wa_id }}/creer">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit" class="btn btn--primary">Créer la fiche depuis l'article World Anvil</button>
-    </form>
-    {% endif %}
-  </div>
+
+  {% if artefact_fiche.physical %}
+  <section class="artefact-sheet" aria-labelledby="description-physique">
+    <h2 class="artefact-sheet__title" id="description-physique">Description physique</h2>
+    {% for item in artefact_fiche.physical %}{{ fiche_section(item, editable, artefact_fiche.text_status) }}{% endfor %}
+  </section>
   {% endif %}
 
+  {% if artefact_fiche.legends or artefact_fiche.books %}
   <section class="lore-links" aria-labelledby="lore-associe">
-    <h2 class="artefact-sheet__title" id="lore-associe">Lore associé</h2>
-    {% if artefact_fiche.lore %}
-    <ol class="lore-links__list">
-      {% for view in artefact_fiche.lore %}
+    <h2 class="artefact-sheet__title" id="lore-associe">Dans le Lore</h2>
+    <ul class="lore-related__list">
+      {% for item in artefact_fiche.legends %}
       <li>
-        <a class="lore-link" href="{{ view.href }}">
-          <span class="lore-link__date">{{ view.label }}</span>
-          <span class="lore-link__title">{{ view.entry.title }}</span>
-          {{ ui("chevron", "icon lore-link__chevron") }}
-        </a>
+        <p class="lore-related__label">Légende associée</p>
+        <a class="lore-linked" href="{{ item.href }}"><span class="lore-linked__icon" aria-hidden="true">{{ ui("quill") }}</span><span class="lore-linked__title">{{ item.story.title }}</span>{{ ui("chevron", "icon lore-link__chevron") }}</a>
       </li>
       {% endfor %}
-    </ol>
-    {% else %}
-    <p class="muted">Aucune entrée de Lore n'est liée à cet artefact.</p>
-    {% endif %}
-    {% if editable %}<a class="btn" href="/mj/articles?section=lore&amp;fiche={{ article.wa_id }}#frise">Ajouter une entrée de Lore</a>{% endif %}
+      {% for item in artefact_fiche.books %}
+      <li>
+        <p class="lore-related__label">Ouvrage associé</p>
+        <a class="lore-linked" href="{{ item.href }}"><span class="lore-linked__icon" aria-hidden="true">{{ ui("scroll") }}</span><span class="lore-linked__title">{{ item.story.title }}</span>{{ ui("chevron", "icon lore-link__chevron") }}</a>
+      </li>
+      {% endfor %}
+    </ul>
   </section>
+  {% endif %}
 
-  {% if editable and artefact %}
+  {% if editable %}
+  <div id="sections">
+    {% for item in artefact_fiche.dm_notes %}{{ fiche_section(item, editable, artefact_fiche.text_status, True) }}{% endfor %}
+  </div>
+
+  <details class="relation-edit">
+    <summary class="btn">Ajouter une section de l'article</summary>
+    <form method="post" action="/mj/artefacts/{{ article.wa_id }}/sections" class="form relation-form lore-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="lore-form__grid">
+        <div class="field">
+          <label for="fiche-section">Section de l'article World Anvil</label>
+          <select id="fiche-section" name="source_section" required>
+            {% for item in artefact_fiche.source_sections %}<option value="{{ item.title }}">{{ "— " * (item.level - 1) if item.level > 1 }}{{ item.title }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="fiche-placement">Place sur la fiche</label>
+          <select id="fiche-placement" name="placement">
+            {% for value in ("characteristic", "physical", "dm_note") %}<option value="{{ value }}">{{ artefact_fiche.placement_labels[value] }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field lore-form__wide">
+          <label for="fiche-section-title">Titre affiché (facultatif)</label>
+          <input id="fiche-section-title" type="text" name="title" maxlength="300" autocomplete="off">
+        </div>
+      </div>
+      <p class="field__hint">Le texte reste lu en direct sur World Anvil ; la section ajoutée est réservée au MJ jusqu'à ce que vous la partagiez. Aucune histoire ici : elle va dans les Légendes.</p>
+      <div class="row"><button type="submit" class="btn btn--primary">Ajouter</button></div>
+    </form>
+  </details>
+
   <details class="relation-edit">
     <summary class="btn">Modifier les caractéristiques</summary>
     <form method="post" action="/mj/artefacts/{{ article.wa_id }}" class="form relation-form lore-form">
@@ -110,12 +153,13 @@
       <div class="field">
         <label for="artefact-properties">Propriétés et effets mécaniques</label>
         <textarea id="artefact-properties" name="properties" rows="12">{{ artefact.properties }}</textarea>
-        <p class="field__hint">BBCode World Anvil accepté. Aucune histoire ici : elle va dans le Lore.</p>
+        <p class="field__hint">BBCode World Anvil accepté. Aucune histoire ici : elle va dans les Légendes.</p>
       </div>
       <div class="field">
         <label for="artefact-bonuses">Bonus</label>
         <textarea id="artefact-bonuses" name="bonuses" rows="3">{{ artefact.bonuses }}</textarea>
       </div>
+      <label class="check"><input type="checkbox" name="gm_only" value="1" {% if artefact.gm_only %}checked{% endif %}> Fiche réservée au MJ (absente du Lore des joueurs)</label>
       <div class="field field--gm">
         <label for="artefact-review">À vérifier <span class="field__hint">note du MJ, jamais montrée aux joueurs</span></label>
         <textarea id="artefact-review" name="review_note" rows="3">{{ artefact.review_note }}</textarea>
@@ -126,4 +170,16 @@
     </form>
   </details>
   {% endif %}
+  {% else %}
+  <div class="empty-state">
+    {{ ui("candle") }}
+    <h2 class="empty-state__title">Caractéristiques à établir</h2>
+    {% if editable %}
+    <p>Cet objet n'est pas encore dans le Lore : utilisez « Ajouter au Lore » ci-dessous pour créer sa fiche d'artefact.</p>
+    {% else %}
+    <p>Votre MJ n'a pas encore partagé la fiche de cet artefact.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  <p class="artefact__back"><a class="btn" href="{{ artefact_fiche.lore_home }}">{{ ui("back") }}Tous les artefacts</a></p>
 </div>

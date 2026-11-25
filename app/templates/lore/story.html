@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import breadcrumb, card, empty_state %}
+{% from "lore/_story_form.html" import story_fields %}
+{% set is_book = story.kind == "ouvrage" %}
+{% block title %}{{ (current.entry.title ~ " · " if current and parts | length > 1 else "") ~ story.title }}{% endblock %}
+{% block main_attrs %}data-section="lore"{% endblock %}
+{% block content %}
+{% set crumbs = [("Accueil", "/mj")] if dm else [("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles")] %}
+{% set _ = crumbs.append(("Lore", lore_home)) %}
+{% set _ = crumbs.append(("Ouvrages" if is_book else "Légendes", list_href)) %}
+{% if view.group %}{% set _ = crumbs.append((view.group.title, list_href ~ "#lore-bloc-" ~ view.group.id)) %}{% endif %}
+{% set _ = crumbs.append((story.title, "")) %}
+{{ breadcrumb(crumbs) }}
+
+<article class="lore-reader reveal"{% if view.era %} data-color="{{ view.era.color }}"{% endif %}>
+  <header class="lore-reader__head">
+    <p class="eyebrow">{% if is_book %}Ouvrage · source en jeu{% else %}Récit{% if view.type_label %} · {{ view.type_label }}{% endif %}{% endif %}</p>
+    <h1 class="lore-reader__title">{{ story.title }}</h1>
+    {% if not is_book %}<p class="lore-entry__date">{{ view.label }}{% if view.era and view.date.start is not none %}<span class="lore-entry__era"> · {{ view.era.name }}</span>{% endif %}</p>{% endif %}
+    <div class="chips">
+      {% if view.group %}<span class="pill pill--lore">{{ view.group.title }}</span>{% endif %}
+      {% if view.date.approximate and view.date.dated and not is_book %}<span class="pill pill--muted">Date approximative</span>{% endif %}
+      {% if dm and story.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
+      {% if article_href %}<a class="pill pill--muted" href="{{ article_href }}"{{ article_href | boost }}>Fiche source</a>{% endif %}
+    </div>
+  </header>
+
+  {% if dm and story.review_note | trim %}
+  <div class="review-note">
+    <p class="review-note__label">À vérifier</p>
+    <p class="review-note__text">{{ story.review_note }}</p>
+    <form method="post" action="/mj/lore/recits/{{ story.id }}/verifie">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">Marquer vérifié</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if description_html | trim or intro_html | trim %}
+  <div class="lore-reader__intro prose">{{ description_html }}{{ intro_html }}</div>
+  {% endif %}
+
+  {% if parts %}
+  <div class="lore-reader__layout">
+    <nav class="lore-parts" id="parties" aria-label="Parties de « {{ story.title }} »">
+      <p class="lore-parts__label">{{ parts | length }} partie{{ "s" if parts | length != 1 }}</p>
+      <ol class="lore-parts__list">
+        {% for part in parts %}
+        <li>
+          <a class="lore-parts__link" href="{{ part.href }}"{% if current and part.index == current.index %} aria-current="page"{% endif %}>
+            <span class="lore-parts__number">{{ part.index }}</span>
+            <span class="lore-parts__title">{{ part.entry.title }}</span>
+            {% if dm and part.entry.gm_only %}<span class="pill pill--danger">MJ</span>{% endif %}
+          </a>
+          {% if dm %}
+          <span class="lore-parts__tools">
+            <form method="post" action="/mj/lore/{{ part.entry.id }}/deplacer"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="sens" value="haut"><button type="submit" class="btn btn--compact" aria-label="Monter « {{ part.entry.title }} »"{% if loop.first %} disabled{% endif %}>↑</button></form>
+            <form method="post" action="/mj/lore/{{ part.entry.id }}/deplacer"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="sens" value="bas"><button type="submit" class="btn btn--compact" aria-label="Descendre « {{ part.entry.title }} »"{% if loop.last %} disabled{% endif %}>↓</button></form>
+            <a class="btn btn--compact" href="/mj/lore/{{ part.entry.id }}">Modifier</a>
+          </span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </nav>
+
+    <section class="lore-part" aria-labelledby="partie-titre">
+      <header class="lore-part__head">
+        <p class="eyebrow">Partie {{ current.index }} sur {{ parts | length }}</p>
+        <h2 class="lore-part__title" id="partie-titre">{{ current.entry.title }}</h2>
+        {% if current.label %}<p class="lore-part__date">{{ current.label }}{% if current.event_href %} · <a href="{{ current.event_href }}">{{ current.event.title }}</a>{% endif %}</p>{% endif %}
+      </header>
+      {% if dm and current.entry.review_note | trim %}<p class="field__hint lore-part__review">À vérifier : {{ current.entry.review_note }}</p>{% endif %}
+      {% if text.html | trim %}
+      <div class="prose prose--story">{{ text.html }}</div>
+      {% else %}
+      <p class="muted">Le texte de cette partie n'est pas disponible.</p>
+      {% endif %}
+      {% if dm %}
+      {% if text.status == text_status.STORED and current.entry.source_article_id %}<p class="field__hint">Section « {{ current.entry.source_section }} » introuvable dans l'article World Anvil : texte enregistré dans l'app affiché.</p>
+      {% elif text.status == text_status.MISSING %}<p class="field__hint">Section « {{ current.entry.source_section }} » introuvable dans l'article World Anvil.</p>
+      {% elif text.status == text_status.FORBIDDEN %}<p class="field__hint">Section réservée au MJ (Secrets, Pistes, Événements de séance) : jamais rendue dans une partie.</p>
+      {% elif text.status == text_status.LIVE %}<p class="field__hint">Texte lu en direct dans World Anvil ({{ current.entry.source.title if current.entry.source else "article" }}{% if current.entry.source_section %}, section « {{ current.entry.source_section }} »{% endif %}).</p>{% endif %}
+      {% endif %}
+      <nav class="lore-pager" aria-label="Parties précédente et suivante">
+        {% if previous %}<a class="lore-pager__link" href="{{ previous.href }}" rel="prev"><span class="lore-pager__dir">← Précédente</span><span class="lore-pager__title">{{ previous.entry.title }}</span></a>{% else %}<span></span>{% endif %}
+        {% if next %}<a class="lore-pager__link lore-pager__link--next" href="{{ next.href }}" rel="next"><span class="lore-pager__dir">Suivante →</span><span class="lore-pager__title">{{ next.entry.title }}</span></a>{% endif %}
+      </nav>
+    </section>
+  </div>
+  {% else %}
+  {{ empty_state("Aucune partie", "Ce récit n'a encore aucune partie visible.", "quill") }}
+  {% endif %}
+</article>
+
+{% if artefact_link or legend_link or book_links %}
+<section class="related lore-related" aria-labelledby="lore-associe">
+  <div class="related__head">
+    <h2 class="related__title" id="lore-associe">Dans le Lore</h2>
+  </div>
+  <ul class="lore-related__list">
+    {% if artefact_link %}
+    <li>
+      <p class="lore-related__label">Artefact associé</p>
+      {% call card(artefact_link.article, artefact_link.href, not dm, boost=True) %}{% if artefact_link.artefact.rarity %}<span class="pill pill--lore">{{ artefact_link.artefact.rarity | truncate(40) }}</span>{% endif %}{% endcall %}
+    </li>
+    {% endif %}
+    {% if legend_link %}
+    <li>
+      <p class="lore-related__label">Légende associée</p>
+      <a class="lore-linked" href="{{ legend_link.href }}"><span class="lore-linked__icon" aria-hidden="true">{{ ui("quill") }}</span><span class="lore-linked__title">{{ legend_link.story.title }}</span>{{ ui("chevron", "icon lore-link__chevron") }}</a>
+    </li>
+    {% endif %}
+    {% for book in book_links %}
+    <li>
+      <p class="lore-related__label">Ouvrage associé</p>
+      <a class="lore-linked" href="{{ book.href }}"><span class="lore-linked__icon" aria-hidden="true">{{ ui("scroll") }}</span><span class="lore-linked__title">{{ book.story.title }}</span>{{ ui("chevron", "icon lore-link__chevron") }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if dm %}
+<div class="lore-entry__admin">
+  <details class="relation-edit">
+    <summary class="btn">Ajouter une partie</summary>
+    <form method="post" action="/mj/lore/recits/{{ story.id }}/parties" class="form relation-form lore-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="lore-form__grid">
+        <div class="field">
+          <label for="part-new-source">Article source</label>
+          <select id="part-new-source" name="source_article_id">
+            <option value="">Aucun (texte saisi ci-dessous)</option>
+            {% for item in story_form.articles %}<option value="{{ item.wa_id }}" {% if item.wa_id == story.wa_article_id %}selected{% endif %}>{{ item.title }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="part-new-section">Section de l'article</label>
+          <input id="part-new-section" type="text" name="source_section" list="part-new-sections" maxlength="300" autocomplete="off">
+          <datalist id="part-new-sections">{% for item in source_sections %}<option value="{{ item.title }}">{% endfor %}</datalist>
+          <p class="field__hint">Intitulé exact d'une section ou d'un passage en gras ; vide = article entier.</p>
+        </div>
+        <div class="field lore-form__wide">
+          <label for="part-new-title">Titre de la partie</label>
+          <input id="part-new-title" type="text" name="title" maxlength="300" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label for="part-new-text">Texte (seulement sans article source)</label>
+        <textarea id="part-new-text" name="text" rows="4"></textarea>
+      </div>
+      <p class="field__hint">La nouvelle partie est réservée au MJ ; ouvrez-la ensuite pour la partager.</p>
+      <div class="row"><button type="submit" class="btn btn--primary">Ajouter la partie</button></div>
+    </form>
+  </details>
+  <details class="relation-edit">
+    <summary class="btn">Modifier {{ "l'ouvrage" if is_book else "le récit" }}</summary>
+    <form method="post" action="/mj/lore/recits/{{ story.id }}" class="form relation-form lore-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ story_fields(story_form, "story-" ~ story.id, story, story.kind) }}
+      <div class="row"><button type="submit" class="btn btn--primary">Enregistrer</button></div>
+    </form>
+    <form method="post" action="/mj/lore/recits/{{ story.id }}/supprimer" class="relation-edit__delete" data-confirm="Retirer « {{ story.title }} » du Lore ? Ses parties sont supprimées ; les articles World Anvil ne sont pas touchés.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn btn--danger">Retirer du Lore</button>
+    </form>
+  </details>
+</div>
+{% endif %}
+<p class="chrono-page__back"><a class="btn" href="{{ list_href }}">{{ ui("back") }}Retour {{ "aux ouvrages" if is_book else "aux légendes" }}</a></p>
+{% endblock %}
