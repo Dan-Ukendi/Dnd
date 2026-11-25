@@ -14,7 +14,7 @@ from app.models import (
     WaArticle,
 )
 from app.presentation import article_image, natural_order
-from app.sections import section_key
+from app.sections import article_section_key, section_key
 from app.services.access import accessible_article_ids
 from app.services.characters import characters_of
 from app.services.dossiers import mark_relations_edited
@@ -106,7 +106,7 @@ class FicheTags:
 
 
 def is_person(article: WaArticle) -> bool:
-    return section_key(article.wa_id, article.template_type) == PERSON_SECTION
+    return article_section_key(article) == PERSON_SECTION
 
 
 def category_badge(category: str) -> Badge:

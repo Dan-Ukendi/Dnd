@@ -29,6 +29,7 @@ from app.db import get_engine, get_session_factory, reset_engine  # noqa: E402
 from app.services import linking  # noqa: E402
 
 TABLES = (
+    "world_categories",
     "link_exclusions",
     "link_aliases",
     "positions",

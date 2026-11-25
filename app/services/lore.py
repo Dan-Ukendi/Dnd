@@ -53,6 +53,7 @@ TEMPLATE_ELEMENTS = {
     "formation": "organisation",
 }
 DEFAULT_ELEMENT = "evenement"
+PLACE_ELEMENT = "lieu"
 MAX_TITLE = 300
 MAX_TEXT = 60_000
 MAX_NOTE = 20_000
@@ -664,6 +665,8 @@ def element_for(db: Session, wa_id: str | None) -> str:
     article = db.get(WaArticle, wa_id) if wa_id else None
     if article is None:
         return DEFAULT_ELEMENT
+    if article.world_category:
+        return PLACE_ELEMENT
     return TEMPLATE_ELEMENTS.get((article.template_type or "").lower(), DEFAULT_ELEMENT)
 
 

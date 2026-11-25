@@ -16,7 +16,7 @@
     <select id="filtre-type" name="type">
       <option value="">Tous les types</option>
       {% for value in section_types(types, section_key, articles) %}
-      <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }}</option>
+      <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | type_option_label }}</option>
       {% endfor %}
     </select>
   </div>

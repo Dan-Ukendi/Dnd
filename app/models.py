@@ -134,10 +134,18 @@ class WaArticle(Base):
     media: Mapped[list["MediaAsset"]] = relationship(
         lazy="selectin", order_by="MediaAsset.id", viewonly=True
     )
+    world_category_row: Mapped["WorldCategory | None"] = relationship(
+        lazy="selectin", viewonly=True
+    )
 
     @property
     def is_available(self) -> bool:
         return self.removed_at is None
+
+    @property
+    def world_category(self) -> str | None:
+        row = self.world_category_row
+        return row.category if row is not None else None
 
 
 PERSON_CATEGORIES = ("lore", "character", "encounter")
@@ -155,6 +163,27 @@ class ArticleCategory(Base):
         ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), primary_key=True
     )
     category: Mapped[str] = mapped_column(String(10))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+WORLD_CATEGORIES = ("pays", "ville", "batiment")
+
+
+class WorldCategory(Base):
+    __tablename__ = "world_categories"
+    __table_args__ = (
+        CheckConstraint(
+            "category IS NULL OR category IN ('pays', 'ville', 'batiment')",
+            name="ck_world_categories_category",
+        ),
+    )
+
+    wa_id: Mapped[str] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), primary_key=True
+    )
+    category: Mapped[str | None] = mapped_column(String(10))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
     )

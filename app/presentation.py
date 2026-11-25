@@ -6,8 +6,8 @@ from urllib.parse import urlsplit
 
 from markupsafe import Markup
 
-from app.models import MediaAsset, MediaRole, WaArticle
-from app.sections import SECTIONS_BY_KEY, TEMPLATE_SECTIONS, section_key
+from app.models import WORLD_CATEGORIES, MediaAsset, MediaRole, WaArticle
+from app.sections import SECTIONS_BY_KEY, TEMPLATE_SECTIONS, WORLD_KEY, article_section_key
 from app.worldanvil.bbcode import IMAGE_HOSTS, to_plain_text
 
 EMPTY_LEAD_RE = re.compile(r"^(?:\s+|\[p\]\s*\[/p\]|\[(h\d?)(?:\|[^\]]*)?\]\s*\[/\1\])", re.S)
@@ -132,9 +132,7 @@ def world_anvil_image(article: WaArticle, player_mode: bool = False) -> str | No
 def in_section(articles: Iterable[WaArticle], key: str | None) -> list[WaArticle]:
     if not key or key not in SECTIONS_BY_KEY:
         return list(articles)
-    return [
-        article for article in articles if section_key(article.wa_id, article.template_type) == key
-    ]
+    return [article for article in articles if article_section_key(article) == key]
 
 
 def section_types(
@@ -143,12 +141,16 @@ def section_types(
     available = [value for value, _ in types]
     if not key or key not in SECTIONS_BY_KEY:
         return available
-    present = {article.template_type for article in in_section(articles, key)}
-    return [
-        value
-        for value in available
-        if TEMPLATE_SECTIONS.get(value, "lore") == key or value in present
-    ]
+    present = {
+        article.world_category or article.template_type for article in in_section(articles, key)
+    }
+    return [value for value in available if _type_section(value) == key or value in present]
+
+
+def _type_section(value: str) -> str:
+    if value in WORLD_CATEGORIES:
+        return WORLD_KEY
+    return TEMPLATE_SECTIONS.get(value, "lore")
 
 
 def _natural_key(article: WaArticle) -> list[tuple[int, int | str]]:
@@ -166,5 +168,5 @@ def natural_order(articles: Iterable[WaArticle]) -> list[WaArticle]:
 def group_by_section(articles: Iterable[WaArticle]) -> list[tuple[str, list[WaArticle]]]:
     groups: dict[str, list[WaArticle]] = {key: [] for key in SECTIONS_BY_KEY}
     for article in articles:
-        groups[section_key(article.wa_id, article.template_type)].append(article)
+        groups[article_section_key(article)].append(article)
     return [(key, items) for key, items in groups.items() if items]

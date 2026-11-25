@@ -1,0 +1,15 @@
+<form method="post" action="/mj/articles/{{ article.wa_id }}/categorie-monde" class="form world-category" aria-labelledby="monde-categorie-titre">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2 class="world-category__title" id="monde-categorie-titre">Catégorie Monde</h2>
+  <div class="field">
+    <label for="monde-categorie">Catégorie</label>
+    <select id="monde-categorie" name="category">
+      <option value="" {% if not article.world_category %}selected{% endif %}>Aucune</option>
+      {% for value, label in world_options.items() %}
+      <option value="{{ value }}" {% if value == article.world_category %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <p class="field__hint">Pays, Ville ou Bâtiment range la fiche dans la section Monde. La synchronisation World Anvil ne change jamais ce choix.</p>
+  <button type="submit" class="btn btn--primary">Enregistrer la catégorie</button>
+</form>

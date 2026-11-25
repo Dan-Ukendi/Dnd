@@ -1,0 +1,15 @@
+{% from "components/ui.html" import card %}
+{% if world_fiche.has_children %}
+<section class="world-children" aria-labelledby="monde-rattaches">
+  <h2 class="world-children__title" id="monde-rattaches">{{ world_fiche.children_label }}</h2>
+  {% if world_fiche.children %}
+  <ul class="card-grid">
+    {% for relation in world_fiche.children %}
+    <li>{{ card(relation.article, relation.href, player_mode, boost=True) }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="world-children__empty">{{ world_fiche.children_empty }}</p>
+  {% endif %}
+</section>
+{% endif %}

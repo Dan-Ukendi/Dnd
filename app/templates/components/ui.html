@@ -26,13 +26,13 @@
   </div>
   <div class="card__body">
     <h3 class="card__title">{{ article.title }}</h3>
-    <p class="card__subtitle">{{ tagline or (article.template_type | template_label) }}</p>
+    <p class="card__subtitle">{{ tagline or (article | type_label) }}</p>
     <div class="card__meta">
       {% if badges is not none and section.key == "personnage" %}
       {{ badge_pills(badges, section.label) }}
       {% else %}
       <span class="pill">{{ section.label }}</span>
-      {% if tagline %}<span class="pill pill--muted">{{ article.template_type | template_label }}</span>{% endif %}
+      {% if tagline %}<span class="pill pill--muted">{{ article | type_label }}</span>{% endif %}
       {% endif %}
       {% if caller is defined %}{{ caller() }}{% endif %}
     </div>

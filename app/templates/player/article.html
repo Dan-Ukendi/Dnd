@@ -2,9 +2,12 @@
 {% block title %}{{ article.title }}{% endblock %}
 {% block content %}
 {% set section = article | section_of %}
-{% set crumbs = [("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles"), (article.title, "")] %}
+{% set crumbs = [("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles")] %}
+{% if world_fiche %}{% set _ = crumbs.append((section.label, "/joueur/articles?section=monde")) %}{% set _ = crumbs.append((world_fiche.tile_label, "/joueur/articles?section=monde&categorie=" ~ world_fiche.slug)) %}{% endif %}
+{% set _ = crumbs.append((article.title, "")) %}
 {% set pills = [] %}
-{% set facts = [("Section", section.label), ("Type", article.template_type | template_label)] %}
+{% set facts = [("Section", section.label), ("Type", article | type_label)] %}
+{% include "components/world_facts.html" %}
 {% if dossier and dossier.aliases %}{% set _ = facts.append(("Alias", dossier.aliases | join(", "))) %}{% endif %}
 {% set gm_sections = [] %}
 {% set related = [] %}

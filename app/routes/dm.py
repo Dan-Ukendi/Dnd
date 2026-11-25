@@ -27,6 +27,7 @@ from app.models import (
     User,
     WaArticle,
 )
+from app.routes import monde
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_add_panel, lore_page_context
 from app.routes.personnage import PERSON_SECTION, dm_page_context
 from app.routes.structures import territory_response
@@ -36,6 +37,7 @@ from app.services import characters as character_service
 from app.services import dossiers as dossier_service
 from app.services import media as media_service
 from app.services import person_tags as person_service
+from app.services import world as world_service
 from app.services.access import dm_render_context
 from app.services.accounts import (
     AccountError,
@@ -190,7 +192,14 @@ def article_list(
     section: Annotated[str, Query(max_length=30)] = "",
     tag: Annotated[str, Query(max_length=20)] = "",
     pj: Annotated[str, Query(max_length=12)] = "",
+    categorie: Annotated[str, Query(max_length=20)] = "",
 ) -> Response:
+    if section == monde.WORLD_SECTION:
+        context = monde.page_context(
+            world_service.dm_articles(db), "/mj", categorie, q.strip(), dm=True
+        )
+        context["banner"] = media_service.section_banner(db, section)
+        return monde.render_page(request, context)
     articles = article_service.search_articles(db, query=q, template_type=type)
     tag = tag if section == PERSON_SECTION else ""
     if tag in person_service.CATEGORY_LABELS:
@@ -292,6 +301,10 @@ def article_detail(
             "person_badges": person_service.dm_badge_index(db),
             "person_tags": person_service.fiche_tags(db, article),
             "structure": build_structure(db, article, Viewer(dm=True), render_context, lieu),
+            "world_fiche": world_service.world_fiche(db, article, Viewer(dm=True)),
+            "world_options": world_service.CATEGORY_LABELS
+            if world_service.is_eligible(article)
+            else None,
         },
     )
 

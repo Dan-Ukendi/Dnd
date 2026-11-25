@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse, Response
 
 from app.deps import CurrentPlayer, DbSession, is_master_key_session, log_in
 from app.models import Character, WaArticle
+from app.routes import monde
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
 from app.routes.personnage import PERSON_SECTION, player_page_context
 from app.routes.structures import territory_response
@@ -29,6 +30,7 @@ from app.services.dossiers import (
 from app.services.media import player_section_banner
 from app.services.person_tags import player_badge_index
 from app.services.structures import Viewer, build_structure
+from app.services.world import player_articles, world_fiche
 from app.templating import flash, render
 from app.worldanvil.bbcode import render_bbcode
 
@@ -73,8 +75,14 @@ def shared_articles(
     section: Annotated[str, Query(max_length=30)] = "",
     tag: Annotated[str, Query(max_length=20)] = "",
     pj: Annotated[str, Query(max_length=12)] = "",
+    q: Annotated[str, Query(max_length=200)] = "",
+    categorie: Annotated[str, Query(max_length=20)] = "",
 ) -> Response:
     banner = player_section_banner(db, player, section)
+    if section == monde.WORLD_SECTION:
+        articles = player_articles(db, accessible_article_ids(db, player))
+        context = monde.page_context(articles, "/joueur", categorie, q.strip(), dm=False)
+        return monde.render_page(request, {**context, "banner": banner})
     if section == PERSON_SECTION:
         return render(
             request,
@@ -178,6 +186,9 @@ def shared_article(
                 Viewer(dm=False, accessible=frozenset(accessible)),
                 render_context,
                 lieu,
+            ),
+            "world_fiche": world_fiche(
+                db, article, Viewer(dm=False, accessible=frozenset(accessible))
             ),
         },
     )

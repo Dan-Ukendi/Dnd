@@ -1,0 +1,6 @@
+{% if world_fiche %}
+{% for label, relation in [("Pays", world_fiche.country), ("Ville", world_fiche.city)] if relation %}
+{% set value %}{% if relation.href %}<a href="{{ relation.href }}"{{ relation.href | boost }}>{{ relation.article.title }}</a>{% else %}{{ relation.article.title }}{% endif %}{% endset %}
+{% set _ = facts.insert(2, (label, value)) %}
+{% endfor %}
+{% endif %}

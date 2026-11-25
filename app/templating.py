@@ -19,6 +19,7 @@ from app.chronology import (
     format_year,
 )
 from app.deps import is_master_key_session
+from app.models import WaArticle
 from app.presentation import (
     article_image,
     article_media,
@@ -33,6 +34,7 @@ from app.presentation import (
 )
 from app.sections import ADVENTURE_KEY, SECTIONS, SECTIONS_BY_KEY, section_of
 from app.security import get_csrf_token
+from app.services.world import category_label
 
 APP_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = APP_DIR / "templates"
@@ -62,7 +64,7 @@ TEMPLATE_LABELS = {
     "rank": "Rang",
     "report": "Compte rendu",
     "ritual": "Rituel",
-    "settlement": "Établissement",
+    "settlement": "Ville",
     "species": "Espèce",
     "spell": "Sort",
     "technology": "Technologie",
@@ -74,6 +76,14 @@ def template_label(value: str | None) -> str:
     if not value:
         return "Sans type"
     return TEMPLATE_LABELS.get(value.lower(), value.capitalize())
+
+
+def type_label(article: WaArticle) -> str:
+    return category_label(article.world_category) or template_label(article.template_type)
+
+
+def type_option_label(value: str | None) -> str:
+    return category_label(value) or template_label(value)
 
 
 def format_datetime(value: datetime | None) -> str:
@@ -115,6 +125,8 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR, context_processors=[_contex
 templates.env.filters.update(
     {
         "template_label": template_label,
+        "type_label": type_label,
+        "type_option_label": type_option_label,
         "datetime_fr": format_datetime,
         "tagline": article_tagline,
         "fiche_body": fiche_body,
@@ -139,7 +151,7 @@ templates.env.globals.update(
         "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
         "ADVENTURE_KEY": ADVENTURE_KEY,
         "section_types": section_types,
-        "ASSET_VERSION": "17",
+        "ASSET_VERSION": "18",
         "year_label": format_year,
         "span_label": format_span,
         "duration_label": format_duration,

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import section_icon, ui %}
+{% from "components/ui.html" import page_head, breadcrumb, map_banner %}
+{% set section = SECTIONS_BY_KEY["monde"] %}
+{% set section_key = section.key %}
+{% block title %}{{ current.label ~ " · " ~ section.label if current else section.label }}{% endblock %}
+{% block main_attrs %}data-section="monde"{% endblock %}
+{% block content %}
+{% set crumbs = [("Accueil", "/mj")] if dm else [("Mon personnage", "/joueur"), ("Mes fiches", "/joueur/articles")] %}
+{% if current %}
+{% set _ = crumbs.append((section.label, section_href)) %}
+{% set _ = crumbs.append((current.label, "")) %}
+{% else %}
+{% set _ = crumbs.append((section.label, "")) %}
+{% endif %}
+{{ breadcrumb(crumbs) }}
+{% set eyebrow = "Archives" if dm else "Archives partagées" %}
+{% if current %}
+{{ page_head(current.label, eyebrow=eyebrow ~ " · " ~ section.label, lead=current.description) }}
+{% else %}
+{{ page_head(section.label, eyebrow=eyebrow, lead=section.description) }}
+{% endif %}
+
+{% if current %}
+<nav class="lore-filters world-bar reveal reveal-delay-1" aria-label="Catégories du Monde">
+  {% for tile in tiles %}
+  <a class="lore-filter world-chip world-chip--{{ tile.key }}" href="{{ tile.href }}"{% if tile.key == current.key %} aria-current="true"{% endif %}>{{ tile.label }}</a>
+  {% endfor %}
+</nav>
+<form method="get" action="{{ base }}/articles" class="toolbar world-search reveal reveal-delay-1" role="search"
+  hx-get="{{ base }}/articles" hx-target="#monde-results" hx-swap="outerHTML" hx-push-url="true"
+  hx-trigger="input delay:300ms from:#monde-q, submit">
+  <input type="hidden" name="section" value="monde">
+  <input type="hidden" name="categorie" value="{{ slug }}">
+  <div class="search-field">
+    {{ ui("search") }}
+    <label class="visually-hidden" for="monde-q">Rechercher par nom</label>
+    <input id="monde-q" type="search" name="q" value="{{ q }}" placeholder="Rechercher par nom…" maxlength="200" autocomplete="off">
+  </div>
+  <noscript><button type="submit" class="btn">Rechercher</button></noscript>
+</form>
+{% include "monde/_results.html" %}
+{% else %}
+<nav class="world-tiles stagger" aria-label="Catégories de la section {{ section.label }}">
+  {% for tile in tiles %}
+  <a class="world-tile world-tile--{{ tile.key }}{% if not tile.count %} is-empty{% endif %}" href="{{ tile.href }}">
+    <span class="world-tile__preview" aria-hidden="true">
+      {% for image in tile.images %}
+      <span class="world-tile__image"><img src="{{ image }}" alt="" loading="lazy" decoding="async"></span>
+      {% else %}
+      <span class="world-tile__placeholder">{{ section_icon("monde") }}</span>
+      {% endfor %}
+    </span>
+    <span class="world-tile__title">{{ tile.label }}</span>
+    <span class="world-tile__desc">{{ tile.description }}</span>
+    <span class="world-tile__foot">
+      <span class="world-tile__count">{% if tile.count %}{{ tile.count }} fiche{{ "s" if tile.count > 1 }}{% else %}{{ tile.empty_label }}{% endif %}</span>
+      <span class="world-tile__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+    </span>
+  </a>
+  {% endfor %}
+</nav>
+{% if banner %}<div class="world-banner">{{ map_banner(banner) }}</div>{% endif %}
+{% endif %}
+{% endblock %}

@@ -32,9 +32,9 @@
       {% if tagline %}<p class="fiche-hero__tagline">{{ tagline }}</p>{% endif %}
       <div class="fiche-hero__pills">
         {% if hero_badges is not none %}
-        {% for badge in hero_badges %}<span class="pill pill--{{ badge.kind }}">{{ badge.label }}</span>{% else %}<span class="pill">{{ article.template_type | template_label }}</span>{% endfor %}
+        {% for badge in hero_badges %}<span class="pill pill--{{ badge.kind }}">{{ badge.label }}</span>{% else %}<span class="pill">{{ article | type_label }}</span>{% endfor %}
         {% else %}
-        <span class="pill">{{ article.template_type | template_label }}</span>
+        <span class="pill">{{ article | type_label }}</span>
         {% endif %}
         {% for label, kind in pills %}<span class="pill pill--{{ kind }}">{{ label }}</span>{% endfor %}
       </div>
@@ -59,6 +59,7 @@
           {% endfor %}
         </dl>
         {% if person_tags is defined and person_tags %}{% include "dm/_person_tags.html" %}{% endif %}
+        {% if world_options is defined and world_options %}{% include "dm/_world_category.html" %}{% endif %}
       </div>
     </details>
 
@@ -89,6 +90,7 @@
       </div>
       {% endif %}
       {% endif %}
+      {% if world_fiche is defined and world_fiche %}{% include "components/world.html" %}{% endif %}
       {% for title, html in gm_sections %}
       <section class="panel panel--gm prose-panel">
         <h2 class="panel__title">{{ title }}</h2>

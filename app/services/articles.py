@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy import any_, func, literal, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import WaArticle
+from app.models import WORLD_CATEGORIES, WaArticle, WorldCategory
 
 SEARCH_LIMIT = 200
 
@@ -69,8 +69,15 @@ def search_articles(
     db: Session, *, query: str = "", template_type: str = "", limit: int = SEARCH_LIMIT
 ) -> list[WaArticle]:
     statement = select(WaArticle).where(WaArticle.removed_at.is_(None))
-    if template_type:
-        statement = statement.where(WaArticle.template_type == template_type)
+    categorised = select(WorldCategory.wa_id).where(WorldCategory.category.is_not(None))
+    if template_type in WORLD_CATEGORIES:
+        statement = statement.where(
+            WaArticle.wa_id.in_(categorised.where(WorldCategory.category == template_type))
+        )
+    elif template_type:
+        statement = statement.where(
+            WaArticle.template_type == template_type, WaArticle.wa_id.not_in(categorised)
+        )
     query = query.strip()[:200]
     if query:
         tsquery = func.websearch_to_tsquery("french", query)
@@ -86,11 +93,14 @@ def search_articles(
 
 
 def template_type_counts(db: Session) -> list[tuple[str, int]]:
+    kind = func.coalesce(WorldCategory.category, WaArticle.template_type)
     rows = db.execute(
-        select(WaArticle.template_type, func.count())
-        .where(WaArticle.removed_at.is_(None), WaArticle.template_type.is_not(None))
-        .group_by(WaArticle.template_type)
-        .order_by(WaArticle.template_type)
+        select(kind, func.count())
+        .select_from(WaArticle)
+        .outerjoin(WorldCategory, WorldCategory.wa_id == WaArticle.wa_id)
+        .where(WaArticle.removed_at.is_(None), kind.is_not(None))
+        .group_by(kind)
+        .order_by(kind)
     ).all()
     return [(row[0], row[1]) for row in rows]
 

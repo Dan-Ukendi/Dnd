@@ -4,7 +4,7 @@
     <a class="ledger-list__title" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>
     <div class="chips">
       <span class="pill">{{ row_section.label }}</span>
-      <span class="pill pill--muted">{{ article.template_type | template_label }}</span>
+      <span class="pill pill--muted">{{ article | type_label }}</span>
       {% if article.removed_at %}<span class="pill pill--danger">Supprimée</span>
       {% elif not article.player_visible %}<span class="pill pill--warn" title="{{ article.visibility_reason or '' }}">Invisible pour les joueurs</span>{% endif %}
     </div>

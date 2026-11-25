@@ -58,7 +58,7 @@
       <select id="type-fiche" name="type">
         <option value="">Tous les types</option>
         {% for value, _ in types %}
-        <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }}</option>
+        <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | type_option_label }}</option>
         {% endfor %}
       </select>
     </div>

@@ -16,9 +16,11 @@ from app.models import (
     SyncRun,
     SyncStatus,
     WaArticle,
+    WorldCategory,
 )
 from app.presentation import article_tagline
-from app.sections import section_key
+from app.sections import WORLD_KEY, article_section_key
+from app.services.world import category_label
 from app.worldanvil.linking import MIN_NAME_LENGTH, Matcher, Name, Target, name_key
 
 logger = logging.getLogger("app.linking")
@@ -47,7 +49,10 @@ class LinkError(Exception):
 def kind_of(article: WaArticle) -> tuple[str, str]:
     if (article.template_type or "").lower() == ITEM_TEMPLATE:
         return OBJECT_KIND
-    return KINDS[section_key(article.wa_id, article.template_type)]
+    key = article_section_key(article)
+    if key == WORLD_KEY and article.world_category:
+        return KINDS[key][0], category_label(article.world_category) or KINDS[key][1]
+    return KINDS[key]
 
 
 def dossier_alias_keys(db: Session) -> set[str]:
@@ -71,6 +76,8 @@ def _fingerprint(db: Session) -> tuple[object, ...]:
         select(func.max(LinkExclusion.id)),
         select(func.count()).select_from(CharacterProfile),
         select(func.max(CharacterProfile.updated_at)),
+        select(func.count()).select_from(WorldCategory),
+        select(func.max(WorldCategory.updated_at)),
     )
     return tuple(db.execute(select(*(item.scalar_subquery() for item in statements))).one())
 

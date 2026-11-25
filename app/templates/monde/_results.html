@@ -1,0 +1,14 @@
+{% from "components/ui.html" import card, empty_state %}
+<section id="monde-results" class="results" aria-live="polite">
+  {% if entries %}
+  <ul class="card-grid stagger">
+    {% for article in entries %}
+    <li>{{ card(article, base ~ "/articles/" ~ article.wa_id, not dm) }}</li>
+    {% endfor %}
+  </ul>
+  {% elif q %}
+  {{ empty_state(current.empty_label, "Aucune fiche de cette catégorie ne porte ce nom.", "search") }}
+  {% else %}
+  {{ empty_state(current.empty_label, "Cette catégorie ne contient aucune fiche.", "map") }}
+  {% endif %}
+</section>

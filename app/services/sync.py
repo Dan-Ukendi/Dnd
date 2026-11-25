@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_session_factory
 from app.models import SyncRun, SyncStatus, WaArticle, WaImage, utcnow
-from app.services import linking
+from app.services import linking, world
 from app.services.chronology import ChronologyError
 from app.services.chronology_sync import sync_timeline
 from app.services.person_tags import ensure_categories
@@ -181,6 +181,7 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
                 run.removed_count += 1
         db.flush()
         _refresh_links(db)
+        world_categorised = world.ensure_categories(db)
         categorised = ensure_categories(db)
         _sync_images(db, source, full=run.full)
         sync_timeline(db, source, world_id, run)
@@ -202,6 +203,8 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
         )
         if categorised:
             logger.info("Sync %d tagged %d new person fiches as encounter", run_id, categorised)
+        if world_categorised:
+            logger.info("Sync %d classified %d new Monde fiches", run_id, world_categorised)
     except Exception as exc:
         db.rollback()
         failed = db.get(SyncRun, run_id)

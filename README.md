@@ -328,6 +328,28 @@ article accessible; a fiche section needs its flag off, and DM notes never reach
 by a chronology event the player cannot see shows no date and no event link. Editing forms are
 never rendered for a player, and the DM routes answer 404 to players.
 
+## Monde: Pays, Villes, Bâtiments
+
+The Monde section (`/mj/articles?section=monde`, `/joueur/articles?section=monde`) opens on three
+tiles of equal size, side by side on wide screens and stacked on phones: **Pays**, **Villes** and
+**Bâtiments** (title, number of fiches, a few fiche images). A tile opens its category
+(`&categorie=pays|villes|batiments`): a card grid, a name search (`&q=`) and a bar to switch category.
+
+**Category.** The category is app data: `world_categories` (one row per World Anvil article, `pays`,
+`ville`, `batiment` or empty). A fiche with a category belongs to the Monde section whatever its World
+Anvil template, and shows its category as its type. The sync never changes an existing row; it only
+gives a new article a first category when its World Anvil data says so: `settlement` → Ville,
+`landmark` → Bâtiment, an `organization` with the *country* variant → Pays. The DM changes it from
+*Catégorie Monde* in the fiche's *Informations clés* (Organisation and Monde fiches only); *Aucune*
+keeps the fiche out of the three categories (an Organisation template then goes back to
+Organisation).
+
+**Links between fiches.** A Ville shows its Pays and lists its Bâtiments; a Bâtiment shows its Ville
+and its Pays; a Pays lists its Villes. They come only from written data: the World Anvil `parent`
+field, or the Territoire places of `import-structures` (the nearest enclosing place that is a fiche).
+A player sees a link only when both fiches are shared with them and every place on the way is marked
+`joueurs`.
+
 ## Personnage tags
 
 Each fiche of the Personnage section carries one tag: **Lore** (people tied to the history of the
