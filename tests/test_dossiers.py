@@ -387,7 +387,7 @@ def test_dm_sees_gm_notes_and_edit_forms(client: TestClient, db: Session, table:
     assert "Vend ses secrets à Shaelith." in page
     assert "Murmure la nuit." in page
     assert f'action="/mj/personnages/{table.keator.id}/relations"' in page
-    assert ">Backstory<" in page
+    assert ">Récit<" in page
 
 
 def test_players_get_no_edit_forms(client: TestClient, db: Session, table: Table) -> None:

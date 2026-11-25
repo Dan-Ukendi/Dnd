@@ -11,10 +11,13 @@ from markupsafe import Markup
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.chronology import format_year
 from app.models import (
     Character,
     CharacterAction,
     CharacterEvent,
+    CharacterEventOrganization,
+    CharacterEventPerson,
     CharacterItem,
     CharacterJournalEntry,
     CharacterProfile,
@@ -96,6 +99,9 @@ MAX_CATEGORY_LENGTH = 40
 MAX_JOURNAL_LINE_LENGTH = 2_000
 MAX_JOURNAL_LINES = 100
 MAX_EXCERPT_LENGTH = 220
+MAX_EVENT_ROWS = 50
+MAX_YEAR = 100_000
+MAX_AGE = 10_000
 PARAGRAPH_BREAK_RE = re.compile(r"\n\s*\n|\[/p\]")
 SINGLE_PARAGRAPH_RE = re.compile(r"^<p>((?:(?!</?p>).)*)</p>$", re.S)
 
@@ -107,10 +113,58 @@ class DossierError(Exception):
 
 
 @dataclass(frozen=True)
-class EventView:
-    session: str | None
+class EventLinkView:
+    name: str
+    href: str | None
+    role: str | None = None
+
+
+@dataclass(frozen=True)
+class EventLinkForm:
+    name: str
+    article: str
+    role: str = ""
+
+
+@dataclass(frozen=True)
+class EventForm:
     title: str
+    session: str
+    year: str
+    age: str
+    approximate: bool
+    place: str
+    place_article: str
+    text: str
+    consequences: str
+    gm_notes: str
+    people: list[EventLinkForm]
+    organizations: list[EventLinkForm]
+
+
+@dataclass(frozen=True)
+class EventView:
+    id: int
+    title: str
+    session: str | None
     html: Markup
+    year: int | None = None
+    date_label: str | None = None
+    age_label: str | None = None
+    place: EventLinkView | None = None
+    people: list[EventLinkView] = field(default_factory=list)
+    organizations: list[EventLinkView] = field(default_factory=list)
+    consequences_html: Markup = field(default_factory=Markup)
+    gm_html: Markup | None = None
+    form: EventForm | None = None
+
+    @property
+    def anchor(self) -> str:
+        return f"evenement-{self.id}"
+
+    @property
+    def when(self) -> str | None:
+        return " · ".join(label for label in (self.date_label, self.age_label) if label) or None
 
 
 @dataclass(frozen=True)
@@ -191,6 +245,15 @@ class Dossier:
     source_file: str | None = None
     dm: bool = False
     relations_edited_at: datetime | None = None
+    events_edited_at: datetime | None = None
+
+    @property
+    def dated_events(self) -> list[EventView]:
+        return [event for event in self.events if event.year is not None]
+
+    @property
+    def undated_events(self) -> list[EventView]:
+        return [event for event in self.events if event.year is None]
 
     @property
     def relation_count(self) -> int:
@@ -306,6 +369,96 @@ def _linked_article(db: Session, entry: dict[str, Any]) -> str | None:
         return find_article(db, wa_id=wa_id, title=title).wa_id
     except LookupError as exc:
         raise DossierError(str(exc), "article") from exc
+
+
+def _event_article(db: Session, entry: dict[str, Any], field: str) -> WaArticle | None:
+    try:
+        wa_id = _text(entry, "article_id", limit=36) or None
+        title = _text(entry, "article", limit=500) or None
+    except DossierError as exc:
+        raise DossierError(str(exc), field) from exc
+    if not wa_id and not title:
+        return None
+    try:
+        return find_article(db, wa_id=wa_id, title=title)
+    except LookupError as exc:
+        raise DossierError(str(exc), field) from exc
+
+
+def _whole(entry: dict[str, Any], key: str, minimum: int, maximum: int) -> int | None:
+    value = entry.get(key)
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise DossierError(f"'{key}' must be a whole number", key)
+    if not minimum <= value <= maximum:
+        raise DossierError(f"'{key}' is out of range", key)
+    return value
+
+
+def _event_rows(
+    db: Session, event: dict[str, Any], key: str, *, with_role: bool
+) -> list[dict[str, Any]]:
+    try:
+        entries = _entries(event, key)
+    except DossierError as exc:
+        raise DossierError(str(exc), key) from exc
+    if len(entries) > MAX_EVENT_ROWS:
+        raise DossierError(f"too many '{key}' rows", key)
+    rows = []
+    for entry in entries:
+        article = _event_article(db, entry, key)
+        try:
+            name = _text(entry, "name") or (article.title[:200] if article else "")
+            role = _text(entry, "role") if with_role else ""
+        except DossierError as exc:
+            raise DossierError(str(exc), key) from exc
+        if not name:
+            raise DossierError(f"a '{key}' row has no name", key)
+        row: dict[str, Any] = {"name": name, "wa_article_id": article.wa_id if article else None}
+        if with_role:
+            row["role"] = role or None
+        rows.append(row)
+    return rows
+
+
+def event_values(db: Session, entry: dict[str, Any]) -> dict[str, Any]:
+    approximate = entry.get("approximate", False)
+    if not isinstance(approximate, bool):
+        raise DossierError("'approximate' must be true or false", "approximate")
+    place_link = {
+        "article": entry.get("place_article"),
+        "article_id": entry.get("place_article_id"),
+    }
+    place_article = _event_article(db, place_link, "place_article")
+    place = _text(entry, "place") or (place_article.title[:200] if place_article else "")
+    return {
+        "title": _text(entry, "title", required=True),
+        "session": _text(entry, "session", limit=100) or None,
+        "text": _text(entry, "text", limit=MAX_TEXT_LENGTH),
+        "world_year": _whole(entry, "year", -MAX_YEAR, MAX_YEAR),
+        "age": _whole(entry, "age", 0, MAX_AGE),
+        "date_approximate": approximate,
+        "place_name": place or None,
+        "place_article_id": place_article.wa_id if place_article else None,
+        "consequences": _text(entry, "consequences", limit=MAX_TEXT_LENGTH),
+        "gm_notes": _text(entry, "gm_notes", limit=MAX_TEXT_LENGTH),
+        "people": _event_rows(db, entry, "people", with_role=True),
+        "organizations": _event_rows(db, entry, "organizations", with_role=False),
+    }
+
+
+def _apply_event(event: CharacterEvent, values: dict[str, Any]) -> CharacterEvent:
+    values = dict(values)
+    people = values.pop("people")
+    organizations = values.pop("organizations")
+    for key, value in values.items():
+        setattr(event, key, value)
+    event.people = [CharacterEventPerson(position=index, **row) for index, row in enumerate(people)]
+    event.organizations = [
+        CharacterEventOrganization(position=index, **row) for index, row in enumerate(organizations)
+    ]
+    return event
 
 
 def normalize_action_kind(value: str) -> str:
@@ -459,12 +612,17 @@ def relations_locked(character: Character) -> bool:
     return character.profile is not None and character.profile.relations_edited_at is not None
 
 
+def events_locked(character: Character) -> bool:
+    return character.profile is not None and character.profile.events_edited_at is not None
+
+
 def import_dossier(
     db: Session,
     data: dict[str, Any],
     source_file: str | None = None,
     *,
     replace_relations: bool = False,
+    replace_events: bool = False,
 ) -> Character:
     name = _text(data, "character", required=True)
     character = find_character(db, name)
@@ -474,12 +632,7 @@ def import_dossier(
     backstory = _text(history, "backstory", limit=MAX_TEXT_LENGTH)
 
     events = [
-        CharacterEvent(
-            position=index,
-            session=_text(entry, "session", limit=100) or None,
-            title=_text(entry, "title", required=True),
-            text=_text(entry, "text", limit=MAX_TEXT_LENGTH),
-        )
+        _apply_event(CharacterEvent(position=index), event_values(db, entry))
         for index, entry in enumerate(_entries(history, "events"))
     ]
     relations = [
@@ -513,6 +666,7 @@ def import_dossier(
     journal = _journal(data)
 
     keep_relations = relations_locked(character) and not replace_relations
+    keep_events = events_locked(character) and not replace_events
     if character.profile is None:
         character.profile = CharacterProfile(character_id=character.id)
     character.profile.backstory = backstory
@@ -520,7 +674,9 @@ def import_dossier(
     character.profile.aliases = aliases
     character.profile.source_file = source_file
     character.profile.updated_at = utcnow()
-    character.events = events
+    if not keep_events:
+        character.events = events
+        character.profile.events_edited_at = None
     if not keep_relations:
         character.relations = relations
         character.profile.relations_edited_at = None
@@ -561,6 +717,36 @@ def update_relation(
 def delete_relation(db: Session, character: Character, relation: CharacterRelation) -> None:
     character.relations.remove(relation)
     mark_relations_edited(character)
+    db.commit()
+
+
+def mark_events_edited(character: Character) -> None:
+    if character.profile is None:
+        character.profile = CharacterProfile(character_id=character.id)
+    character.profile.events_edited_at = utcnow()
+
+
+def add_event(db: Session, character: Character, entry: dict[str, Any]) -> CharacterEvent:
+    values = event_values(db, entry)
+    position = max((event.position for event in character.events), default=-1) + 1
+    event = _apply_event(CharacterEvent(position=position), values)
+    character.events.append(event)
+    mark_events_edited(character)
+    db.commit()
+    return event
+
+
+def update_event(
+    db: Session, character: Character, event: CharacterEvent, entry: dict[str, Any]
+) -> None:
+    _apply_event(event, event_values(db, entry))
+    mark_events_edited(character)
+    db.commit()
+
+
+def delete_event(db: Session, character: Character, event: CharacterEvent) -> None:
+    character.events.remove(event)
+    mark_events_edited(character)
     db.commit()
 
 
@@ -622,6 +808,84 @@ def _gm_html(notes: str, context: RenderContext, dm: bool) -> Markup | None:
     return render_bbcode(notes, context) if dm and notes.strip() else None
 
 
+def event_date_label(year: int | None, approximate: bool) -> str | None:
+    if year is None:
+        return None
+    if not approximate:
+        return format_year(year)
+    return f"Vers l'an {year}" if year >= 0 else f"Vers {format_year(year)}"
+
+
+def event_age_label(age: int | None, approximate: bool, *, alone: bool) -> str | None:
+    if age is None:
+        return None
+    label = f"{age} an" if age <= 1 else f"{age} ans"
+    if approximate:
+        label = f"vers {label}"
+    return label[:1].upper() + label[1:] if alone else label
+
+
+def _event_form(event: CharacterEvent) -> EventForm:
+    def title(article: WaArticle | None) -> str:
+        return article.title if article is not None else ""
+
+    return EventForm(
+        title=event.title,
+        session=event.session or "",
+        year="" if event.world_year is None else str(event.world_year),
+        age="" if event.age is None else str(event.age),
+        approximate=event.date_approximate,
+        place=event.place_name or "",
+        place_article=title(event.place_article),
+        text=event.text,
+        consequences=event.consequences,
+        gm_notes=event.gm_notes,
+        people=[
+            EventLinkForm(person.name, title(person.article), person.role or "")
+            for person in event.people
+        ],
+        organizations=[
+            EventLinkForm(organization.name, title(organization.article))
+            for organization in event.organizations
+        ],
+    )
+
+
+def event_view(
+    event: CharacterEvent,
+    context: RenderContext,
+    article_href: Callable[[WaArticle], str | None],
+    *,
+    dm: bool = False,
+) -> EventView:
+    def href(article: WaArticle | None) -> str | None:
+        return article_href(article) if article is not None else None
+
+    place = EventLinkView(event.place_name, href(event.place_article)) if event.place_name else None
+    return EventView(
+        id=event.id,
+        title=event.title,
+        session=event.session,
+        html=render_bbcode(event.text, context),
+        year=event.world_year,
+        date_label=event_date_label(event.world_year, event.date_approximate),
+        age_label=event_age_label(
+            event.age, event.date_approximate, alone=event.world_year is None
+        ),
+        place=place,
+        people=[
+            EventLinkView(person.name, href(person.article), person.role) for person in event.people
+        ],
+        organizations=[
+            EventLinkView(organization.name, href(organization.article))
+            for organization in event.organizations
+        ],
+        consequences_html=render_bbcode(event.consequences, context),
+        gm_html=_gm_html(event.gm_notes, context, dm),
+        form=_event_form(event) if dm else None,
+    )
+
+
 def build_dossier(
     character: Character,
     context: RenderContext,
@@ -630,10 +894,11 @@ def build_dossier(
     dm: bool = False,
 ) -> Dossier:
     profile = character.profile
-    events = [
-        EventView(event.session, event.title, render_bbcode(event.text, context))
-        for event in character.events
-    ]
+    ordered = sorted(
+        character.events,
+        key=lambda event: (event.world_year is None, event.world_year or 0, event.position),
+    )
+    events = [event_view(event, context, article_href, dm=dm) for event in ordered]
     grouped: dict[str, list[RelationView]] = {}
     labels: dict[str, str] = {}
     for relation in character.relations:
@@ -720,4 +985,5 @@ def build_dossier(
         source_file=profile.source_file if profile else None,
         dm=dm,
         relations_edited_at=profile.relations_edited_at if profile else None,
+        events_edited_at=profile.events_edited_at if profile else None,
     )

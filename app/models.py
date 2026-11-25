@@ -229,6 +229,7 @@ class CharacterProfile(Base):
     combat: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     aliases: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
     relations_edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    events_edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     source_file: Mapped[str | None] = mapped_column(String(255))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
@@ -237,6 +238,7 @@ class CharacterProfile(Base):
 
 class CharacterEvent(Base):
     __tablename__ = "character_events"
+    __table_args__ = (CheckConstraint("age IS NULL OR age >= 0", name="ck_character_events_age"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     character_id: Mapped[int] = mapped_column(
@@ -246,6 +248,60 @@ class CharacterEvent(Base):
     session: Mapped[str | None] = mapped_column(String(100))
     title: Mapped[str] = mapped_column(String(200))
     text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    world_year: Mapped[int | None] = mapped_column(Integer)
+    age: Mapped[int | None] = mapped_column(Integer)
+    date_approximate: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    place_name: Mapped[str | None] = mapped_column(String(200))
+    place_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+    consequences: Mapped[str] = mapped_column(Text, default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+
+    place_article: Mapped[WaArticle | None] = relationship()
+    people: Mapped[list["CharacterEventPerson"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterEventPerson.position",
+    )
+    organizations: Mapped[list["CharacterEventOrganization"]] = relationship(
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CharacterEventOrganization.position",
+    )
+
+
+class CharacterEventPerson(Base):
+    __tablename__ = "character_event_people"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("character_events.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(200))
+    role: Mapped[str | None] = mapped_column(String(200))
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+
+    article: Mapped[WaArticle | None] = relationship()
+
+
+class CharacterEventOrganization(Base):
+    __tablename__ = "character_event_organizations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("character_events.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String(200))
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+
+    article: Mapped[WaArticle | None] = relationship()
 
 
 class CharacterRelation(Base):

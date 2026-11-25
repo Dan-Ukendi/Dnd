@@ -91,8 +91,9 @@ default) that password is all players need. When it is on, a player who signs in
 ## Character dossiers
 
 Each played character's fiche has five tabs: **Fiche** (the World Anvil article), **Actions** (what the
-character can do on their combat turn), **Relations**, **Histoire** (backstory, then the important
-events session after session, with links to the character's adventure journal) and **Inventaire**.
+character can do on their combat turn), **Relations**, **Histoire** (sub-tabs **Récit**, the backstory; **Événements marquants**,
+the character's memorable events, each with its own card; **Journal**, only when the character has
+adventure journal episodes) and **Inventaire**.
 Only the DM and the character's own player see the last four tabs; another player who was shared the
 article only sees the Fiche.
 
@@ -103,8 +104,8 @@ Dossiers are written as one TOML file per character (keep them out of git, e.g. 
 python -m app.cli import-dossiers source/dossiers
 ```
 
-Re-importing a file replaces that character's whole dossier, except relations edited in the app
-(see below). Text fields accept plain paragraphs (separated by a blank line) and the same BBCode as
+Re-importing a file replaces that character's whole dossier, except relations and events edited
+in the app (see below). Text fields accept plain paragraphs (separated by a blank line) and the same BBCode as
 World Anvil (`[b]`, `[i]`, `[ul]`…).
 
 ```toml
@@ -118,10 +119,26 @@ Né orphelin dans le Khaanat...
 Un vieux prêtre lui révèle que son sang vient de Zariel.
 """
 
-[[history.events]]                    # in chronological order
-session = "Séance 1"                  # optional
+[[history.events]]                    # memorable events; every field but title is optional
 title = "Dispute pour l'amulette"
+session = "Séance 1, jour 1"          # shown as a badge
+year = 987                            # world calendar, An 0 = creation of the Empire d'Ébène
+age = 31                              # the character's age
+approximate = false                   # true shows "Vers l'an 987", "vers 31 ans"
+place = "Marché noir de Khar Zakh"
+place_article = "..."                 # exact title of a Monde fiche (or place_article_id)
 text = "Au marché noir de Khar Zakh..."
+consequences = "L'impact sur le personnage..."
+gm_notes = "Ce que le joueur ignore"  # shown to the DM only
+
+[[history.events.people]]             # repeat per person
+name = "Zilvra"
+role = "Rivale, puis alliée"          # optional
+article = "Zilvra"                    # optional: exact fiche title, otherwise a free name
+
+[[history.events.organizations]]      # repeat per organisation
+name = "La Guilde des Aventuriers"
+article = "La Guilde des Aventuriers" # optional
 
 # category: famille, fideles, amis, allies, connaissances, rivaux, ennemis or autres; any other
 # category ("Couvent de Lolth") is accepted as written and listed after these
@@ -192,6 +209,21 @@ its own page (`/joueur/journal/<character id>/<episode>`) with the narrative and
 The DM sees every character's journal on the DM *Aventure* page (`/mj/journal/...`) and in the
 Histoire tab of each character's fiche. A journal is never shown to another player, even one who
 was shared the character's article. Re-importing a file replaces that character's journal.
+
+### Memorable events
+
+The **Événements marquants** sub-tab lists the events with a world year on a frieze sorted by year
+(then by file order), and groups the undated ones apart. Each card shows the title, the date and
+age, the session, the place and the people; opening it shows the full event (what happened, place,
+people with their role, organisations, consequences) with links to the fiches the reader can open,
+and has the anchor `#evenement-<id>`. These events are personal: they never enter the world
+chronology. Players only read their own character's events; the DM sees every event with its
+GM notes and can add, edit and delete events from the fiche. As for relations, the first change made
+in the app keeps the events through later imports (with a warning) until:
+
+```bash
+python -m app.cli import-dossiers source/dossiers --replace-events
+```
 
 ### Editing relations in the app
 

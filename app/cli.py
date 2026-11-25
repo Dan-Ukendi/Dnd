@@ -13,6 +13,7 @@ from app.services.accounts import AccountError, create_user
 from app.services.chronology import ChronologyError, load_seed
 from app.services.dossiers import (
     DossierError,
+    events_locked,
     import_dossier,
     load_dossier_file,
     relations_locked,
@@ -151,6 +152,7 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
                     load_dossier_file(path),
                     path.name,
                     replace_relations=args.replace_relations,
+                    replace_events=args.replace_events,
                 )
             except DossierError as exc:
                 db.rollback()
@@ -169,6 +171,12 @@ def cmd_import_dossiers(args: argparse.Namespace) -> int:
                 logger.warning(
                     "%s: relations were edited in the app and were kept; "
                     "use --replace-relations to overwrite them with the file",
+                    path.name,
+                )
+            if events_locked(character):
+                logger.warning(
+                    "%s: events were edited in the app and were kept; "
+                    "use --replace-events to overwrite them with the file",
                     path.name,
                 )
     return _print_report(lines)
@@ -246,6 +254,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--replace-relations",
         action="store_true",
         help="Also replace relations that the DM edited in the app",
+    )
+    dossiers.add_argument(
+        "--replace-events",
+        action="store_true",
+        help="Also replace events that the DM edited in the app",
     )
     dossiers.set_defaults(handler=cmd_import_dossiers)
 

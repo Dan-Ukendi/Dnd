@@ -41,6 +41,8 @@ TABLES = (
     "character_actions",
     "character_items",
     "character_relations",
+    "character_event_organizations",
+    "character_event_people",
     "character_events",
     "character_profiles",
     "media_variants",

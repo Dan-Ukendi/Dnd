@@ -3200,6 +3200,225 @@ input[type="file"]:focus-visible {
   font-size: 1.05rem;
 }
 
+.saga--undated .saga__item::before {
+  background: var(--ebony-2);
+  border-style: dashed;
+}
+
+.tabs--sub > .tabs__list {
+  margin-bottom: 1.4rem;
+}
+
+.tabs--sub > .tabs__list .tabs__tab {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.88rem;
+}
+
+.event {
+  scroll-margin-top: calc(var(--header-offset, 0px) + 1rem);
+  border: 1px solid var(--gold-hair);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--ebony-2), var(--ebony-1));
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.event[open],
+.event:hover {
+  border-color: var(--gold-line);
+}
+
+.event > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.event > summary::-webkit-details-marker {
+  display: none;
+}
+
+.event__head {
+  display: grid;
+  flex: 1;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.event__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+}
+
+.event__title {
+  color: var(--parchment);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+}
+
+.event__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  color: var(--parchment-dim);
+  font-size: 0.98rem;
+}
+
+.event__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.event__chip .icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--gold);
+}
+
+.event__chevron {
+  flex: none;
+  color: var(--gold);
+  transition: transform var(--duration) var(--ease);
+}
+
+.event[open] .event__chevron {
+  transform: rotate(90deg);
+}
+
+.event__body {
+  display: grid;
+  gap: 1.1rem;
+  padding: 0.25rem 1.1rem 1.1rem;
+}
+
+.event__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 2rem;
+  margin: 0;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--gold-hair);
+}
+
+.event__facts dt,
+.event__label {
+  margin: 0 0 0.3rem;
+  color: var(--parchment-dim);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.event__facts dd {
+  margin: 0;
+  color: var(--parchment);
+}
+
+.event__section .prose {
+  font-size: 1.05rem;
+}
+
+.event__people {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event__people li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.75rem;
+}
+
+.event__person {
+  color: var(--parchment);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.event__role {
+  color: var(--parchment-dim);
+  font-style: italic;
+}
+
+.event-form__rows {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--gold-hair);
+  border-radius: var(--radius);
+}
+
+.event-form__rows legend {
+  padding: 0 0.4rem;
+  color: var(--parchment-dim);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.event-form__row {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.relation-form input[type="number"] {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--gold-hair);
+  border-radius: var(--radius);
+  background: rgba(14, 13, 12, 0.7);
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+}
+
+.relation-form .check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--parchment);
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.relation-form .check input {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--gold);
+}
+
+@media (min-width: 40rem) {
+  .event-form__row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .event-form__row--pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .inventory {
   display: grid;
   gap: 0.75rem;

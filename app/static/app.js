@@ -162,17 +162,28 @@ document.querySelectorAll("[data-tabs]").forEach((container) => {
   });
 });
 
-const initialTab = tabFromHash();
-if (initialTab) {
-  revealTab(initialTab);
-}
-
-window.addEventListener("hashchange", () => {
+function revealHashTarget() {
   const tab = tabFromHash();
   if (tab) {
     revealTab(tab);
+    return;
   }
-});
+  const key = window.location.hash.slice(1);
+  const target = key ? document.getElementById(key) : null;
+  const panel = target ? target.closest('[role="tabpanel"]') : null;
+  const owner = panel ? document.querySelector(`[data-tabs] [role="tab"][aria-controls="${CSS.escape(panel.id)}"]`) : null;
+  if (!owner) {
+    return;
+  }
+  revealTab(owner);
+  if (target instanceof HTMLDetailsElement) {
+    target.open = true;
+  }
+  target.scrollIntoView({ block: "start" });
+}
+
+revealHashTarget();
+window.addEventListener("hashchange", revealHashTarget);
 
 function visibleTreeItems(tree) {
   return Array.from(tree.querySelectorAll('[role="treeitem"]')).filter((item) => {

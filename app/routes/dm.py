@@ -1,3 +1,4 @@
+from itertools import zip_longest
 from typing import Annotated
 
 from fastapi import (
@@ -17,6 +18,7 @@ from app.config import get_settings
 from app.deps import CurrentDm, DbSession
 from app.models import (
     Character,
+    CharacterEvent,
     CharacterRelation,
     MediaAsset,
     MediaRole,
@@ -87,6 +89,25 @@ RELATION_ERROR_MESSAGES = {
     "status": "Le statut est trop long (100 caractères au plus).",
     "article": "Aucune fiche World Anvil disponible ne porte exactement ce titre.",
     "text": "La description est trop longue.",
+    "gm_notes": "Les notes du MJ sont trop longues.",
+}
+EVENT_ERROR_MESSAGES = {
+    "title": "Le titre est obligatoire (200 caractères au plus).",
+    "session": "La séance est trop longue (100 caractères au plus).",
+    "year": "L'année doit être un nombre entier, négatif avant l'An 0.",
+    "age": "L'âge doit être un nombre entier positif.",
+    "place": "Le lieu est trop long (200 caractères au plus).",
+    "place_article": "Aucune fiche World Anvil disponible ne porte exactement le titre du lieu.",
+    "people": (
+        "Chaque personne doit avoir un nom ou une fiche existante "
+        "(titre exact, 200 caractères au plus)."
+    ),
+    "organizations": (
+        "Chaque organisation doit avoir un nom ou une fiche existante "
+        "(titre exact, 200 caractères au plus)."
+    ),
+    "text": "Le récit de l'événement est trop long.",
+    "consequences": "Les conséquences sont trop longues.",
     "gm_notes": "Les notes du MJ sont trop longues.",
 }
 CHARACTER_ERROR_MESSAGES = {
@@ -688,3 +709,140 @@ def delete_relation(
     dossier_service.delete_relation(db, character, relation)
     flash(request, f"Relation « {name} » supprimée.")
     return RedirectResponse(_dossier_url(character), status_code=303)
+
+
+def _get_event(db: DbSession, character: Character, event_id: int) -> CharacterEvent:
+    event = db.get(CharacterEvent, event_id)
+    if event is None or event.character_id != character.id:
+        raise HTTPException(status_code=404)
+    return event
+
+
+def _events_url(character: Character, anchor: str = "evenements") -> str:
+    if character.main_article_id is None:
+        return f"/mj/personnages/{character.id}"
+    return f"/mj/articles/{character.main_article_id}#{anchor}"
+
+
+def _whole_number(value: str, field: str) -> int | None:
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise dossier_service.DossierError(f"'{field}' must be a whole number", field) from exc
+
+
+def _rows(keys: tuple[str, ...], *columns: list[str]) -> list[dict[str, str]]:
+    return [
+        dict(zip(keys, values, strict=True))
+        for values in zip_longest(*columns, fillvalue="")
+        if any(value.strip() for value in values)
+    ]
+
+
+EventShort = Annotated[str, Form(max_length=600)]
+EventText = Annotated[str, Form(max_length=60_000)]
+EventColumn = Annotated[list[str], Form()]
+
+
+def _event_entry(
+    title: str,
+    session: str,
+    year: str,
+    age: str,
+    approximate: str,
+    place: str,
+    place_article: str,
+    text: str,
+    consequences: str,
+    gm_notes: str,
+    people: list[dict[str, str]],
+    organizations: list[dict[str, str]],
+) -> dict[str, object]:
+    return {
+        "title": title,
+        "session": session,
+        "year": _whole_number(year, "year"),
+        "age": _whole_number(age, "age"),
+        "approximate": bool(approximate),
+        "place": place,
+        "place_article": place_article,
+        "text": text,
+        "consequences": consequences,
+        "gm_notes": gm_notes,
+        "people": people,
+        "organizations": organizations,
+    }
+
+
+def _event_error(request: Request, db: DbSession, exc: dossier_service.DossierError) -> None:
+    db.rollback()
+    message = EVENT_ERROR_MESSAGES.get(exc.field or "", "Événement non enregistré.")
+    flash(request, f"Événement non enregistré : {message[:1].lower()}{message[1:]}", "error")
+
+
+@router.post("/personnages/{character_id}/evenements")
+@router.post("/personnages/{character_id}/evenements/{event_id}")
+def save_event(
+    request: Request,
+    character_id: int,
+    db: DbSession,
+    dm: CurrentDm,
+    event_id: int | None = None,
+    title: EventShort = "",
+    session: EventShort = "",
+    year: EventShort = "",
+    age: EventShort = "",
+    approximate: EventShort = "",
+    place: EventShort = "",
+    place_article: EventShort = "",
+    text: EventText = "",
+    consequences: EventText = "",
+    gm_notes: EventText = "",
+    person_name: EventColumn = [],  # noqa: B006
+    person_role: EventColumn = [],  # noqa: B006
+    person_article: EventColumn = [],  # noqa: B006
+    organization_name: EventColumn = [],  # noqa: B006
+    organization_article: EventColumn = [],  # noqa: B006
+) -> Response:
+    character = _get_character(db, character_id)
+    event = _get_event(db, character, event_id) if event_id is not None else None
+    try:
+        entry = _event_entry(
+            title,
+            session,
+            year,
+            age,
+            approximate,
+            place,
+            place_article,
+            text,
+            consequences,
+            gm_notes,
+            _rows(("name", "role", "article"), person_name, person_role, person_article),
+            _rows(("name", "article"), organization_name, organization_article),
+        )
+        if event is None:
+            event = dossier_service.add_event(db, character, entry)
+            flash(request, f"Événement « {event.title} » ajouté.")
+        else:
+            dossier_service.update_event(db, character, event, entry)
+            flash(request, f"Événement « {event.title} » enregistré.")
+    except dossier_service.DossierError as exc:
+        _event_error(request, db, exc)
+        return RedirectResponse(_events_url(character), status_code=303)
+    return RedirectResponse(_events_url(character, f"evenement-{event.id}"), status_code=303)
+
+
+@router.post("/personnages/{character_id}/evenements/{event_id}/supprimer")
+def delete_event(
+    request: Request, character_id: int, event_id: int, db: DbSession, dm: CurrentDm
+) -> Response:
+    character = _get_character(db, character_id)
+    event = _get_event(db, character, event_id)
+    title = event.title
+    dossier_service.delete_event(db, character, event)
+    flash(request, f"Événement « {title} » supprimé.")
+    return RedirectResponse(_events_url(character), status_code=303)

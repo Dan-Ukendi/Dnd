@@ -197,7 +197,7 @@ def test_other_player_never_reads_a_journal(client: TestClient, db: Session, par
     assert fiche.status_code == 200
     assert "Occultiste." in fiche.text
     assert "L&#39;amulette du marché noir" not in fiche.text
-    assert "Journal d'aventure" not in fiche.text
+    assert 'data-tab="journal"' not in fiche.text
     adventure = client.get("/joueur/articles?section=aventure").text
     assert "Maelys signe le contrat" in adventure
     assert "La route barrée" not in adventure
@@ -210,7 +210,7 @@ def test_owner_sees_the_journal_in_the_dossier(
     login(client, "keator")
     for path in ("/joueur", f"/joueur/articles/{party.khaetar_article.wa_id}"):
         page = client.get(path).text
-        assert "Journal d'aventure" in page
+        assert 'data-tab="journal"' in page
         assert f'href="/joueur/journal/{party.keator.id}/1"' in page
         assert "Maelys signe le contrat" not in page
 
@@ -227,7 +227,7 @@ def test_dm_reads_every_journal(client: TestClient, db: Session, party: Party) -
     assert "Visible par Zilvra et le MJ" in entry.text
     assert f'href="/mj/articles/{party.zilvra_article.wa_id}"' in entry.text
     fiche = client.get(f"/mj/articles/{party.khaetar_article.wa_id}").text
-    assert "Journal d'aventure" in fiche
+    assert 'data-tab="journal"' in fiche
     assert f'href="/mj/journal/{party.keator.id}/2"' in fiche
     assert client.get(f"/mj/journal/{party.keator.id}/7").status_code == 404
     assert client.get("/mj/journal/999/1").status_code == 404

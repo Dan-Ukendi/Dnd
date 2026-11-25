@@ -1,5 +1,5 @@
 {% from "components/icons.html" import ui %}
-{% from "components/tabs.html" import tab_panel %}
+{% from "components/tabs.html" import tabs, tab_panel %}
 {% set prefix = "dossier-" ~ dossier.character.id %}
 {% set dm_hint = "" if player_mode else " Complétez le dossier du personnage puis lancez la commande import-dossiers." %}
 {% set editable = dossier.dm and not player_mode %}
@@ -35,6 +35,173 @@
   <label for="{{ id }}-gm">Notes du MJ <span class="field__hint">jamais montrées au joueur</span></label>
   <textarea id="{{ id }}-gm" name="gm_notes" rows="3">{{ form.gm_notes if form else '' }}</textarea>
 </div>
+{% endmacro %}
+
+{% macro event_link(item) -%}
+{% if item.href %}<a href="{{ item.href }}">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
+{%- endmacro %}
+
+{% macro event_fields(lists, id, form) %}
+{% set blank = {"name": "", "role": "", "article": ""} %}
+<div class="relation-form__grid">
+  <div class="field relation-form__wide">
+    <label for="{{ id }}-title">Titre</label>
+    <input id="{{ id }}-title" type="text" name="title" value="{{ form.title if form else '' }}" required maxlength="200" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-year">Année du monde</label>
+    <input id="{{ id }}-year" type="number" name="year" value="{{ form.year if form else '' }}" step="1" inputmode="numeric">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-age">Âge du personnage</label>
+    <input id="{{ id }}-age" type="number" name="age" value="{{ form.age if form else '' }}" min="0" step="1" inputmode="numeric">
+  </div>
+  <label class="check relation-form__wide"><input type="checkbox" name="approximate" value="1"{% if form and form.approximate %} checked{% endif %}> Date et âge approximatifs</label>
+  <div class="field">
+    <label for="{{ id }}-session">Séance</label>
+    <input id="{{ id }}-session" type="text" name="session" value="{{ form.session if form else '' }}" maxlength="100" autocomplete="off" placeholder="Séance 1, jour 2">
+  </div>
+  <div class="field">
+    <label for="{{ id }}-place">Lieu</label>
+    <input id="{{ id }}-place" type="text" name="place" value="{{ form.place if form else '' }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="field relation-form__wide">
+    <label for="{{ id }}-place-article">Fiche du lieu (Monde)</label>
+    <input id="{{ id }}-place-article" type="text" name="place_article" value="{{ form.place_article if form else '' }}" maxlength="500" list="{{ lists }}-monde" autocomplete="off" placeholder="Titre exact, ou vide">
+  </div>
+</div>
+<p class="field__hint">An 0 = création de l'Empire d'Ébène ; avant, les années sont négatives. Une date inconnue reste vide.</p>
+<div class="field">
+  <label for="{{ id }}-text">Ce qui s'est passé</label>
+  <textarea id="{{ id }}-text" name="text" rows="5">{{ form.text if form else '' }}</textarea>
+</div>
+<fieldset class="event-form__rows">
+  <legend>Personnes impliquées</legend>
+  <p class="field__hint">Nom libre, ou titre exact d'une fiche Personnage. Une ligne vide est ignorée.</p>
+  {% for person in (form.people if form else []) + [blank, blank, blank] %}
+  {% set row = id ~ "-person-" ~ loop.index %}
+  <div class="event-form__row">
+    <div class="field">
+      <label for="{{ row }}-name">Nom</label>
+      <input id="{{ row }}-name" type="text" name="person_name" value="{{ person.name }}" maxlength="200" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="{{ row }}-role">Rôle</label>
+      <input id="{{ row }}-role" type="text" name="person_role" value="{{ person.role }}" maxlength="200" list="{{ lists }}-roles" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="{{ row }}-article">Fiche liée</label>
+      <input id="{{ row }}-article" type="text" name="person_article" value="{{ person.article }}" maxlength="500" list="{{ lists }}-personnage" autocomplete="off">
+    </div>
+  </div>
+  {% endfor %}
+</fieldset>
+<fieldset class="event-form__rows">
+  <legend>Organisations impliquées</legend>
+  {% for organization in (form.organizations if form else []) + [blank, blank] %}
+  {% set row = id ~ "-organization-" ~ loop.index %}
+  <div class="event-form__row event-form__row--pair">
+    <div class="field">
+      <label for="{{ row }}-name">Nom</label>
+      <input id="{{ row }}-name" type="text" name="organization_name" value="{{ organization.name }}" maxlength="200" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="{{ row }}-article">Fiche liée</label>
+      <input id="{{ row }}-article" type="text" name="organization_article" value="{{ organization.article }}" maxlength="500" list="{{ lists }}-organisation" autocomplete="off">
+    </div>
+  </div>
+  {% endfor %}
+</fieldset>
+<div class="field">
+  <label for="{{ id }}-consequences">Conséquences</label>
+  <textarea id="{{ id }}-consequences" name="consequences" rows="4">{{ form.consequences if form else '' }}</textarea>
+</div>
+<div class="field field--gm">
+  <label for="{{ id }}-gm">Notes du MJ <span class="field__hint">jamais montrées au joueur</span></label>
+  <textarea id="{{ id }}-gm" name="gm_notes" rows="3">{{ form.gm_notes if form else '' }}</textarea>
+</div>
+{% endmacro %}
+
+{% macro event_card(event) %}
+<li class="saga__item">
+  <details class="event" id="{{ event.anchor }}">
+    <summary>
+      <span class="event__head">
+        {% if event.when or event.session %}
+        <span class="event__meta">
+          {% if event.when %}<span class="saga__session">{{ event.when }}</span>{% endif %}
+          {% if event.session %}<span class="pill pill--muted">{{ event.session }}</span>{% endif %}
+        </span>
+        {% endif %}
+        <span class="event__title">{{ event.title }}</span>
+        {% if event.place or event.people %}
+        <span class="event__summary">
+          {% if event.place %}<span class="event__chip">{{ ui("compass") }}{{ event.place.name }}</span>{% endif %}
+          {% if event.people %}<span class="event__chip">{{ ui("users") }}{{ event.people | map(attribute="name") | join(", ") }}</span>{% endif %}
+        </span>
+        {% endif %}
+      </span>
+      {{ ui("chevron", "icon event__chevron") }}
+    </summary>
+    <div class="event__body">
+      <dl class="event__facts">
+        <div><dt>Quand</dt><dd>{{ event.when or "Date inconnue" }}</dd></div>
+        {% if event.session %}<div><dt>Séance</dt><dd>{{ event.session }}</dd></div>{% endif %}
+        <div><dt>Où</dt><dd>{% if event.place %}{{ event_link(event.place) }}{% else %}Lieu inconnu{% endif %}</dd></div>
+      </dl>
+      <section class="event__section">
+        <h4 class="event__label">Ce qui s'est passé</h4>
+        {% if event.html | trim %}<div class="prose">{{ event.html }}</div>{% else %}<p class="muted">Rien de plus n'est consigné pour l'instant.</p>{% endif %}
+      </section>
+      {% if event.people %}
+      <section class="event__section">
+        <h4 class="event__label">Qui était impliqué</h4>
+        <ul class="event__people">
+          {% for person in event.people %}
+          <li><span class="event__person">{{ event_link(person) }}</span>{% if person.role %}<span class="event__role">{{ person.role }}</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {% if event.organizations %}
+      <section class="event__section">
+        <h4 class="event__label">Organisations impliquées</h4>
+        <ul class="event__people">
+          {% for organization in event.organizations %}<li><span class="event__person">{{ event_link(organization) }}</span></li>{% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {% if event.consequences_html | trim %}
+      <section class="event__section">
+        <h4 class="event__label">Conséquences</h4>
+        <div class="prose">{{ event.consequences_html }}</div>
+      </section>
+      {% endif %}
+      {% if event.gm_html %}
+      <div class="gm-note">
+        <p class="gm-note__label">Notes du MJ</p>
+        <div class="prose">{{ event.gm_html }}</div>
+      </div>
+      {% endif %}
+      {% if editable and event.form %}
+      <details class="relation-edit">
+        <summary class="btn">Modifier</summary>
+        <form method="post" action="/mj/personnages/{{ dossier.character.id }}/evenements/{{ event.id }}" class="form relation-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          {{ event_fields(prefix, prefix ~ "-evt-" ~ event.id, event.form) }}
+          <div class="row">
+            <button type="submit" class="btn btn--primary">Enregistrer</button>
+          </div>
+        </form>
+        <form method="post" action="/mj/personnages/{{ dossier.character.id }}/evenements/{{ event.id }}/supprimer" class="relation-edit__delete" data-confirm="Supprimer l'événement « {{ event.title }} » ?">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn--danger">Supprimer cet événement</button>
+        </form>
+      </details>
+      {% endif %}
+    </div>
+  </details>
+</li>
 {% endmacro %}
 
 {% call tab_panel(prefix, "actions", "Actions") %}
@@ -180,8 +347,11 @@
 {% endcall %}
 
 {% call tab_panel(prefix, "histoire", "Histoire") %}
-  <section class="dossier-block" aria-labelledby="{{ prefix }}-backstory">
-    <h3 class="dossier-block__title" id="{{ prefix }}-backstory">Backstory</h3>
+  {% set story = prefix ~ "-histoire" %}
+  {% set story_tabs = [("recit", "Récit", 0), ("evenements", "Événements marquants", dossier.events | length)] %}
+  {% if dossier.journal %}{% set story_tabs = story_tabs + [("journal", "Journal", dossier.journal | length)] %}{% endif %}
+  {% call tabs(story, "Histoire de " ~ dossier.character.name, story_tabs, "sub") %}
+  {% call tab_panel(story, "recit", "Récit") %}
     {% if dossier.backstory | trim %}
     <div class="prose prose--story">{{ dossier.backstory }}</div>
     {% else %}
@@ -191,10 +361,62 @@
       <p>Le passé de {{ dossier.character.name }} n'est pas encore consigné.{{ dm_hint }}</p>
     </div>
     {% endif %}
-  </section>
+  {% endcall %}
+  {% call tab_panel(story, "evenements", "Événements marquants") %}
+    {% if editable %}
+    {% if dossier.events_edited_at %}
+    <p class="alert alert--warn">Événements modifiés dans l'application le {{ dossier.events_edited_at | datetime_fr }}. Un nouvel import {% if dossier.source_file %}de {{ dossier.source_file }} {% endif %}met à jour le reste du dossier mais ne les remplace plus. Pour revenir au fichier : import-dossiers --replace-events.</p>
+    {% else %}
+    <p class="dossier-note">Vous pouvez modifier les événements ici. Dès la première modification, un nouvel import du fichier de dossier ne les remplace plus.</p>
+    {% endif %}
+    {% endif %}
+    {% if dossier.events %}
+    {% if dossier.dated_events %}
+    <section class="dossier-block" aria-labelledby="{{ story }}-dates">
+      <h3 class="dossier-block__title" id="{{ story }}-dates">Frise</h3>
+      <ol class="saga">
+        {% for event in dossier.dated_events %}{{ event_card(event) }}{% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+    {% if dossier.undated_events %}
+    <section class="dossier-block" aria-labelledby="{{ story }}-sans-date">
+      <h3 class="dossier-block__title" id="{{ story }}-sans-date">Non datés</h3>
+      <ol class="saga saga--undated">
+        {% for event in dossier.undated_events %}{{ event_card(event) }}{% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+      {{ ui("hourglass") }}
+      <h4 class="empty-state__title">Aucun événement marquant</h4>
+      <p>Les moments qui ont marqué la vie de {{ dossier.character.name }} apparaîtront ici.</p>
+    </div>
+    {% endif %}
+    {% if editable %}
+    <details class="relation-edit relation-edit--new">
+      <summary class="btn">Ajouter un événement</summary>
+      <form method="post" action="/mj/personnages/{{ dossier.character.id }}/evenements" class="form relation-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        {{ event_fields(prefix, prefix ~ "-evt-new", none) }}
+        <div class="row">
+          <button type="submit" class="btn btn--primary">Ajouter</button>
+        </div>
+      </form>
+    </details>
+    {% for key in ("monde", "personnage", "organisation") %}
+    <datalist id="{{ prefix }}-{{ key }}">
+      {% for item in relation_articles if (item | section_of).key == key %}<option value="{{ item.title }}">{% endfor %}
+    </datalist>
+    {% endfor %}
+    <datalist id="{{ prefix }}-roles">
+      {% for label in ("Allié", "Adversaire", "Témoin", "Victime", "Proche", "Commanditaire") %}<option value="{{ label }}">{% endfor %}
+    </datalist>
+    {% endif %}
+  {% endcall %}
   {% if dossier.journal %}
-  <section class="dossier-block" aria-labelledby="{{ prefix }}-journal">
-    <h3 class="dossier-block__title" id="{{ prefix }}-journal">Journal d'aventure</h3>
+  {% call tab_panel(story, "journal", "Journal d'aventure") %}
     <ol class="journal-index">
       {% for entry in dossier.journal | reverse %}
       <li>
@@ -206,24 +428,9 @@
       </li>
       {% endfor %}
     </ol>
-  </section>
+  {% endcall %}
   {% endif %}
-  <section class="dossier-block" aria-labelledby="{{ prefix }}-seances">
-    <h3 class="dossier-block__title" id="{{ prefix }}-seances">Au fil des séances</h3>
-    {% if dossier.events %}
-    <ol class="saga">
-      {% for event in dossier.events %}
-      <li class="saga__item">
-        {% if event.session %}<span class="saga__session">{{ event.session }}</span>{% endif %}
-        <h4 class="saga__title">{{ event.title }}</h4>
-        {% if event.html | trim %}<div class="prose">{{ event.html }}</div>{% endif %}
-      </li>
-      {% endfor %}
-    </ol>
-    {% else %}
-    <p class="muted">Aucun événement marquant pour l'instant.</p>
-    {% endif %}
-  </section>
+  {% endcall %}
 {% endcall %}
 
 {% call tab_panel(prefix, "inventaire", "Inventaire") %}
