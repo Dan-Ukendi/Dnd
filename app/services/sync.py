@@ -11,6 +11,7 @@ from app.db import get_session_factory
 from app.models import SyncRun, SyncStatus, WaArticle, WaImage, utcnow
 from app.services.chronology import ChronologyError
 from app.services.chronology_sync import sync_timeline
+from app.services.lore import ensure_artefacts
 from app.worldanvil.bbcode import (
     extract_image_ids,
     extract_links,
@@ -179,6 +180,7 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
                 run.removed_count += 1
         db.flush()
         _refresh_links(db)
+        created_fiches = ensure_artefacts(db)
         _sync_images(db, source, full=run.full)
         sync_timeline(db, source, world_id, run)
         run.status = SyncStatus.SUCCESS
@@ -196,6 +198,8 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
             run.events_updated,
             run.events_removed,
         )
+        if created_fiches:
+            logger.info("Sync %d created %d artefact fiches", run_id, len(created_fiches))
     except Exception as exc:
         db.rollback()
         failed = db.get(SyncRun, run_id)

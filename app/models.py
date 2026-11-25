@@ -498,3 +498,84 @@ class TimelineEra(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
     )
+
+
+class Artefact(Base):
+    __tablename__ = "artefacts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    wa_article_id: Mapped[str] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), unique=True
+    )
+    tagline: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    object_type: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    other_names: Mapped[str] = mapped_column(String(500), default="", server_default="")
+    rarity: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    attunement: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    properties: Mapped[str] = mapped_column(Text, default="", server_default="")
+    bonuses: Mapped[str] = mapped_column(Text, default="", server_default="")
+    charges: Mapped[str] = mapped_column(String(100), default="", server_default="")
+    recharge: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    curse: Mapped[str] = mapped_column(Text, default="", server_default="")
+    holder: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    location: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    status: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+    article: Mapped[WaArticle] = relationship()
+
+
+LORE_ELEMENT_TYPES = ("artefact", "lieu", "personnage", "organisation", "divinite", "evenement")
+
+
+class LoreEntry(Base):
+    __tablename__ = "lore_entries"
+    __table_args__ = (
+        CheckConstraint(
+            "element_type IN ('artefact', 'lieu', 'personnage', 'organisation', 'divinite', "
+            "'evenement')",
+            name="ck_lore_entries_element_type",
+        ),
+        CheckConstraint(
+            "end_year IS NULL OR (start_year IS NOT NULL AND end_year >= start_year)",
+            name="ck_lore_entries_years",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(300))
+    element_type: Mapped[str] = mapped_column(String(20))
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    start_year: Mapped[int | None] = mapped_column(Integer)
+    end_year: Mapped[int | None] = mapped_column(Integer)
+    era: Mapped[str | None] = mapped_column(String(30))
+    approximate: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    timeline_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("timeline_events.id", ondelete="SET NULL"), index=True
+    )
+    source_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL")
+    )
+    source_section: Mapped[str | None] = mapped_column(String(300))
+    gm_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+    article: Mapped[WaArticle | None] = relationship(foreign_keys=[wa_article_id])
+    event: Mapped[TimelineEvent | None] = relationship()

@@ -12,11 +12,12 @@ INVENTED = [f"E-{number:03d}" for number in range(1, 54)]
 
 
 @pytest.fixture
-def rerun_migration() -> Iterator[object]:
+def rerun_migration(db: Session) -> Iterator[object]:
     config = Config("alembic.ini")
     config.attributes["configure_logger"] = False
 
     def rerun() -> None:
+        db.rollback()
         command.downgrade(config, "0008")
         command.upgrade(config, "head")
 

@@ -53,14 +53,22 @@ def _skip_empty_lead(source: str) -> str:
 
 
 def article_tagline(article: WaArticle) -> str:
-    source = _skip_empty_lead(article.content or "")
+    return tagline_from(article.title, article.content)
+
+
+def is_title_heading(heading: str, title: str) -> bool:
+    return _is_title_heading(heading, title)
+
+
+def tagline_from(title: str, content: str | None) -> str:
+    source = _skip_empty_lead(content or "")
     remainder = ""
     heading_match = HEADING_BBCODE_RE.match(source)
     if heading_match is not None:
         heading = to_plain_text(heading_match.group("heading")).strip()
-        if not _is_title_heading(heading, article.title):
+        if not _is_title_heading(heading, title):
             return ""
-        remainder = _title_remainder(heading, article.title)
+        remainder = _title_remainder(heading, title)
         source = _skip_empty_lead(source[heading_match.end() :])
     italic = ITALIC_BBCODE_RE.match(source)
     tagline = to_plain_text(italic.group("tagline")).strip() if italic else remainder
