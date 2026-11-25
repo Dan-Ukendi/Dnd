@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui, divider_ornament %}
+{% from "components/ui.html" import breadcrumb %}
+{% set list_icons = {"encounters": "users", "items": "pouch", "quests": "compass", "leads": "search"} %}
+{% set position = episodes.index(entry.episode) %}
+{% set previous = episodes[position - 1] if position > 0 else none %}
+{% set following = episodes[position + 1] if position + 1 < episodes | length else none %}
+{% block title %}Épisode {{ entry.episode }} · {{ entry.title }}{% endblock %}
+{% block main_attrs %}data-section="aventure"{% endblock %}
+{% block content %}
+{{ breadcrumb(crumbs + [("Épisode " ~ entry.episode, "")]) }}
+<article class="journal-entry" aria-labelledby="journal-title">
+  <header class="journal-entry__head reveal">
+    <div class="eyebrow">{{ ui("quill") }}Journal de {{ character.name }}</div>
+    <p class="journal-entry__episode">Épisode {{ entry.episode }}</p>
+    <h1 class="journal-entry__title" id="journal-title">{{ entry.title }}</h1>
+    {% if entry.days %}<p class="journal-entry__days">{{ entry.days }}</p>{% endif %}
+    {% if player_name is defined %}<p class="journal-entry__audience"><span class="pill pill--muted">Visible par {{ player_name }} et le MJ</span></p>{% endif %}
+    {{ divider_ornament() }}
+  </header>
+
+  {% if entry.html | trim %}
+  <div class="journal-entry__page reveal reveal-delay-1">
+    <div class="prose prose--story">{{ entry.html }}</div>
+  </div>
+  {% endif %}
+
+  {% if entry.lists %}
+  <div class="journal-notes reveal reveal-delay-2">
+    {% for group in entry.lists %}
+    <section class="journal-notes__panel journal-notes__panel--{{ group.key }}" aria-labelledby="notes-{{ group.key }}">
+      <h2 class="journal-notes__title" id="notes-{{ group.key }}">{{ ui(list_icons[group.key]) }}{{ group.label }}<span>{{ group.lines | length }}</span></h2>
+      <ul class="journal-notes__list">
+        {% for line in group.lines %}<li>{{ line }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="frieze journal-entry__frieze" aria-hidden="true"></div>
+  <nav class="journal-entry__nav" aria-label="Épisodes">
+    {% if previous %}<a class="btn" href="{{ base_href }}/{{ previous }}" rel="prev">{{ ui("back") }}Épisode {{ previous }}</a>{% endif %}
+    <a class="btn" href="{{ back_href }}">Retour à l'Aventure</a>
+    {% if fiche_href %}<a class="btn" href="{{ fiche_href }}">Fiche de {{ character.name }}</a>{% endif %}
+    {% if following %}<a class="btn" href="{{ base_href }}/{{ following }}" rel="next">Épisode {{ following }}{{ ui("chevron") }}</a>{% endif %}
+  </nav>
+</article>
+{% endblock %}

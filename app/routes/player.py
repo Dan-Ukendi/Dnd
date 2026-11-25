@@ -6,7 +6,8 @@ from fastapi.responses import RedirectResponse, Response
 
 from app.config import get_settings
 from app.deps import CurrentPlayer, DbSession, log_in
-from app.models import WaArticle
+from app.models import Character, WaArticle
+from app.sections import ADVENTURE_KEY
 from app.services.access import (
     accessible_article_ids,
     get_player_article,
@@ -16,7 +17,12 @@ from app.services.access import (
 from app.services.accounts import AccountError, change_password
 from app.services.articles import articles_by_ids
 from app.services.characters import characters_of
-from app.services.dossiers import build_dossier
+from app.services.dossiers import (
+    build_dossier,
+    find_journal_entry,
+    journal_entry_view,
+    journal_shelves,
+)
 from app.services.media import player_section_banner
 from app.templating import flash, render
 from app.worldanvil.bbcode import render_bbcode
@@ -51,11 +57,49 @@ def my_character(request: Request, db: DbSession, player: CurrentPlayer) -> Resp
 
 @router.get("/articles")
 def shared_articles(request: Request, db: DbSession, player: CurrentPlayer) -> Response:
-    banner = player_section_banner(db, player, request.query_params.get("section", ""))
+    section = request.query_params.get("section", "")
+    banner = player_section_banner(db, player, section)
+    journals = (
+        journal_shelves(characters_of(db, player), player_render_context(db, player))
+        if section == ADVENTURE_KEY
+        else []
+    )
     return render(
         request,
         "player/articles.html",
-        {"articles": player_shared_articles(db, player), "banner": banner},
+        {"articles": player_shared_articles(db, player), "banner": banner, "journals": journals},
+    )
+
+
+@router.get("/journal/{character_id}/{episode}")
+def journal_entry(
+    request: Request, character_id: int, episode: int, db: DbSession, player: CurrentPlayer
+) -> Response:
+    character = db.get(Character, character_id)
+    if character is None or character.player_id != player.id:
+        raise HTTPException(status_code=404)
+    entry = find_journal_entry(character, episode)
+    if entry is None:
+        raise HTTPException(status_code=404)
+    accessible = accessible_article_ids(db, player)
+    main = character.main_article
+    return render(
+        request,
+        "journal/entry.html",
+        {
+            "character": character,
+            "entry": journal_entry_view(entry, player_render_context(db, player)),
+            "episodes": [item.episode for item in character.journal],
+            "base_href": f"/joueur/journal/{character.id}",
+            "crumbs": [
+                ("Mon personnage", "/joueur"),
+                ("Aventure", f"/joueur/articles?section={ADVENTURE_KEY}"),
+            ],
+            "back_href": f"/joueur/articles?section={ADVENTURE_KEY}",
+            "fiche_href": f"/joueur/articles/{main.wa_id}"
+            if main is not None and main.wa_id in accessible
+            else None,
+        },
     )
 
 

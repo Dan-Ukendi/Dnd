@@ -194,6 +194,22 @@
     </div>
     {% endif %}
   </section>
+  {% if dossier.journal %}
+  <section class="dossier-block" aria-labelledby="{{ prefix }}-journal">
+    <h3 class="dossier-block__title" id="{{ prefix }}-journal">Journal d'aventure</h3>
+    <ol class="journal-index">
+      {% for entry in dossier.journal | reverse %}
+      <li>
+        <a class="journal-index__link" href="{{ '/joueur/journal/' if player_mode else '/mj/journal/' }}{{ dossier.character.id }}/{{ entry.episode }}">
+          <span class="journal-index__episode">Épisode {{ entry.episode }}{% if entry.days %} · {{ entry.days }}{% endif %}</span>
+          <span class="journal-index__title">{{ entry.title }}</span>
+          {{ ui("chevron", "icon journal-index__chevron") }}
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
   <section class="dossier-block" aria-labelledby="{{ prefix }}-seances">
     <h3 class="dossier-block__title" id="{{ prefix }}-seances">Au fil des séances</h3>
     {% if dossier.events %}

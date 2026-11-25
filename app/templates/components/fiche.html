@@ -89,7 +89,7 @@
       {% set prefix = "dossier-" ~ dossier.character.id %}
       <div class="tabs" data-tabs>
         <div class="tabs__list" role="tablist" aria-label="Dossier de {{ dossier.character.name }}">
-          {% for key, label, count in [("fiche", "Fiche", 0), ("actions", "Actions", dossier.action_count), ("relations", "Relations", dossier.relation_count), ("histoire", "Histoire", dossier.events | length), ("inventaire", "Inventaire", dossier.items | length)] %}
+          {% for key, label, count in [("fiche", "Fiche", 0), ("actions", "Actions", dossier.action_count), ("relations", "Relations", dossier.relation_count), ("histoire", "Histoire", dossier.events | length + dossier.journal | length), ("inventaire", "Inventaire", dossier.items | length)] %}
           <button type="button" class="tabs__tab" role="tab" id="{{ prefix }}-tab-{{ key }}" aria-controls="{{ prefix }}-{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab="{{ key }}">{{ label }}{% if count %}<span class="tabs__count">{{ count }}</span>{% endif %}</button>
           {% endfor %}
         </div>

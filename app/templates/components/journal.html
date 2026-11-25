@@ -1,0 +1,28 @@
+{% from "components/icons.html" import ui %}
+
+{% macro journal_shelf(shelves, base, title, lead, show_names=False) -%}
+<section class="journal-shelf reveal reveal-delay-1" aria-labelledby="journal-shelf-title">
+  {% set total = namespace(count=0) %}
+  {% for shelf in shelves %}{% set total.count = total.count + shelf.entries | length %}{% endfor %}
+  <h2 class="section-group__title" id="journal-shelf-title">{{ ui("quill") }}{{ title }}<span>{{ total.count }}</span></h2>
+  {% if lead %}<p class="journal-shelf__lead">{{ lead }}</p>{% endif %}
+  {% for shelf in shelves %}
+  {% if show_names %}<h3 class="journal-shelf__name">{{ shelf.character.name }}</h3>{% endif %}
+  <ol class="journal-list" aria-label="Journal de {{ shelf.character.name }}">
+    {% for entry in shelf.entries %}
+    <li>
+      <a class="journal-card" href="{{ base }}/{{ shelf.character.id }}/{{ entry.episode }}">
+        <span class="journal-card__seal" aria-hidden="true"><span>Épisode</span>{{ entry.episode }}</span>
+        <span class="journal-card__body">
+          <span class="journal-card__eyebrow">Épisode {{ entry.episode }}{% if entry.days %} · {{ entry.days }}{% endif %}</span>
+          <span class="journal-card__title">{{ entry.title }}</span>
+          {% if entry.excerpt %}<span class="journal-card__text">{{ entry.excerpt }}</span>{% endif %}
+        </span>
+        <span class="journal-card__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ol>
+  {% endfor %}
+</section>
+{%- endmacro %}

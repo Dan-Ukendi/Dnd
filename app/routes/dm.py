@@ -25,7 +25,7 @@ from app.models import (
     User,
     WaArticle,
 )
-from app.sections import section_counts
+from app.sections import ADVENTURE_KEY, section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
 from app.services import dossiers as dossier_service
@@ -170,8 +170,42 @@ def article_list(
     }
     if is_htmx(request) and request.headers.get("hx-target") == "article-results":
         return render(request, "dm/_article_results.html", context)
-    banner = media_service.section_banner(db, request.query_params.get("section", ""))
-    return render(request, "dm/articles.html", {**context, "banner": banner})
+    section = request.query_params.get("section", "")
+    banner = media_service.section_banner(db, section)
+    journals = (
+        dossier_service.journal_shelves(
+            list(db.scalars(select(Character).order_by(Character.name)).all()),
+            dm_render_context(db),
+        )
+        if section == ADVENTURE_KEY
+        else []
+    )
+    return render(request, "dm/articles.html", {**context, "banner": banner, "journals": journals})
+
+
+@router.get("/journal/{character_id}/{episode}")
+def journal_entry(
+    request: Request, character_id: int, episode: int, db: DbSession, dm: CurrentDm
+) -> Response:
+    character = db.get(Character, character_id)
+    entry = dossier_service.find_journal_entry(character, episode) if character else None
+    if character is None or entry is None:
+        raise HTTPException(status_code=404)
+    main = character.main_article
+    return render(
+        request,
+        "journal/entry.html",
+        {
+            "character": character,
+            "entry": dossier_service.journal_entry_view(entry, dm_render_context(db)),
+            "episodes": [item.episode for item in character.journal],
+            "base_href": f"/mj/journal/{character.id}",
+            "crumbs": [("Accueil", "/mj"), ("Aventure", f"/mj/articles?section={ADVENTURE_KEY}")],
+            "back_href": f"/mj/articles?section={ADVENTURE_KEY}",
+            "fiche_href": f"/mj/articles/{main.wa_id}" if main is not None else None,
+            "player_name": character.player.display_name,
+        },
+    )
 
 
 @router.get("/articles/{wa_id}")
