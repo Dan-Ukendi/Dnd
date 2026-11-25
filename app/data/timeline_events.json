@@ -1785,11 +1785,13 @@
   "importance": "majeur",
   "origin": "canon",
   "place": "Marché noir de Khar Zakh",
-  "summary": "Dispute pour l'amulette au marché noir. Zilvra gagne.",
+  "summary": "Au marché noir, Zilvra, une drow venue chercher une amulette dont on dit qu'elle permet de contrôler les gens, et Khaetar Voss, un tiefling venu pour la même amulette sur ordre de son patron, posent la main dessus au même moment. La dispute éclate pour savoir qui la gardera ; d'un geste vif, Zilvra s'en empare. Les gardes la prennent aussitôt pour une voleuse.",
   "linked": [
-   "C22"
+   "C22",
+   "C21",
+   "C19"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1799,17 +1801,17 @@
  },
  {
   "code": "S2",
-  "title": "Poursuite par les veilleurs",
+  "title": "Poursuivis par les veilleurs, ils tuent un guerrier et mettent en fuite un mage et un archer",
   "start_year": 987,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Les veilleurs les poursuivent. Ils tuent un guerrier ; un mage et un archer s'enfuient.",
+  "summary": "Pris en chasse par les veilleurs, les gardes du marché noir, les deux rivaux doivent combattre côte à côte. Ils tuent un guerrier et mettent en fuite le mage et l'archer qui les poursuivaient.",
   "linked": [
    "S1"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1825,11 +1827,11 @@
   "importance": "mineur",
   "origin": "canon",
   "place": "Le Troll qui Rit",
-  "summary": "Les deux se réfugient dans la taverne.",
+  "summary": "Les deux fuyards trouvent refuge au Troll qui Rit, une immense taverne de la ville haute tenue par Jean-Charles.",
   "linked": [
    "S2"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1842,14 +1844,15 @@
   "title": "Le pacte du soir : rendre son pouvoir à l'amulette",
   "start_year": 987,
   "end_year": null,
-  "importance": "notable",
+  "importance": "majeur",
   "origin": "canon",
   "place": "Le Troll qui Rit",
-  "summary": "Le soir, ils conviennent de rendre d'abord son pouvoir à l'amulette ensemble.",
+  "summary": "Autour d'une table, ils concluent un accord : avant de décider à qui reviendra l'amulette, ils vont d'abord lui rendre son pouvoir, ensemble. Le rituel demande deux choses : du sang de troll, et une incantation récitée à l'endroit même où l'amulette a été forgée.",
   "linked": [
-   "S3"
+   "S3",
+   "A1"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1858,83 +1861,210 @@
   "wa_history_id": "1e2dd0f8-d5b9-420f-999c-be66a65433aa"
  },
  {
-  "code": "S5",
-  "title": "La Nuit lance la traque",
+  "code": "S13",
+  "title": "Zilvra gagne la faveur de Jean-Charles en payant en or",
   "start_year": 987,
   "end_year": null,
-  "importance": "notable",
+  "importance": "mineur",
+  "origin": "canon",
+  "place": "Le Troll qui Rit",
+  "summary": "Zilvra fait la connaissance de Jean-Charles, le propriétaire de la taverne. Comme elle paie en pièces d'or, il se fait d'elle une excellente opinion et se montre prêt à tout pour la satisfaire. Il loge les deux compagnons.",
+  "linked": [
+   "S3"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J1",
+  "order": 94,
+  "wa_history_id": "2657bf0b-4ea4-410d-8a8b-ba87a3c0673c"
+ },
+ {
+  "code": "S14",
+  "title": "Bob, pickpocket halfelin, vole la bourse de Zilvra",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "mineur",
+  "origin": "canon",
+  "place": "Le Troll qui Rit",
+  "summary": "Khaetar monte se coucher le premier. Zilvra reste boire et tente de soutirer des informations à la foule, sans succès. Au cours de la soirée, Bob, un halfelin habitué de la taverne, lui subtilise sa bourse sans qu'elle s'en aperçoive.",
+  "linked": [
+   "S13",
+   "C20"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J1",
+  "order": 95,
+  "wa_history_id": "99851873-1352-4959-860b-68a10d84b8ab"
+ },
+ {
+  "code": "S15",
+  "title": "Première nuit au Troll qui Rit",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "mineur",
+  "origin": "canon",
+  "place": "Le Troll qui Rit",
+  "summary": "Zilvra finit par aller dormir à son tour. Les deux compagnons passent leur première nuit à la taverne de Jean-Charles.",
+  "linked": [
+   "S14"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J1",
+  "order": 96,
+  "wa_history_id": "cc608773-e9e5-49c2-97df-3400890eea39"
+ },
+ {
+  "code": "S5",
+  "title": "La Nuit lance la traque des voleurs de l'amulette",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "majeur",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Parmi les écoutes de la Nuit, des descriptions d'une drow et d'un tiefling.",
+  "summary": "Le mage et l'archer en fuite rapportent ce qu'ils ont vu. Pour la Nuit, le vol de l'amulette est une insulte directe au conseil des trois Ezen, et le guerrier tué doit être payé. Les descriptions d'une drow et d'un tiefling circulent parmi les écoutes, qui surveillent les portes de la montagne, les tavernes et la Guilde des Aventuriers.\n\nÀ valider : le moment exact est déduit (la traque suit le retour du mage et de l'archer) ; à la fin de la séance, elle est déjà lancée.",
   "linked": [
-   "S4"
+   "S2",
+   "C9"
   ],
   "status": "a_valider",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J1",
-  "order": 94,
+  "order": 97,
   "wa_history_id": "9fe8f78f-b186-4ad4-9a75-a9b4442dc045"
  },
  {
+  "code": "S16",
+  "title": "Jean-Charles leur donne deux pistes pour le sang de troll",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "notable",
+  "origin": "canon",
+  "place": "Le Troll qui Rit",
+  "summary": "Au petit-déjeuner, le duo demande à Jean-Charles où trouver du sang de troll. Il leur donne deux pistes : son cousin, historien de formation qui s'intéresse à leurs ancêtres, dont l'aventurier chasseur de trolls qui acheta la taverne il y a plusieurs générations ; ou la Guilde des Aventuriers, pour y chercher des informations ou des quêtes. Ils choisissent la Guilde. Le cousin reste une piste ouverte.",
+  "linked": [
+   "S15",
+   "S4"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J2",
+  "order": 98,
+  "wa_history_id": "8cc4d2b0-dddb-44b9-aa35-7924c19635c8"
+ },
+ {
   "code": "S6",
-  "title": "Licence de rang B sans épreuve, choix de la quête de Sophie",
+  "title": "Licence de rang B obtenue sans épreuve auprès de Gronk",
   "start_year": 987,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
   "place": "Guilde de Khüchniin Khöndii",
-  "summary": "Gronk leur délivre une licence de rang B sans épreuve. Ils choisissent la quête de rang D de Sophie.",
+  "summary": "Au guichet de la Guilde des Aventuriers, Gronk, fils de Brok, le réceptionniste orc, reçoit les deux compagnons. À force d'assurance et de mensonges, ils le convainquent qu'ils sont des aventuriers redoutables, de rang B. Ils échappent ainsi aux épreuves d'admission et repartent avec une licence de rang B, bien au-dessus du rang qui aurait dû être le leur.",
   "linked": [
-   "C24"
+   "S16",
+   "C6"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 95,
+  "order": 99,
   "wa_history_id": "b9c9908b-9081-4513-abef-03b6c6e798fa"
+ },
+ {
+  "code": "S17",
+  "title": "Ils choisissent la quête de rang D de Sophie",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "notable",
+  "origin": "canon",
+  "place": "Guilde de Khüchniin Khöndii",
+  "summary": "Deux quêtes concernent des trolls : une de rang B, qui demande d'en abattre plusieurs, et une de rang D, « La route barrée », qui n'en vise qu'un seul. Ils prennent la seconde, qui les envoie chez la cliente, Sophie, une marchande naine.",
+  "linked": [
+   "S6",
+   "C24"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J2",
+  "order": 100,
+  "wa_history_id": "db8462e7-1504-4d88-8d74-7f4b276324f7"
  },
  {
   "code": "S7",
   "title": "Chez Sophie, Zilvra vide un coffre caché",
   "start_year": 987,
   "end_year": null,
-  "importance": "mineur",
+  "importance": "notable",
   "origin": "canon",
-  "place": "Chez Sophie",
-  "summary": "Zilvra vide un coffre caché : 50 pièces d'or, 4 potions de soin, 2 potions de sort.",
+  "place": "La demeure de Sophie",
+  "summary": "Pendant qu'ils attendent au salon, où Gérard, le majordome de Sophie, leur sert à boire, Zilvra lui demande les toilettes. Elle en profite pour explorer la maison, découvre une pièce discrète où se trouve un coffre et le vide : 50 pièces d'or, 4 potions de soin et 2 potions de sort. Elle rejoint Khaetar au salon sans que personne ne remarque rien.",
   "linked": [
-   "S6"
+   "S17"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 96,
+  "order": 101,
   "wa_history_id": "9309e3e1-7438-48e9-b63a-a8142b3cb421"
  },
  {
-  "code": "S8",
-  "title": "Contrat magique de confidentialité",
+  "code": "S18",
+  "title": "Sophie leur expose la mission du troll et Khaetar flatte sa barbe",
   "start_year": 987,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
-  "place": "Chez Sophie",
-  "summary": "Ils signent le contrat. Zilvra signe du faux nom \"Maely\".",
+  "place": "La demeure de Sophie",
+  "summary": "Sophie les reçoit dans son bureau, à l'étage. Elle possède une route secrète, un héritage familial qui relie plusieurs endroits de la forêt ; depuis quelques mois, un troll s'y est installé et rend le passage impossible. Elle leur demande de régler le problème. Khaetar complimente la naine sur sa barbe : Sophie rougit et se fait une très bonne opinion du groupe.",
   "linked": [
-   "S7"
+   "S7",
+   "C23",
+   "C13"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 97,
+  "order": 102,
+  "wa_history_id": "d43c6c63-cf46-498e-b822-1d5a1a0c4ad4"
+ },
+ {
+  "code": "S8",
+  "title": "Contrat magique de confidentialité : Zilvra signe « Maelys »",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "notable",
+  "origin": "canon",
+  "place": "La demeure de Sophie",
+  "summary": "Avant de leur révéler le chemin, Sophie leur fait signer un contrat magique de confidentialité qui leur interdit d'en divulguer l'emplacement. Khaetar signe de son vrai nom ; Zilvra signe « Maelys » pour échapper au contrat. Personne ne remarque rien, et Khaetar croit désormais que Maelys est le vrai nom de sa compagne et que « Zilvra » n'est qu'un alias. C'est l'inverse.",
+  "linked": [
+   "S18"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J2",
+  "order": 103,
   "wa_history_id": "010d188e-68e3-4ca3-91de-2cdea2a6a0bb"
  },
  {
@@ -1945,17 +2075,18 @@
   "importance": "mineur",
   "origin": "canon",
   "place": "Le Troll qui Rit",
-  "summary": "Zilvra interroge la taverne sur le vol de son argent.",
+  "summary": "Les deux compagnons se séparent un moment. Zilvra retourne au Troll qui Rit pour savoir qui lui a volé sa bourse ; Jean-Charles lui parle de Bob, un habitué de la taverne.",
   "linked": [
    "S8",
+   "S14",
    "C20"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 98,
+  "order": 104,
   "wa_history_id": "54854f50-9489-4e35-8a58-c713779937fe"
  },
  {
@@ -1966,57 +2097,101 @@
   "importance": "majeur",
   "origin": "canon",
   "place": "Temple Blanc d'Arès",
-  "summary": "Kratéros coupe Khaetar de l'influence de son patron et lui remet une amulette bénie par Arès.",
+  "summary": "Pendant ce temps, Khaetar se rend au temple d'Arès. Un vieux prêtre agenouillé devant la statue du dieu, Kratéros, le prend à part et le coupe, le temps de leur échange, de l'influence de son patron démoniaque, puis lui demande s'il veut de l'aide pour s'en libérer. Il doit d'abord faire ses propres recherches et reviendra vers lui quand il en saura davantage. En attendant, il lui remet une amulette bénie par Arès, le Gage d'Arès : à chaque victoire, elle se charge et rapproche Khaetar du dieu.",
   "linked": [
+   "S8",
    "C10",
    "C19"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 99,
+  "order": 105,
   "wa_history_id": "8d13a21a-543c-48d2-8f65-fa823502b850"
  },
  {
-  "code": "S11",
-  "title": "Bob retrouvé, menacé et chassé de la taverne",
+  "code": "S20",
+  "title": "Kratéros voit en Khaetar la quête qu'il attendait d'Arès",
   "start_year": 987,
   "end_year": null,
-  "importance": "mineur",
+  "importance": "notable",
   "origin": "canon",
-  "place": "Le Troll qui Rit",
-  "summary": "Zilvra et Khaetar récupèrent l'argent et chassent Bob.",
+  "place": "Temple Blanc d'Arès",
+  "summary": "Évêque d'Arès que presque tous prennent pour un simple prêtre, Kratéros attendait depuis des années une quête que son dieu lui confierait. Il voit dans le jeune tiefling le signe attendu et fait de son aide sa quête. Il lui a confié le Gage seul, sans l'accord du conseil des prélats, qui ignore que l'amulette a quitté le temple.",
   "linked": [
-   "S9"
+   "S10",
+   "C10"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 100,
+  "order": 106,
+  "wa_history_id": "9b2d0f6a-e8c9-449d-ae36-76c92c6ddd7b"
+ },
+ {
+  "code": "S11",
+  "title": "Bob retrouvé, menacé et chassé du Troll qui Rit",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "notable",
+  "origin": "canon",
+  "place": "Le Troll qui Rit",
+  "summary": "Zilvra attend Khaetar devant le temple, puis tous deux retournent à la taverne. Ils y trouvent Bob, le menacent, récupèrent l'argent en toute discrétion et le jettent dehors ; Jean-Charles le laisse chasser de l'établissement.",
+  "linked": [
+   "S9",
+   "S10"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J2",
+  "order": 107,
   "wa_history_id": "26e19912-5979-43b0-be6b-132409cb15ee"
  },
  {
+  "code": "S19",
+  "title": "Humilié, Bob compte vendre les deux voleurs à la Nuit",
+  "start_year": 987,
+  "end_year": null,
+  "importance": "notable",
+  "origin": "canon",
+  "place": "Khüchniin Khöndii",
+  "summary": "Chassé de la taverne et délesté de l'or qu'il venait de voler, Bob veut se venger et récupérer de l'argent. Écoute de la Nuit, il a vu les deux aventuriers de près et sait où les trouver : il compte les dénoncer à ses contacts du marché noir, qui les poursuivent déjà pour le vol de l'amulette.",
+  "linked": [
+   "S11",
+   "S5"
+  ],
+  "status": "etabli",
+  "visibility": "mj",
+  "chronicle": true,
+  "session": 1,
+  "day": "J2",
+  "order": 108,
+  "wa_history_id": "25d2fda9-b868-4089-af01-58c816da50b6"
+ },
+ {
   "code": "S12",
-  "title": "Coucher tôt avant la quête du lendemain",
+  "title": "Deuxième nuit au Troll qui Rit : coucher tôt avant la quête",
   "start_year": 987,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
   "place": "Le Troll qui Rit",
-  "summary": "Ils se couchent tôt pour être en forme le lendemain.",
+  "summary": "La soirée est courte : les deux compagnons se couchent tôt au Troll qui Rit pour être en forme le lendemain, en vue de la quête du troll de Sophie.",
   "linked": [
    "S11"
   ],
-  "status": "a_valider",
+  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
   "day": "J2",
-  "order": 101,
+  "order": 109,
   "wa_history_id": "a7fbd572-7796-4690-9342-66da2733e184"
  }
 ]

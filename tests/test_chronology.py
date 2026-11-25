@@ -139,31 +139,31 @@ def test_event_validation_accepts_string_years() -> None:
 
 def test_dataset_is_coherent() -> None:
     events = load_dataset()
-    assert len(events) == 101
+    assert len(events) == 109
     codes = {event.code for event in events}
-    assert len(codes) == 101
+    assert len(codes) == 109
     for event in events:
         assert -1237 <= event.start_year <= 987, event.code
         assert event.end_year is None or event.start_year <= event.end_year <= 987, event.code
         assert set(event.linked) <= codes, event.code
         assert event.wa_history_id, event.code
-    assert len({event.wa_history_id for event in events}) == 101
+    assert len({event.wa_history_id for event in events}) == 109
     raw = json.loads(DATASET_PATH.read_text(encoding="utf-8"))
-    assert [row["order"] for row in raw] == list(range(1, 102))
+    assert [row["order"] for row in raw] == list(range(1, 110))
     chronicle = [event for event in events if event.chronicle]
-    assert {event.code for event in chronicle} == {f"S{number}" for number in range(1, 13)}
+    assert {event.code for event in chronicle} == {f"S{number}" for number in range(1, 21)}
     assert all(event.session == 1 and event.day in ("J1", "J2") for event in chronicle)
 
 
 def test_initial_load_creates_every_event_and_is_idempotent(db: Session) -> None:
     first = load_seed(db)
-    assert (first.created, first.updated) == (101, 0)
-    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 101
+    assert (first.created, first.updated) == (109, 0)
+    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 109
     expected_links = sum(len(event.linked) for event in load_dataset())
     assert db.scalar(select(func.count()).select_from(TimelineEventLink)) == expected_links
     second = load_seed(db)
-    assert (second.created, second.updated, second.unchanged) == (0, 0, 101)
-    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 101
+    assert (second.created, second.updated, second.unchanged) == (0, 0, 109)
+    assert db.scalar(select(func.count()).select_from(TimelineEvent)) == 109
     assert db.scalar(select(func.count()).select_from(TimelineEventLink)) == expected_links
 
 
