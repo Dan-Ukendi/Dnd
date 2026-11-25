@@ -416,6 +416,24 @@ subtree. A person, place or organisation links to its fiche only when that fiche
 the player; DM notes, *À valider* and *MJ seulement* badges are never rendered for a player. Excerpts
 are read live from the source article and shown only when that article is readable.
 
+## Automatic links between fiches
+
+When a text names a fiche, the name becomes a link at render time; nothing stored or synced is
+changed. The index holds the titles of the World Anvil articles that are not removed, plus the DM
+aliases of `/mj/liens` (Lore entries and chronology events are not indexed, but their texts are
+linked). Detection runs server-side on the text nodes of the BBCode tree (`app/worldanvil/linking.py`,
+one compiled regex, memoised and rebuilt after every sync and every alias or exclusion change):
+whole words, case- and accent-insensitive, longest match first, optional leading article (Le, La,
+Les, L'), elisions and contractions (`l'`, `d'`, `du`, `au`), names under 3 letters ignored,
+first occurrence per text section, never in headings, existing links or code, never to the fiche
+being read. A name borne by several fiches is not linked, logged by `app.linking` and listed on
+`/mj/liens`. Character dossier aliases (Maelys) never create a link.
+
+A player gets a link only to a fiche he can open; any other name stays plain text, with no
+tooltip. The hover and focus preview reads `/joueur/liens/apercus` (or `/mj/liens/apercus`), a JSON
+index filtered per user and cached with an ETag. Generated links and fiche-to-fiche links navigate
+with `hx-boost` (never forms); Back restores the previous fiche at the same scroll position.
+
 ## Useful commands
 
 | Command | Purpose |
