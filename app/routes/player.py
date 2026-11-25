@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Annotated
 
 from fastapi import APIRouter, Form, HTTPException, Query, Request
@@ -43,14 +44,15 @@ def my_character(request: Request, db: DbSession, player: CurrentPlayer) -> Resp
     sheets = []
     for character in characters_of(db, player):
         article = character.main_article
+        context = replace(render_context, current=article.wa_id if article else None)
         content = None
         if article is not None and article.wa_id in accessible:
-            content = render_bbcode(article.content, render_context)
+            content = render_bbcode(article.content, context)
         sheets.append(
             {
                 "character": character,
                 "content_html": content,
-                "dossier": build_dossier(character, render_context, article_href),
+                "dossier": build_dossier(character, context, article_href),
             }
         )
     return render(
@@ -154,7 +156,7 @@ def shared_article(
     linked = [
         item for item in articles_by_ids(db, article.linked_ids or []) if item.wa_id in accessible
     ]
-    render_context = player_render_context(db, player)
+    render_context = player_render_context(db, player, current=wa_id)
     own = next((item for item in characters_of(db, player) if item.main_article_id == wa_id), None)
     dossier = (
         build_dossier(own, render_context, _player_article_href(accessible))
@@ -195,7 +197,13 @@ def shared_article_territory(
         raise HTTPException(status_code=404)
     viewer = Viewer(dm=False, accessible=frozenset(accessible_article_ids(db, player)))
     return territory_response(
-        request, db, article, viewer, player_render_context(db, player), lieu, player_mode=True
+        request,
+        db,
+        article,
+        viewer,
+        player_render_context(db, player, current=wa_id),
+        lieu,
+        player_mode=True,
     )
 
 

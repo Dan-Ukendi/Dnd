@@ -1,15 +1,18 @@
+from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
+from markupsafe import Markup
 
 from app.chronology import EventStatus, EventVisibility
 from app.deps import CurrentDm, CurrentPlayer, DbSession
 from app.models import TimelineEvent, User
 from app.services import chronology as service
-from app.services.access import accessible_article_ids
+from app.services.access import accessible_article_ids, dm_render_context, player_render_context
 from app.services.articles import all_available_articles
 from app.templating import flash, is_htmx, render
+from app.worldanvil.bbcode import render_plain_text
 
 dm_router = APIRouter(prefix="/mj/chronologie")
 player_router = APIRouter(prefix="/joueur/chronologie")
@@ -42,6 +45,15 @@ def _int_param(request: Request, key: str) -> int | None:
     if value.lstrip("-").isdigit() and len(value) <= 7:
         return int(value)
     return None
+
+
+def _autolink(db: DbSession, user: User, *, dm: bool) -> Callable[..., Markup]:
+    context = dm_render_context(db) if dm else player_render_context(db, user)
+
+    def autolink(text: str | None, *, paragraphs: bool = False) -> Markup:
+        return render_plain_text(text, context, paragraphs=paragraphs)
+
+    return autolink
 
 
 def _detail_context(
@@ -82,6 +94,7 @@ def _page(request: Request, db: DbSession, user: User, *, dm: bool) -> Response:
         "sessions": service.chronicle_sessions(views),
         "current_url": str(request.url.path)
         + (f"?{request.url.query}" if request.url.query else ""),
+        "autolink": _autolink(db, user, dm=dm),
     }
     event_id = _int_param(request, "evenement")
     year = _int_param(request, "annee")
@@ -108,6 +121,7 @@ def _event_page(
         "dm": dm,
         "base": DM_BASE if dm else PLAYER_BASE,
         "current_url": request.url.path,
+        "autolink": _autolink(db, user, dm=dm),
         **_detail_context(db, event, eras, user, dm=dm),
     }
     return render(request, "chronology/event.html", context)

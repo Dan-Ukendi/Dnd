@@ -7,12 +7,15 @@ from urllib.parse import urlsplit
 import nh3
 from markupsafe import Markup
 
+from app.worldanvil.linking import Matcher
+
 MENTION_PATTERN = r"@\[([^\[\]\n]+)\]\(([A-Za-z]+):([0-9A-Fa-f-]{36})\)"
 TAG_PATTERN = r"\[(/?)([A-Za-z][A-Za-z0-9]*)((?:[:|=][^\[\]\n]*)?)\]"
 TOKEN_RE = re.compile(f"{MENTION_PATTERN}|{TAG_PATTERN}")
 LIST_MARKER_RE = re.compile(r"^\s*[-*•]\s+")
 IMAGE_ID_RE = re.compile(r"^\s*(\d+)")
 _TAG_ONLY_RE = re.compile(r"<[^>]+>")
+PARAGRAPH_RE = re.compile(r"\n[ \t]*\n")
 
 HEADINGS = {"h": "h2", "h1": "h2", "h2": "h3", "h3": "h4", "h4": "h5", "h5": "h6", "h6": "h6"}
 INLINE = {
@@ -80,7 +83,7 @@ ALLOWED_TAGS = {
     "td",
 }
 ALLOWED_ATTRIBUTES = {
-    "a": {"href", "class", "target"},
+    "a": {"href", "class", "target", "aria-label"},
     "img": {"src", "alt", "loading", "class"},
     "div": {"class"},
     "span": {"class"},
@@ -88,6 +91,7 @@ ALLOWED_ATTRIBUTES = {
     "th": {"scope"},
     "td": {"data-label"},
 }
+ALLOWED_ATTRIBUTE_VALUES = {"a": {"hx-boost": {"true"}}}
 IMAGE_HOSTS = frozenset(
     {
         "worldanvil.com",
@@ -127,6 +131,8 @@ class RenderContext:
     resolve_article_url: Callable[[str], str | None]
     resolve_image: Callable[[int], ImageRef | None]
     player_mode: bool
+    matcher: Matcher | None = None
+    current: str | None = None
 
 
 @dataclass
@@ -265,6 +271,44 @@ def _with_breaks(fragment: str) -> str:
 class _Renderer:
     def __init__(self, context: RenderContext) -> None:
         self.context = context
+        self.linked: set[str] = set()
+        self.verbatim = 0
+
+    def text(self, value: str) -> str:
+        matcher = self.context.matcher
+        if matcher is None or self.verbatim:
+            return _escape(value)
+        parts: list[str] = []
+        position = 0
+        for found in matcher.find(value):
+            label = value[found.start : found.end]
+            parts.append(_escape(value[position : found.start]))
+            parts.append(self.autolink(label, found.wa_id))
+            position = found.end
+        parts.append(_escape(value[position:]))
+        return "".join(parts)
+
+    def autolink(self, label: str, wa_id: str | None) -> str:
+        matcher = self.context.matcher
+        target = matcher.targets.get(wa_id) if matcher and wa_id else None
+        if target is None or wa_id == self.context.current or wa_id in self.linked:
+            return _escape(label)
+        href = self.context.resolve_article(target.wa_id)
+        if href is None:
+            return _escape(label)
+        self.linked.add(target.wa_id)
+        return (
+            f'<a class="autolink autolink--{_escape(target.kind)}" href="{_escape(href)}" '
+            f'aria-label="{_escape(f"{label}, fiche {target.label.lower()}")}" '
+            f'hx-boost="true">{_escape(label)}</a>'
+        )
+
+    def verbatim_inline(self, children: list[Node]) -> str:
+        self.verbatim += 1
+        try:
+            return self.inline(children)
+        finally:
+            self.verbatim -= 1
 
     def block(self, children: list[Node]) -> str:
         output: list[str] = []
@@ -293,7 +337,7 @@ class _Renderer:
 
     def node(self, node: Node) -> str:
         if isinstance(node, Text):
-            return _escape(node.value)
+            return self.text(node.value)
         if isinstance(node, Mention):
             return self.mention(node)
         if isinstance(node, Void):
@@ -305,7 +349,8 @@ class _Renderer:
         label = _escape(node.label)
         if href is None:
             return label
-        return f'<a class="internal" href="{_escape(href)}">{label}</a>'
+        self.linked.add(node.wa_id)
+        return f'<a class="internal" href="{_escape(href)}" hx-boost="true">{label}</a>'
 
     def void(self, node: Void) -> str:
         if node.name == "br":
@@ -336,7 +381,8 @@ class _Renderer:
             return f'<div class="gm-only">{self.block(node.children)}</div>'
         if name in HEADINGS:
             tag = HEADINGS[name]
-            content = _with_breaks(self.inline(node.children))
+            content = _with_breaks(self.verbatim_inline(node.children))
+            self.linked.clear()
             return f"<{tag}>{content}</{tag}>" if _TAG_ONLY_RE.sub("", content).strip() else ""
         if name in INLINE:
             tag = INLINE[name]
@@ -455,12 +501,12 @@ class _Renderer:
 
     def link(self, node: Element) -> str:
         href = _arg_value(node.arg) or _text_of(node.children).strip()
-        label = self.inline(node.children).strip() or _escape(href)
+        label = self.verbatim_inline(node.children).strip() or _escape(href)
         scheme = urlsplit(href).scheme.lower()
         if is_world_anvil_url(href):
             internal = self.context.resolve_article_url(normalize_wa_url(href))
             if internal is not None:
-                return f'<a class="internal" href="{_escape(internal)}">{label}</a>'
+                return f'<a class="internal" href="{_escape(internal)}" hx-boost="true">{label}</a>'
             if self.context.player_mode:
                 return label
         if scheme in {"http", "https", "mailto"}:
@@ -507,6 +553,7 @@ def sanitize_html(fragment: str) -> str:
         fragment,
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
+        tag_attribute_values=ALLOWED_ATTRIBUTE_VALUES,
         url_schemes={"http", "https", "mailto"},
         link_rel="noopener noreferrer nofollow",
         strip_comments=True,
@@ -518,6 +565,18 @@ def render_bbcode(source: str | None, context: RenderContext) -> Markup:
         return Markup("")
     fragment = _Renderer(context).block(parse(source).children)
     return Markup(sanitize_html(fragment))
+
+
+def render_plain_text(
+    source: str | None, context: RenderContext, *, paragraphs: bool = False
+) -> Markup:
+    if not source or not source.strip():
+        return Markup("")
+    renderer = _Renderer(context)
+    if not paragraphs:
+        return Markup(sanitize_html(renderer.text(source)))
+    parts = [part for part in PARAGRAPH_RE.split(source) if part.strip()]
+    return Markup(sanitize_html("".join(f"<p>{renderer.text(part)}</p>" for part in parts)))
 
 
 def to_plain_text(source: str | None) -> str:

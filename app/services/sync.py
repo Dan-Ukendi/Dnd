@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_session_factory
 from app.models import SyncRun, SyncStatus, WaArticle, WaImage, utcnow
+from app.services import linking
 from app.services.chronology import ChronologyError
 from app.services.chronology_sync import sync_timeline
 from app.services.lore import ensure_artefacts
@@ -188,6 +189,7 @@ def execute_sync(db: Session, source: WorldAnvilSource, world_id: str, run: Sync
         run.status = SyncStatus.SUCCESS
         run.finished_at = utcnow()
         db.commit()
+        linking.refresh(db)
         logger.info(
             "Sync %d finished: %d created, %d updated, %d unchanged, %d removed; "
             "chronology: %d created, %d updated, %d removed",

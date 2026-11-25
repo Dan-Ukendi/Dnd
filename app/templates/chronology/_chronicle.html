@@ -15,7 +15,7 @@
         <li class="saga__item{% if dm and view.event.status == 'a_valider' %} is-pending{% endif %}">
           {% if view.event.place %}<p class="saga__session">{{ view.event.place }}</p>{% endif %}
           <h4 class="saga__title"><a href="{{ base }}/evenements/{{ view.id }}">{{ view.event.title }}</a></h4>
-          {% if view.event.summary %}<div class="prose"><p>{{ view.event.summary }}</p></div>{% endif %}
+          {% if view.event.summary %}<div class="prose"><p>{{ autolink(view.event.summary) }}</p></div>{% endif %}
           {% if dm %}
           <p class="chronicle__meta">
             <span class="pill {{ 'pill--ok' if view.event.visibility == 'joueurs' else 'pill--muted' }}">{{ VISIBILITY_LABELS[view.event.visibility] }}</span>

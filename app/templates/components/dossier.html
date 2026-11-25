@@ -38,7 +38,7 @@
 {% endmacro %}
 
 {% macro event_link(item) -%}
-{% if item.href %}<a href="{{ item.href }}">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
+{% if item.href %}<a href="{{ item.href }}"{{ item.href | boost }}>{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}
 {%- endmacro %}
 
 {% macro event_fields(lists, id, form) %}
@@ -293,7 +293,7 @@
               <div class="prose">{{ person.gm_html }}</div>
             </div>
             {% endif %}
-            {% if person.href %}<a class="btn" href="{{ person.href }}">Voir la fiche</a>{% endif %}
+            {% if person.href %}<a class="btn" href="{{ person.href }}"{{ person.href | boost }}>Voir la fiche</a>{% endif %}
             {% if editable and person.form %}
             <details class="relation-edit">
               <summary class="btn">Modifier</summary>
@@ -455,7 +455,7 @@
         <div class="prose">{{ item.gm_html }}</div>
       </div>
       {% endif %}
-      {% if item.href %}<a class="inventory__link" href="{{ item.href }}">Voir la fiche</a>{% endif %}
+      {% if item.href %}<a class="inventory__link" href="{{ item.href }}"{{ item.href | boost }}>Voir la fiche</a>{% endif %}
     </li>
     {% endfor %}
   </ul>

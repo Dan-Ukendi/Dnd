@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models import Place, Position, WaArticle
 from app.sections import section_of
 from app.services.structure_excerpts import AnchorStatus, find_excerpt
-from app.worldanvil.bbcode import RenderContext, render_bbcode
+from app.worldanvil.bbcode import RenderContext, render_bbcode, render_plain_text
 
 ORGANISATION = "organisation"
 MONDE = "monde"
@@ -252,7 +252,11 @@ class _World:
     def _dm_fields(self, row: Place | Position) -> dict[str, str]:
         if not self.viewer.dm:
             return {}
-        return {"gm_notes": row.gm_notes, "status": row.status, "visibility": row.visibility}
+        return {
+            "gm_notes": render_plain_text(row.gm_notes, self.context),
+            "status": row.status,
+            "visibility": row.visibility,
+        }
 
     def card(
         self,

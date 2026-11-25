@@ -263,7 +263,7 @@ def article_detail(
     lieu: Annotated[str, Query(max_length=80)] = "",
 ) -> Response:
     article = _get_article(db, wa_id)
-    render_context = dm_render_context(db)
+    render_context = dm_render_context(db, current=wa_id)
     extra_fields = [
         (field.label, render_bbcode(field.value, render_context))
         for field in article_service.dm_extra_fields(article.raw)
@@ -305,7 +305,13 @@ def article_territory(
 ) -> Response:
     article = _get_article(db, wa_id)
     return territory_response(
-        request, db, article, Viewer(dm=True), dm_render_context(db), lieu, player_mode=False
+        request,
+        db,
+        article,
+        Viewer(dm=True),
+        dm_render_context(db, current=wa_id),
+        lieu,
+        player_mode=False,
     )
 
 

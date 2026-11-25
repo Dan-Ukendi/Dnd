@@ -764,3 +764,31 @@ class Position(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
     )
+
+
+class LinkAlias(Base):
+    __tablename__ = "link_aliases"
+    __table_args__ = (
+        UniqueConstraint("wa_article_id", "alias", name="uq_link_aliases_article_alias"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    alias: Mapped[str] = mapped_column(String(200))
+    wa_article_id: Mapped[str] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+    article: Mapped[WaArticle] = relationship()
+
+
+class LinkExclusion(Base):
+    __tablename__ = "link_exclusions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    term: Mapped[str] = mapped_column(String(200), unique=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )

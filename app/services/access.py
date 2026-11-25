@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Character, CharacterArticle, User, WaArticle, WaImage
+from app.services import linking
 from app.worldanvil.bbcode import ImageRef, RenderContext, normalize_wa_url
 
 
@@ -68,7 +69,7 @@ def _image_resolver(db: Session, *, player_mode: bool) -> dict[int, ImageRef]:
     }
 
 
-def dm_render_context(db: Session) -> RenderContext:
+def dm_render_context(db: Session, current: str | None = None) -> RenderContext:
     rows = db.execute(
         select(WaArticle.wa_id, WaArticle.url).where(WaArticle.removed_at.is_(None))
     ).all()
@@ -80,10 +81,12 @@ def dm_render_context(db: Session) -> RenderContext:
         resolve_article_url=lambda url: f"/mj/articles/{by_url[url]}" if url in by_url else None,
         resolve_image=images.get,
         player_mode=False,
+        matcher=linking.matcher(db),
+        current=current,
     )
 
 
-def player_render_context(db: Session, player: User) -> RenderContext:
+def player_render_context(db: Session, player: User, current: str | None = None) -> RenderContext:
     accessible = accessible_article_ids(db, player)
     rows = db.execute(
         select(WaArticle.wa_id, WaArticle.url).where(WaArticle.wa_id.in_(accessible))
@@ -97,4 +100,6 @@ def player_render_context(db: Session, player: User) -> RenderContext:
         ),
         resolve_image=images.get,
         player_mode=True,
+        matcher=linking.matcher(db),
+        current=current,
     )

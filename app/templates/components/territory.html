@@ -38,7 +38,7 @@
     <summary>Détails de ce lieu</summary>
     <div class="place-focus__body">
       {{ place_details(focus, "monde") }}
-      {% if focus.href %}<a class="btn btn--compact" href="{{ focus.href }}">Voir la fiche</a>{% endif %}
+      {% if focus.href %}<a class="btn btn--compact" href="{{ focus.href }}"{{ focus.href | boost }}>Voir la fiche</a>{% endif %}
     </div>
   </details>
   {% elif focus.members or focus.organisations %}
@@ -46,7 +46,7 @@
     {% if focus.organisations %}
     <section class="place-section">
       <h3 class="place-section__title">Organisations présentes</h3>
-      <ul class="chip-list">{% for organisation in focus.organisations %}<li class="chip">{% if organisation.href %}<a href="{{ organisation.href }}">{{ organisation.label }}</a>{% else %}{{ organisation.label }}{% endif %}</li>{% endfor %}</ul>
+      <ul class="chip-list">{% for organisation in focus.organisations %}<li class="chip">{% if organisation.href %}<a href="{{ organisation.href }}"{{ organisation.href | boost }}>{{ organisation.label }}</a>{% else %}{{ organisation.label }}{% endif %}</li>{% endfor %}</ul>
     </section>
     {% endif %}
     {% if focus.members %}

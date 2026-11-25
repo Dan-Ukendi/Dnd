@@ -133,7 +133,7 @@
     </div>
     <ul class="card-grid stagger">
       {% for item, href in related %}
-      <li>{{ card(item, href, player_mode, person_badges.get(item.wa_id, []) if person_badges is defined else none) }}</li>
+      <li>{{ card(item, href, player_mode, person_badges.get(item.wa_id, []) if person_badges is defined else none, boost=True) }}</li>
       {% endfor %}
     </ul>
   </section>

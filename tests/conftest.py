@@ -26,8 +26,11 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from app.config import get_settings  # noqa: E402
 from app.db import get_engine, get_session_factory, reset_engine  # noqa: E402
+from app.services import linking  # noqa: E402
 
 TABLES = (
+    "link_exclusions",
+    "link_aliases",
     "positions",
     "places",
     "article_categories",
@@ -83,6 +86,7 @@ def engine() -> Iterator[Engine]:
 def clean_database(engine: Engine) -> None:
     with engine.begin() as connection:
         connection.execute(text(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY CASCADE"))
+    linking.invalidate()
 
 
 @pytest.fixture

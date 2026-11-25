@@ -15,7 +15,9 @@ HEADING_BBCODE_RE = re.compile(r"^\[(h\d?)(?:\|[^\]]*)?\](?P<heading>.*?)\[/\1\]
 ITALIC_BBCODE_RE = re.compile(r"^\[p\]\s*\[i\](?P<tagline>.+?)\[/i\]\s*\[/p\]", re.S)
 TITLE_SEPARATOR_RE = re.compile(r"\s*[:—–-]\s*")
 LEADING_HEADING_RE = re.compile(r"^\s*<h2>(?P<inner>.*?)</h2>\s*", re.S)
-LEADING_TAGLINE_RE = re.compile(r"^\s*<p><em>(?P<inner>[^<]*?)</em></p>\s*", re.S)
+LEADING_TAGLINE_RE = re.compile(
+    r"^\s*<p><em>(?P<inner>(?:[^<]|<a\s[^>]*>|</a>)*?)</em></p>\s*", re.S
+)
 TAG_RE = re.compile(r"<[^>]+>")
 LEADING_ARTICLE_RE = re.compile(r"^(?:le|la|les|l|un|une) ")
 MAX_TAGLINE_LENGTH = 160

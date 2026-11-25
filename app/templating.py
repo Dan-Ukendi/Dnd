@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -5,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 from starlette.responses import HTMLResponse
 
 from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
@@ -89,6 +91,15 @@ def format_filesize(size: int | None) -> str:
     return f"{size / (1024 * 1024):.1f} Mo".replace(".", ",")
 
 
+FICHE_HREF_RE = re.compile(r"^/(?:mj|joueur)/articles/[0-9A-Fa-f-]{36}(?:#[\w-]+)?$")
+
+
+def boost(href: object) -> Markup:
+    if isinstance(href, str) and FICHE_HREF_RE.match(href):
+        return Markup(' hx-boost="true"')
+    return Markup("")
+
+
 def flash(request: Request, message: str, kind: str = "success") -> None:
     request.session[FLASH_SESSION_KEY] = {"message": message, "kind": kind}
 
@@ -117,6 +128,7 @@ templates.env.filters.update(
         "group_by_section": group_by_section,
         "natural_order": natural_order,
         "section_of": section_of,
+        "boost": boost,
     }
 )
 templates.env.globals.update(
@@ -128,7 +140,7 @@ templates.env.globals.update(
         "SECTIONS_BY_KEY": SECTIONS_BY_KEY,
         "ADVENTURE_KEY": ADVENTURE_KEY,
         "section_types": section_types,
-        "ASSET_VERSION": "14",
+        "ASSET_VERSION": "15",
         "year_label": format_year,
         "span_label": format_span,
         "duration_label": format_duration,

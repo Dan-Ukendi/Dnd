@@ -14,7 +14,7 @@
   {% if event.place %}<p class="chrono-detail__place">{{ ui("map") }}<span>{{ event.place }}</span></p>{% endif %}
   {% if event.summary %}
   <div class="prose chrono-detail__summary">
-    {% for paragraph in event.summary.split("\n\n") %}<p>{{ paragraph }}</p>{% endfor %}
+    {{ autolink(event.summary, paragraphs=True) }}
   </div>
   {% endif %}
   <dl class="facts chrono-detail__facts">

@@ -1,7 +1,7 @@
 {% from "components/icons.html" import ui %}
 
 {% macro link_to(item) -%}
-{% if item.href %}<a href="{{ item.href }}">{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
+{% if item.href %}<a href="{{ item.href }}"{{ item.href | boost }}>{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
 {%- endmacro %}
 
 {% macro review_pills(item) -%}
@@ -30,7 +30,7 @@
   <li class="member">
     {{ avatar(member, "member__avatar") }}
     <span class="member__identity">
-      {% if member.href %}<a class="member__name" href="{{ member.href }}">{{ member.name }}</a>{% else %}<span class="member__name">{{ member.name }}</span>{% endif %}
+      {% if member.href %}<a class="member__name" href="{{ member.href }}"{{ member.href | boost }}>{{ member.name }}</a>{% else %}<span class="member__name">{{ member.name }}</span>{% endif %}
       {% if member.title %}<span class="member__role">{{ member.title }}</span>{% endif %}
       {% if member.organisation %}<span class="member__org">{{ link_to(member.organisation) }}</span>{% endif %}
     </span>
@@ -110,7 +110,7 @@
     {% endif %}
     <div class="place-card__actions">
       {% if card.explore_href %}<a class="btn btn--compact" href="{{ card.explore_href }}#territoire" hx-get="{{ structure.fragment_url }}?lieu={{ card.key }}" hx-target="#structure-territoire-body" hx-swap="innerHTML" hx-push-url="{{ card.explore_href }}#territoire">Explorer ce lieu</a>{% endif %}
-      {% if card.href %}<a class="btn btn--compact" href="{{ card.href }}">Voir la fiche</a>{% endif %}
+      {% if card.href %}<a class="btn btn--compact" href="{{ card.href }}"{{ card.href | boost }}>Voir la fiche</a>{% endif %}
     </div>
   </div>
 </details>
@@ -135,7 +135,7 @@
     {% if count %}<span class="tree__toggle" data-tree-toggle aria-hidden="true">{{ ui("chevron") }}</span>{% else %}<span class="tree__toggle tree__toggle--leaf" aria-hidden="true"></span>{% endif %}
     {{ avatar(node.member, "tree__avatar") }}
     <span class="tree__identity" id="noeud-{{ node.key }}">
-      {% if node.member.href %}<a class="tree__name" href="{{ node.member.href }}">{{ node.member.name }}</a>{% else %}<span class="tree__name">{{ node.member.name }}</span>{% endif %}
+      {% if node.member.href %}<a class="tree__name" href="{{ node.member.href }}"{{ node.member.href | boost }}>{{ node.member.name }}</a>{% else %}<span class="tree__name">{{ node.member.name }}</span>{% endif %}
       {% if node.member.title %}<span class="tree__title">{{ node.member.title }}</span>{% endif %}
       {% if count %}<span class="visually-hidden">, {{ count }} {{ "subordonné direct" if count == 1 else "subordonnés directs" }}</span>{% endif %}
     </span>

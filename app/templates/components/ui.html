@@ -11,12 +11,12 @@
 {% for badge in badges %}<span class="pill pill--{{ badge.kind }}">{{ badge.label }}</span>{% else %}<span class="pill">{{ fallback }}</span>{% endfor %}
 {%- endmacro %}
 
-{% macro card(article, href, player_mode=False, badges=none) -%}
+{% macro card(article, href, player_mode=False, badges=none, boost=False) -%}
 {% set section = article | section_of %}
 {% set image = article | article_image(player_mode) %}
 {% set tagline = article | tagline %}
 {% set media_kind = "portrait" if article | article_media("portrait") else ("map" if article | article_media("map") else "") %}
-<a class="card" href="{{ href }}" data-section="{{ section.key }}">
+<a class="card" href="{{ href }}" data-section="{{ section.key }}"{% if boost %}{{ href | boost }}{% endif %}>
   <div class="card__media">
     {% if image %}
     <img src="{{ image }}" alt="" loading="lazy" decoding="async"{% if media_kind %} class="card__img--{{ media_kind }}"{% endif %}>

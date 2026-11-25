@@ -133,11 +133,16 @@ function tabFromHash() {
   return key ? document.querySelector(`[data-tabs] [role="tab"][data-tab="${CSS.escape(key)}"]`) : null;
 }
 
-document.querySelectorAll("[data-tabs]").forEach((container) => {
+function initTabs(root = document) {
+  root.querySelectorAll("[data-tabs]").forEach(initTabContainer);
+}
+
+function initTabContainer(container) {
   const tabs = ownTabs(container);
-  if (!tabs.length) {
+  if (!tabs.length || container.dataset.tabsReady) {
     return;
   }
+  container.dataset.tabsReady = "true";
   container.classList.add("tabs--ready");
   selectTab(container, tabs[0], false);
   tabs.forEach((tab) => {
@@ -160,7 +165,9 @@ document.querySelectorAll("[data-tabs]").forEach((container) => {
     selectTab(container, next, true);
     history.replaceState(null, "", `#${next.dataset.tab}`);
   });
-});
+}
+
+initTabs();
 
 function revealHashTarget() {
   const tab = tabFromHash();
@@ -464,18 +471,46 @@ syncFilterPanels();
 measureHeader();
 window.addEventListener("resize", measureHeader);
 
-const currentNavLink = document.querySelector(".nav a[aria-current]");
-if (currentNavLink && currentNavLink.parentElement) {
-  const nav = currentNavLink.parentElement;
-  const overflow = currentNavLink.offsetLeft + currentNavLink.offsetWidth - nav.clientWidth;
-  if (overflow > 0) {
-    nav.scrollLeft = overflow + 24;
+function revealCurrentNavLink() {
+  const currentNavLink = document.querySelector(".nav a[aria-current]");
+  if (currentNavLink && currentNavLink.parentElement) {
+    const nav = currentNavLink.parentElement;
+    const overflow = currentNavLink.offsetLeft + currentNavLink.offsetWidth - nav.clientWidth;
+    if (overflow > 0) {
+      nav.scrollLeft = overflow + 24;
+    }
   }
+}
+
+revealCurrentNavLink();
+
+function initPage() {
+  syncPanels();
+  markScrollableTables();
+  initTabs();
+  revealHashTarget();
+  initStructures();
+  applyGeometry();
+  initFrise();
+  syncFilterPanels();
+  measureHeader();
+  revealCurrentNavLink();
 }
 
 document.addEventListener("htmx:afterSwap", (event) => {
   const target = event.target instanceof Element ? event.target : null;
   if (!target) {
+    return;
+  }
+  if (event.detail && event.detail.boosted) {
+    hidePreview();
+    previewIndexes.clear();
+    initPage();
+    const main = document.getElementById("contenu");
+    if (main) {
+      main.tabIndex = -1;
+      main.focus({ preventScroll: true });
+    }
     return;
   }
   applyGeometry(target);
@@ -502,10 +537,159 @@ document.addEventListener("htmx:afterSwap", (event) => {
 });
 
 document.addEventListener("htmx:historyRestore", () => {
+  hidePreview();
   document.querySelectorAll("[data-frise]").forEach((frise) => frise.removeAttribute("data-ready"));
   document.querySelectorAll("[data-tree]").forEach((tree) => tree.removeAttribute("data-ready"));
-  initStructures();
-  applyGeometry();
-  initFrise();
-  syncFilterPanels();
+  document.querySelectorAll("[data-tabs]").forEach((container) => container.removeAttribute("data-tabs-ready"));
+  initPage();
 });
+
+function leaveBoostedRequest(event) {
+  const link = event.detail ? event.detail.elt : null;
+  if (event.detail && event.detail.boosted && link instanceof HTMLAnchorElement) {
+    window.location.assign(link.href);
+  }
+}
+
+document.addEventListener("htmx:beforeHistorySave", () => {
+  hidePreview();
+  const styled = Array.from(document.body.querySelectorAll("[style]"), (node) => [node, node.style.cssText]);
+  styled.forEach(([node]) => node.removeAttribute("style"));
+  window.setTimeout(() => styled.forEach(([node, css]) => {
+    node.style.cssText = css;
+  }), 0);
+});
+document.addEventListener("htmx:responseError", leaveBoostedRequest);
+document.addEventListener("htmx:sendError", leaveBoostedRequest);
+
+const FICHE_PATH = /^\/(mj|joueur)\/articles\/([0-9a-f-]{36})$/i;
+const PREVIEW_KINDS = new Set(["personnage", "lieu", "objet", "organisation", "lore", "aventure"]);
+const previewIndexes = new Map();
+let previewTip = null;
+let previewLink = null;
+let previewTimer = 0;
+
+function loadPreviews(scope) {
+  if (!previewIndexes.has(scope)) {
+    const request = fetch(`/${scope}/liens/apercus`, { credentials: "same-origin", headers: { Accept: "application/json" } })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => (data && data.fiches) || {})
+      .catch(() => {
+        previewIndexes.delete(scope);
+        return {};
+      });
+    previewIndexes.set(scope, request);
+  }
+  return previewIndexes.get(scope);
+}
+
+function previewElement() {
+  if (!previewTip || !previewTip.isConnected) {
+    previewTip = document.getElementById("apercu-fiche");
+  }
+  if (!previewTip) {
+    previewTip = document.createElement("div");
+    previewTip.id = "apercu-fiche";
+    previewTip.setAttribute("role", "tooltip");
+    previewTip.hidden = true;
+    ["type", "title", "text"].forEach((part) => {
+      const span = document.createElement("span");
+      span.className = `link-preview__${part}`;
+      previewTip.append(span);
+    });
+    document.documentElement.append(previewTip);
+  }
+  return previewTip;
+}
+
+function hidePreview() {
+  window.clearTimeout(previewTimer);
+  if (previewLink) {
+    previewLink.removeAttribute("aria-describedby");
+  }
+  previewLink = null;
+  if (previewTip) {
+    previewTip.hidden = true;
+  }
+}
+
+function placePreview(tip, link) {
+  const box = link.getClientRects()[0] || link.getBoundingClientRect();
+  tip.hidden = false;
+  const left = Math.max(8, Math.min(box.left, window.innerWidth - tip.offsetWidth - 8));
+  let top = box.bottom + 8;
+  if (top + tip.offsetHeight > window.innerHeight - 8) {
+    top = Math.max(8, box.top - tip.offsetHeight - 8);
+  }
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
+function showPreview(link) {
+  const match = FICHE_PATH.exec(link.getAttribute("href") || "");
+  if (!match) {
+    return;
+  }
+  previewLink = link;
+  loadPreviews(match[1].toLowerCase()).then((fiches) => {
+    const key = match[2].toLowerCase();
+    const fiche = Object.prototype.hasOwnProperty.call(fiches, key) ? fiches[key] : null;
+    if (previewLink !== link || !fiche || !link.isConnected) {
+      return;
+    }
+    const tip = previewElement();
+    tip.className = PREVIEW_KINDS.has(fiche.kind) ? `link-preview link-preview--${fiche.kind}` : "link-preview";
+    const [type, title, text] = tip.children;
+    type.textContent = fiche.type || "";
+    title.textContent = fiche.title || "";
+    text.textContent = fiche.excerpt || "";
+    placePreview(tip, link);
+    link.setAttribute("aria-describedby", tip.id);
+  });
+}
+
+function autolinkOf(node) {
+  return node instanceof Element ? node.closest("a.autolink") : null;
+}
+
+document.addEventListener("mouseover", (event) => {
+  const link = autolinkOf(event.target);
+  if (!link || link === previewLink) {
+    return;
+  }
+  window.clearTimeout(previewTimer);
+  previewTimer = window.setTimeout(() => showPreview(link), 180);
+});
+
+document.addEventListener("mouseout", (event) => {
+  const link = autolinkOf(event.target);
+  if (!link || link.contains(event.relatedTarget)) {
+    return;
+  }
+  window.clearTimeout(previewTimer);
+  if (link === previewLink && document.activeElement !== link) {
+    hidePreview();
+  }
+});
+
+document.addEventListener("focusin", (event) => {
+  const link = autolinkOf(event.target);
+  if (link) {
+    window.clearTimeout(previewTimer);
+    showPreview(link);
+  }
+});
+
+document.addEventListener("focusout", (event) => {
+  if (previewLink && autolinkOf(event.target) === previewLink) {
+    hidePreview();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && previewLink) {
+    hidePreview();
+  }
+});
+
+window.addEventListener("scroll", hidePreview, { passive: true, capture: true });

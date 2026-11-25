@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import ui %}
+{% from "components/ui.html" import page_head, breadcrumb, empty_state %}
+{% block title %}Liens automatiques{% endblock %}
+{% block content %}
+{{ breadcrumb([("Accueil", "/mj"), ("Liens automatiques", "")]) }}
+{{ page_head("Liens automatiques", eyebrow="Les fils des archives", lead="Quand un texte nomme une fiche, ce nom devient un lien. Ajoutez ici d'autres noms pour une fiche, ou écartez les faux positifs. Les alias des dossiers de personnage ne créent jamais de lien.") }}
+<p class="muted links-summary">{{ name_count }} nom{{ "s" if name_count != 1 }} reconnu{{ "s" if name_count != 1 }} dans les textes. Un joueur ne voit un lien que vers une fiche qu'il peut ouvrir.</p>
+
+<section class="panel reveal reveal-delay-1" id="alias" aria-labelledby="alias-titre">
+  <h2 class="panel__title" id="alias-titre">Alias</h2>
+  <p class="muted">Un alias est un autre nom de la fiche, cherché dans les textes comme son titre.</p>
+  <form method="post" action="/mj/liens/alias" class="form form--inline links-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="alias-nom">Alias</label>
+      <input id="alias-nom" type="text" name="alias" required minlength="3" maxlength="200" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="alias-fiche">Fiche</label>
+      <input id="alias-fiche" type="text" name="article" required maxlength="500" list="alias-fiches" autocomplete="off" placeholder="Titre exact">
+      <datalist id="alias-fiches">{% for article in articles %}<option value="{{ article.title }}"></option>{% endfor %}</datalist>
+    </div>
+    <button type="submit" class="btn btn--primary">Ajouter l'alias</button>
+  </form>
+  {% if aliases %}
+  <ul class="ledger-list">
+    {% for row in aliases %}
+    <li>
+      <div class="candidate__info">
+        <span class="ledger-list__title">{{ row.alias }}</span>
+        <div class="chips"><a class="pill pill--muted" href="/mj/articles/{{ row.wa_article_id }}">{{ row.article.title }}</a>{% if row.article.removed_at %}<span class="pill pill--danger">Supprimée de World Anvil</span>{% endif %}</div>
+      </div>
+      <form method="post" action="/mj/liens/alias/{{ row.id }}/supprimer" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn--danger" aria-label="Supprimer l'alias {{ row.alias }}">Supprimer</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  {{ empty_state("Aucun alias", "Seuls les titres des fiches sont reconnus pour l'instant.", "link") }}
+  {% endif %}
+</section>
+
+<section class="panel reveal reveal-delay-2" id="exclusions" aria-labelledby="exclusions-titre">
+  <h2 class="panel__title" id="exclusions-titre">Exclusions</h2>
+  <p class="muted">Un nom exclu n'est jamais lié, même s'il est le titre d'une fiche. L'article initial (le, la, les, l') est ignoré.</p>
+  <form method="post" action="/mj/liens/exclusions" class="form form--inline links-form links-form--single">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="exclusion-nom">Nom ou expression</label>
+      <input id="exclusion-nom" type="text" name="term" required minlength="3" maxlength="200" autocomplete="off">
+    </div>
+    <button type="submit" class="btn btn--primary">Exclure</button>
+  </form>
+  {% if exclusions %}
+  <ul class="ledger-list">
+    {% for row in exclusions %}
+    <li>
+      <span class="ledger-list__title">{{ row.term }}</span>
+      <form method="post" action="/mj/liens/exclusions/{{ row.id }}/supprimer" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn--danger" aria-label="Ne plus exclure {{ row.term }}">Retirer</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  {{ empty_state("Aucune exclusion", "Tous les titres et alias peuvent devenir des liens.", "link") }}
+  {% endif %}
+</section>
+
+<section class="panel reveal reveal-delay-3" id="conflits" aria-labelledby="conflits-titre">
+  <h2 class="panel__title" id="conflits-titre">Conflits de noms</h2>
+  <p class="muted">Plusieurs fiches portent ces noms : ils restent en texte simple. Ajoutez une exclusion, ou un alias plus précis.</p>
+  {% if conflicts %}
+  <ul class="ledger-list">
+    {% for conflict in conflicts %}
+    <li>
+      <span class="ledger-list__title">{{ conflict.name }}</span>
+      <div class="chips">{% for article in conflict.articles %}<a class="pill pill--warn" href="/mj/articles/{{ article.wa_id }}">{{ article.title }}</a>{% endfor %}</div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  {{ empty_state("Aucun conflit", "Chaque nom reconnu désigne une seule fiche.", "link") }}
+  {% endif %}
+</section>
+{% endblock %}
