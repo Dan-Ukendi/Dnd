@@ -5,8 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse, Response
 
-from app.config import get_settings
-from app.deps import CurrentPlayer, DbSession, log_in
+from app.deps import CurrentPlayer, DbSession, is_master_key_session, log_in
 from app.models import Character, WaArticle
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
 from app.routes.personnage import PERSON_SECTION, player_page_context
@@ -18,7 +17,7 @@ from app.services.access import (
     player_render_context,
     player_shared_articles,
 )
-from app.services.accounts import AccountError, change_password
+from app.services.accounts import AccountError, change_pin
 from app.services.articles import articles_by_ids
 from app.services.characters import characters_of
 from app.services.dossiers import (
@@ -214,49 +213,48 @@ def _player_article_href(accessible: set[str]) -> Callable[[WaArticle], str | No
     return href
 
 
-def _require_password_change_enabled() -> None:
-    if not get_settings().player_password_change:
+def _require_own_session(request: Request) -> None:
+    if is_master_key_session(request):
         raise HTTPException(status_code=404)
 
 
-PASSWORD_ERROR_MESSAGES = {
-    "wrong_password": "Le mot de passe actuel est incorrect.",
-    "password_too_short": "Le nouveau mot de passe doit contenir au moins 10 caractères.",
-    "password_too_long": "Le nouveau mot de passe est trop long.",
-    "password_mismatch": "Les deux nouveaux mots de passe ne correspondent pas.",
-    "password_unchanged": "Choisissez un mot de passe différent de l'actuel.",
+PIN_ERROR_MESSAGES = {
+    "wrong_pin": "Le code PIN actuel est incorrect.",
+    "pin_invalid": "Le code PIN doit contenir exactement 4 chiffres.",
+    "pin_mismatch": "Les deux codes PIN ne correspondent pas.",
+    "pin_unchanged": "Choisissez un code différent de l'actuel.",
 }
 
 
 @router.get("/mot-de-passe")
-def password_form(request: Request, player: CurrentPlayer) -> Response:
-    _require_password_change_enabled()
+def pin_form(request: Request, player: CurrentPlayer) -> Response:
+    _require_own_session(request)
     return render(request, "player/password.html", {"forced": player.must_change_password})
 
 
 @router.post("/mot-de-passe")
-def password_submit(
+def pin_submit(
     request: Request,
     db: DbSession,
     player: CurrentPlayer,
-    current_password: Annotated[str, Form(max_length=512)] = "",
-    new_password: Annotated[str, Form(max_length=512)] = "",
-    new_password_confirmation: Annotated[str, Form(max_length=512)] = "",
+    current_pin: Annotated[str, Form(max_length=512)] = "",
+    new_pin: Annotated[str, Form(max_length=512)] = "",
+    new_pin_confirmation: Annotated[str, Form(max_length=512)] = "",
 ) -> Response:
-    _require_password_change_enabled()
+    _require_own_session(request)
     forced = player.must_change_password
     try:
-        change_password(db, player, current_password, new_password, new_password_confirmation)
+        change_pin(db, player, None if forced else current_pin, new_pin, new_pin_confirmation)
     except AccountError as exc:
         return render(
             request,
             "player/password.html",
             {
                 "forced": forced,
-                "error": PASSWORD_ERROR_MESSAGES.get(exc.code, "Modification impossible."),
+                "error": PIN_ERROR_MESSAGES.get(exc.code, "Modification impossible."),
             },
             status_code=400,
         )
     log_in(request, player)
-    flash(request, "Votre mot de passe est enregistré.")
+    flash(request, "Votre code PIN est enregistré.")
     return RedirectResponse("/joueur", status_code=303)

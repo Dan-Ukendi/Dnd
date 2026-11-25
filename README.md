@@ -55,8 +55,7 @@ tests/                 pytest suite
 | `WA_WORLD_ID` | for sync | Id of the world to synchronise. |
 | `WA_TIMELINE_ID` | no | Id of the World Anvil timeline holding the chronology. By default the timeline titled "Chronologie de Valhar Molaris" is used. |
 | `APP_ENV` | no | `production` (default: secure cookies, HSTS) or `development` (plain HTTP on localhost). |
-| `PLAYER_PASSWORD_CHANGE` | no | `false` (default): players sign in with the temporary password and the password page is hidden. `true`: a temporary password must be replaced at first login. |
-| `PLAYER_INITIAL_PASSWORD` | no | Temporary password given to new or reset player accounts (default `0000`). Players must replace it at their first login when `PLAYER_PASSWORD_CHANGE` is on. |
+| `PLAYER_INITIAL_PASSWORD` | no | Temporary code given to new or reset player accounts (default `0000`). Players replace it with their own 4-digit PIN at their first login. |
 
 `postgres://` and `postgresql://` URLs are accepted and converted to the psycopg driver automatically.
 Copy `.env.example` to `.env` for local work; `.env` is ignored by git.
@@ -82,11 +81,14 @@ Open http://localhost:8000 and sign in with the DM account.
 
 The landing page asks for a role. **Maître du jeu** opens the DM form (login and password).
 **Joueur** lists the active player accounts that have a password; a player picks their name and types
-their password. Accounts created by `import-characters`, or reset from the DM's *Joueurs* page with
-*Mot de passe provisoire*, use `PLAYER_INITIAL_PASSWORD`. While `PLAYER_PASSWORD_CHANGE` is off (the
-default) that password is all players need. When it is on, a player who signs in with it is sent to
-*Choisissez votre mot de passe* and cannot open anything else until they choose their own (at least
-10 characters). Invitation links still work as an alternative.
+their 4-digit PIN. Accounts created by `import-characters`, or reset from the DM's *Joueurs* page with
+*Code provisoire*, use `PLAYER_INITIAL_PASSWORD`. A player who signs in with it is sent to
+*Choisissez votre code PIN* and cannot open anything else until they choose their own 4-digit PIN;
+they can change it later from *Code PIN*, given the current one. Invitation links also set a PIN.
+
+The password of any active DM account is a master key: typed on a player's sign-in form, it opens that
+player's account. A master-key session never triggers the PIN setup and cannot change the player's
+PIN; the DM resets a forgotten PIN with *Code provisoire*.
 
 ## Character dossiers
 

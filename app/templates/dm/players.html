@@ -35,7 +35,7 @@
         <div class="chips">
           <span class="pill pill--muted">{{ player.login }}</span>
           {% if not player.is_active %}<span class="pill pill--danger">Désactivé</span>
-          {% elif player.must_change_password %}<span class="pill pill--warn">Mot de passe provisoire</span>
+          {% elif player.must_change_password %}<span class="pill pill--warn">Code provisoire</span>
           {% elif player.has_password %}<span class="pill pill--ok">Actif</span>
           {% else %}<span class="pill pill--warn">Invitation en attente</span>{% endif %}
         </div>
@@ -49,7 +49,7 @@
         </form>
         <form method="post" action="/mj/joueurs/{{ player.id }}/mot-de-passe-provisoire" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn">Mot de passe provisoire</button>
+          <button type="submit" class="btn">Code provisoire</button>
         </form>
         <form method="post" action="/mj/joueurs/{{ player.id }}/desactiver" class="inline-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

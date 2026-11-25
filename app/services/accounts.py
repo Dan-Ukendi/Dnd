@@ -15,6 +15,7 @@ from app.security import (
 )
 
 LOGIN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,49}$")
+PIN_RE = re.compile(r"^[0-9]{4}$")
 MAX_PASSWORD_LENGTH = 256
 
 
@@ -35,6 +36,13 @@ def validate_password(password: str, confirmation: str | None = None) -> None:
         raise AccountError("password_too_long")
     if confirmation is not None and password != confirmation:
         raise AccountError("password_mismatch")
+
+
+def validate_pin(pin: str, confirmation: str) -> None:
+    if not PIN_RE.match(pin):
+        raise AccountError("pin_invalid")
+    if pin != confirmation:
+        raise AccountError("pin_mismatch")
 
 
 def create_user(
@@ -75,6 +83,21 @@ def authenticate(db: Session, login: str, password: str) -> User | None:
     return user
 
 
+def authenticate_with_master_key(db: Session, login: str, password: str) -> User | None:
+    player = find_login_player(db, login)
+    dm_hashes = db.scalars(
+        select(User.password_hash).where(
+            User.role == Role.DM, User.is_active.is_(True), User.password_hash.is_not(None)
+        )
+    ).all()
+    if player is None or not dm_hashes:
+        verify_password(None, password)
+        return None
+    if any(verify_password(dm_hash, password) for dm_hash in dm_hashes):
+        return player
+    return None
+
+
 def create_invitation(db: Session, user: User, ttl_hours: int) -> str:
     if user.role != Role.PLAYER:
         raise AccountError("not_a_player")
@@ -110,7 +133,7 @@ def find_valid_invitation(db: Session, token: str) -> Invitation | None:
 def accept_invitation(
     db: Session, invitation: Invitation, password: str, confirmation: str
 ) -> User:
-    validate_password(password, confirmation)
+    validate_pin(password, confirmation)
     claimed = db.scalar(
         select(Invitation)
         .where(Invitation.id == invitation.id, Invitation.used_at.is_(None))
@@ -142,12 +165,15 @@ def set_temporary_password(db: Session, user: User, password: str) -> None:
     db.commit()
 
 
-def change_password(db: Session, user: User, current: str, new: str, confirmation: str) -> None:
-    if not verify_password(user.password_hash, current):
-        raise AccountError("wrong_password")
-    validate_password(new, confirmation)
-    if new == current:
-        raise AccountError("password_unchanged")
+def change_pin(db: Session, user: User, current: str | None, new: str, confirmation: str) -> None:
+    if current is None:
+        if not user.must_change_password:
+            raise AccountError("wrong_pin")
+    elif not verify_password(user.password_hash, current):
+        raise AccountError("wrong_pin")
+    validate_pin(new, confirmation)
+    if verify_password(user.password_hash, new):
+        raise AccountError("pin_unchanged")
     user.password_hash = hash_password(new)
     user.must_change_password = False
     user.session_version += 1

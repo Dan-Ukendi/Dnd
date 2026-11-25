@@ -19,7 +19,7 @@ from app.chronology import (
     format_span,
     format_year,
 )
-from app.config import get_settings
+from app.deps import is_master_key_session
 from app.presentation import (
     article_image,
     article_media,
@@ -148,7 +148,7 @@ templates.env.globals.update(
         "ORIGIN_LABELS": ORIGIN_LABELS,
         "STATUS_LABELS": STATUS_LABELS,
         "VISIBILITY_LABELS": VISIBILITY_LABELS,
-        "player_password_change_enabled": lambda: get_settings().player_password_change,
+        "is_master_key_session": is_master_key_session,
     }
 )
 

@@ -3,13 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
-from app.config import get_settings
 from app.deps import ACCOUNT_SETUP_PATH, DbSession, OptionalUser, client_ip, log_in
 from app.models import Role, User
 from app.services.accounts import (
     AccountError,
     accept_invitation,
     authenticate,
+    authenticate_with_master_key,
     find_login_player,
     find_valid_invitation,
     login_players,
@@ -19,9 +19,8 @@ from app.templating import render
 router = APIRouter()
 
 ACCOUNT_ERROR_MESSAGES = {
-    "password_too_short": "Le mot de passe doit contenir au moins 10 caractères.",
-    "password_too_long": "Le mot de passe est trop long.",
-    "password_mismatch": "Les deux mots de passe ne correspondent pas.",
+    "pin_invalid": "Le code PIN doit contenir exactement 4 chiffres.",
+    "pin_mismatch": "Les deux codes PIN ne correspondent pas.",
     "invitation_used": "Ce lien d'invitation a déjà été utilisé.",
 }
 
@@ -105,21 +104,19 @@ def login_submit(
             429,
         )
     user = authenticate(db, login, password)
+    master_key = False
+    if user is None:
+        user = authenticate_with_master_key(db, login, password)
+        master_key = user is not None
     if user is None:
         limiter.register_failure(ip, login)
         message = (
-            "Mot de passe incorrect."
-            if mode == "joueur"
-            else "Identifiant ou mot de passe incorrect."
+            "Code incorrect." if mode == "joueur" else "Identifiant ou mot de passe incorrect."
         )
         return _login_error(request, db, mode, login, message, 400)
     limiter.reset(ip, login)
-    log_in(request, user)
-    if (
-        user.role == Role.PLAYER
-        and user.must_change_password
-        and get_settings().player_password_change
-    ):
+    log_in(request, user, master_key=master_key)
+    if user.role == Role.PLAYER and user.must_change_password and not master_key:
         return RedirectResponse(ACCOUNT_SETUP_PATH, status_code=303)
     return RedirectResponse(home_url(user), status_code=303)
 

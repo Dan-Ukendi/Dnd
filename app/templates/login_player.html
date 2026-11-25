@@ -19,12 +19,12 @@
       <input type="hidden" name="login" value="{{ player.login }}">
       <input type="text" name="username" value="{{ player.login }}" autocomplete="username" hidden readonly>
       <div class="field">
-        <label for="password">Mot de passe</label>
-        <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="256" autofocus>
+        <label for="password">Code PIN</label>
+        <input id="password" type="password" name="password" inputmode="numeric" autocomplete="current-password" required maxlength="256" autofocus>
       </div>
       <button type="submit" class="btn btn--primary btn--block">Entrer</button>
     </form>
-    <p class="screen__hint reveal reveal-delay-3">Première connexion ? Utilisez le mot de passe provisoire transmis par votre maître du jeu.</p>
+    <p class="screen__hint reveal reveal-delay-3">Première connexion ? Entrez le code provisoire transmis par votre maître du jeu, puis choisissez votre code PIN à 4 chiffres.</p>
   </div>
 </main>
 {% endblock %}

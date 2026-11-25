@@ -439,8 +439,8 @@ def reset_player_password(
     set_temporary_password(db, player, get_settings().player_initial_password.get_secret_value())
     flash(
         request,
-        f"{player.display_name} se connecte désormais avec le mot de passe provisoire "
-        "et devra en choisir un nouveau.",
+        f"{player.display_name} se connecte désormais avec le code provisoire "
+        "et devra choisir son code PIN.",
     )
     return RedirectResponse("/mj/joueurs", status_code=303)
 

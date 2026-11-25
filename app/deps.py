@@ -3,12 +3,12 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.db import get_db
 from app.models import Role, User
 
 SESSION_USER_KEY = "uid"
 SESSION_VERSION_KEY = "sv"
+SESSION_MASTER_KEY = "mk"
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -17,10 +17,16 @@ class NotAuthenticatedError(Exception):
     pass
 
 
-def log_in(request: Request, user: User) -> None:
+def log_in(request: Request, user: User, *, master_key: bool = False) -> None:
     request.session.clear()
     request.session[SESSION_USER_KEY] = user.id
     request.session[SESSION_VERSION_KEY] = user.session_version
+    if master_key:
+        request.session[SESSION_MASTER_KEY] = True
+
+
+def is_master_key_session(request: Request) -> bool:
+    return request.session.get(SESSION_MASTER_KEY) is True
 
 
 def get_current_user(request: Request, db: DbSession) -> User | None:
@@ -66,8 +72,8 @@ def require_player(request: Request, user: Annotated[User, Depends(require_user)
     if user.role != Role.PLAYER:
         raise HTTPException(status_code=404)
     if (
-        get_settings().player_password_change
-        and user.must_change_password
+        user.must_change_password
+        and not is_master_key_session(request)
         and request.url.path != ACCOUNT_SETUP_PATH
     ):
         raise PasswordChangeRequiredError

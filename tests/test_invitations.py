@@ -47,13 +47,13 @@ def test_invitation_flow_creates_a_usable_account(
     assert page.status_code == 200
     assert "chloe" in page.text
 
-    response = accept(other_client, path, "un-tres-bon-mot-de-passe")
+    response = accept(other_client, path, "4827")
     assert response.status_code == 303
     assert response.headers["location"] == "/joueur"
     assert other_client.get("/joueur").status_code == 200
 
     other_client.post("/deconnexion", data={"csrf_token": csrf_token(other_client, "/joueur")})
-    assert login(other_client, "chloe", "un-tres-bon-mot-de-passe").status_code == 303
+    assert login(other_client, "chloe", "4827").status_code == 303
 
 
 def test_invitation_link_is_single_use(
@@ -62,9 +62,9 @@ def test_invitation_link_is_single_use(
     make_user(db, "maitre", Role.DM)
     login(client, "maitre")
     path = create_player_and_invite(client)
-    assert accept(other_client, path, "un-tres-bon-mot-de-passe").status_code == 303
+    assert accept(other_client, path, "4827").status_code == 303
     assert other_client.get(path).status_code == 404
-    assert accept(other_client, path, "un-autre-mot-de-passe").status_code == 404
+    assert accept(other_client, path, "1357").status_code == 404
 
 
 def test_invitation_rejects_weak_or_mismatched_passwords(
@@ -73,10 +73,10 @@ def test_invitation_rejects_weak_or_mismatched_passwords(
     make_user(db, "maitre", Role.DM)
     login(client, "maitre")
     path = create_player_and_invite(client)
-    short = accept(other_client, path, "court")
+    short = accept(other_client, path, "123")
     assert short.status_code == 400
-    assert "au moins 10 caractères" in short.text
-    mismatch = accept(other_client, path, "un-tres-bon-mot-de-passe", "un-autre-mot-de-passe")
+    assert "exactement 4 chiffres" in short.text
+    mismatch = accept(other_client, path, "4827", "1357")
     assert mismatch.status_code == 400
     assert db.scalar(select(User).where(User.login == "chloe")).password_hash is None
 
