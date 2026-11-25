@@ -1,10 +1,10 @@
 import logging
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.chronology import ERAS, ERAS_BY_SLUG, EventVisibility, era_of, format_span
@@ -53,7 +53,6 @@ TEMPLATE_ELEMENTS = {
     "formation": "organisation",
 }
 DEFAULT_ELEMENT = "evenement"
-ADD_NOTE = "Ajouté au Lore depuis l'article « {title} » : réservé au MJ par défaut ; à vérifier."
 MAX_TITLE = 300
 MAX_TEXT = 60_000
 MAX_NOTE = 20_000
@@ -74,7 +73,6 @@ ARTEFACT_LIMITS = {
     "holder": 200,
     "location": 300,
     "status": 200,
-    "review_note": MAX_NOTE,
 }
 ERA_INDEX = {era.slug: index for index, era in enumerate(ERAS)}
 RARITIES = (
@@ -344,7 +342,6 @@ class LegendFilters:
     type_id: int | None = None
     query: str = ""
     sort: str = "chrono"
-    review: bool = False
 
     @classmethod
     def parse(cls, params: Mapping[str, str], *, dm: bool) -> "LegendFilters":
@@ -353,19 +350,16 @@ class LegendFilters:
             type_id=int(raw_type) if raw_type.isdigit() and len(raw_type) < 9 else None,
             query=params.get("q", "").strip()[:200],
             sort="alpha" if params.get("tri") == "alpha" else "chrono",
-            review=dm and params.get("a_verifier") == "1",
         )
 
     @property
     def active(self) -> bool:
-        return self.type_id is not None or bool(self.query) or self.review
+        return self.type_id is not None or bool(self.query)
 
     def matches(self, view: StoryView) -> bool:
         if self.type_id is not None and view.story.type_id != self.type_id:
             return False
-        if self.query and fold(self.query) not in fold(view.story.title):
-            return False
-        return not (self.review and not view.story.review_note.strip())
+        return not (self.query and fold(self.query) not in fold(view.story.title))
 
     def ordered(self, views: list[StoryView]) -> list[StoryView]:
         if self.sort == "alpha":
@@ -424,16 +418,6 @@ def frise_groups(views: list[StoryView], eras: list[EraView]) -> list[FriseGroup
     return [FriseGroup(era, grouped_views[era.slug]) for era in eras if grouped_views.get(era.slug)]
 
 
-def unplaced_entries(db: Session) -> list[LoreEntry]:
-    return list(
-        db.scalars(
-            select(LoreEntry)
-            .where(LoreEntry.placement == "part", LoreEntry.story_id.is_(None))
-            .order_by(LoreEntry.id)
-        ).all()
-    )
-
-
 def item_articles(db: Session) -> list[WaArticle]:
     return list(
         db.scalars(
@@ -490,7 +474,6 @@ class ArtefactFilters:
     rarity: str = ""
     type: str = ""
     query: str = ""
-    review: bool = False
 
     @classmethod
     def parse(cls, params: Mapping[str, str], *, dm: bool) -> "ArtefactFilters":
@@ -499,7 +482,6 @@ class ArtefactFilters:
             rarity=rarity if rarity in dict(RARITIES) else "",
             type=params.get("type", "")[:60],
             query=params.get("q", "").strip()[:200],
-            review=dm and params.get("a_verifier") == "1",
         )
 
     def matches(self, card: ArtefactCard) -> bool:
@@ -511,9 +493,8 @@ class ArtefactFilters:
             haystack = fold(
                 " ".join((card.article.title, card.artefact.other_names, card.artefact.object_type))
             )
-            if fold(self.query) not in haystack:
-                return False
-        return not (self.review and not card.artefact.review_note.strip())
+            return fold(self.query) in haystack
+        return True
 
 
 def fiche_sections(db: Session, artefact: Artefact, scope: Scope) -> list[LoreEntry]:
@@ -557,23 +538,6 @@ def holders(db: Session, wa_id: str, player: User | None = None) -> list[str]:
     if player is not None:
         statement = statement.where(Character.player_id == player.id)
     return list(db.scalars(statement).all())
-
-
-def review_counts(db: Session) -> dict[str, int]:
-    def count(model: type[Any], *conditions: ColumnElement[bool]) -> int:
-        return (
-            db.scalar(
-                select(func.count()).select_from(model).where(model.review_note != "", *conditions)
-            )
-            or 0
-        )
-
-    return {
-        "legendes": count(LoreStory, LoreStory.kind == LEGEND),
-        "ouvrages": count(LoreStory, LoreStory.kind == BOOK),
-        "artefacts": count(Artefact),
-        "entrees": count(LoreEntry),
-    }
 
 
 def _year(value: str, code: str) -> int | None:
@@ -646,7 +610,6 @@ class EntryForm:
     article_id: str = ""
     event_id: str = ""
     gm_only: bool = False
-    review_note: str = ""
     story_id: str = ""
     placement: str = "part"
     position: str = ""
@@ -657,7 +620,6 @@ class EntryForm:
 def _validated(db: Session, form: EntryForm) -> dict[str, object]:
     title = _clean(form.title, MAX_TITLE, "title", required=True)
     text = _clean(form.text, MAX_TEXT, "text")
-    review_note = _clean(form.review_note, MAX_NOTE, "review_note")
     start, end, era = _dates(form.start_year, form.end_year, form.era)
     event_id = None
     if form.event_id.strip():
@@ -691,7 +653,6 @@ def _validated(db: Session, form: EntryForm) -> dict[str, object]:
         "wa_article_id": article_id,
         "timeline_event_id": event_id,
         "gm_only": form.gm_only,
-        "review_note": review_note,
         "story_id": story_id,
         "placement": form.placement,
         "source_article_id": source_id,
@@ -766,11 +727,6 @@ def move_entry(db: Session, entry: LoreEntry, direction: int) -> None:
     db.commit()
 
 
-def clear_entry_review(db: Session, entry: LoreEntry) -> None:
-    entry.review_note = ""
-    db.commit()
-
-
 def delete_entry(db: Session, entry: LoreEntry) -> None:
     db.delete(entry)
     db.commit()
@@ -793,7 +749,6 @@ class StoryForm:
     artefact_id: str = ""
     legend_id: str = ""
     gm_only: bool = True
-    review_note: str = ""
 
 
 def _group_id(db: Session, form: StoryForm) -> int | None:
@@ -834,7 +789,6 @@ def _story_values(
         "artefact_id": _optional_id(db, Artefact, form.artefact_id, "artefact"),
         "legend_id": legend_id if kind == BOOK else None,
         "gm_only": form.gm_only,
-        "review_note": _clean(form.review_note, MAX_NOTE, "review_note"),
     }
 
 
@@ -850,11 +804,6 @@ def create_story(db: Session, kind: str, form: StoryForm) -> LoreStory:
 def update_story(db: Session, story: LoreStory, form: StoryForm) -> None:
     for key, value in _story_values(db, form, story.kind, story.id).items():
         setattr(story, key, value)
-    db.commit()
-
-
-def clear_story_review(db: Session, story: LoreStory) -> None:
-    story.review_note = ""
     db.commit()
 
 
@@ -924,11 +873,6 @@ def update_artefact(
     db.commit()
 
 
-def clear_artefact_review(db: Session, artefact: Artefact) -> None:
-    artefact.review_note = ""
-    db.commit()
-
-
 def add_fiche_section(
     db: Session, artefact: Artefact, title: str, section: str, placement: str
 ) -> LoreEntry:
@@ -952,7 +896,6 @@ def add_fiche_section(
         source_section=section,
         placement=placement,
         gm_only=True,
-        review_note=ADD_NOTE.format(title=artefact.article.title),
     )
     db.add(entry)
     db.commit()
@@ -992,7 +935,6 @@ class AddResult:
     genre: str
     story: LoreStory | None = None
     artefact: Artefact | None = None
-    notes: list[str] = field(default_factory=list)
 
 
 def _default_type_id(db: Session) -> int | None:
@@ -1014,7 +956,6 @@ def _add_story(db: Session, article: WaArticle, kind: str) -> LoreStory:
         position=top + 1,
         wa_article_id=article.wa_id,
         gm_only=True,
-        review_note=ADD_NOTE.format(title=article.title),
     )
     db.add(story)
     db.flush()
@@ -1043,8 +984,6 @@ def _add_artefact(db: Session, article: WaArticle) -> Artefact:
         raise LoreError("exists")
     draft = split_item_article(article.wa_id, article.title, article.content)
     row = artefact_row(article.wa_id, draft)
-    notes = [ADD_NOTE.format(title=article.title), *row["review_note"].splitlines()]
-    row["review_note"] = "\n".join(note for note in notes if note)
     artefact = Artefact(**row, gm_only=True)
     db.add(artefact)
     db.flush()

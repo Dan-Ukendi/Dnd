@@ -194,20 +194,20 @@ def test_dm_can_reset_a_player_pin(
     login(other_client, "zilvra")
     assert other_client.get("/joueur").status_code == 200
     login(client, "maitre")
-    response = post_form(client, f"/mj/joueurs/{player.id}/mot-de-passe-provisoire", {}, "/mj")
+    response = post_form(client, f"/mj/joueurs/{player.id}/code-initial", {}, "/mj")
     assert response.status_code == 303
     db.refresh(player)
     assert player.must_change_password
     assert verify_password(player.password_hash, TEMPORARY)
     assert other_client.get("/joueur", follow_redirects=False).headers["location"] == "/connexion"
-    assert "Code provisoire" in client.get("/mj/joueurs").text
+    assert "Code initial" in client.get("/mj/joueurs").text
 
 
 def test_player_cannot_reset_pins(client: TestClient, db: Session) -> None:
     victim = make_user(db, "zilvra")
     make_user(db, "keator")
     login(client, "keator")
-    response = post_form(client, f"/mj/joueurs/{victim.id}/mot-de-passe-provisoire", {}, "/joueur")
+    response = post_form(client, f"/mj/joueurs/{victim.id}/code-initial", {}, "/joueur")
     assert response.status_code == 404
     db.refresh(victim)
     assert not victim.must_change_password

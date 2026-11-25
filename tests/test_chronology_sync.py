@@ -232,7 +232,6 @@ def test_sync_updates_content_but_keeps_app_owned_fields(
     db: Session, seeded: dict[str, TimelineEvent], source: FakeTimelineSource
 ) -> None:
     event = by_code(db, "B1")
-    event.status = "etabli"
     event.visibility = "joueurs"
     event.chronicle = True
     event.session = 4
@@ -266,12 +265,12 @@ def test_sync_updates_content_but_keeps_app_owned_fields(
         "ajout",
     )
     assert event.importance == "mineur"
-    assert (event.status, event.visibility) == ("etabli", "joueurs")
+    assert event.visibility == "joueurs"
     assert (event.chronicle, event.session, event.day, event.sort_order) == (True, 4, "J2", 42)
     assert event.modified_by_dm
 
 
-def test_sync_inserts_new_histories_hidden_and_pending(
+def test_sync_inserts_new_histories_hidden(
     db: Session, seeded: dict[str, TimelineEvent], source: FakeTimelineSource
 ) -> None:
     source.put(
@@ -290,12 +289,12 @@ def test_sync_inserts_new_histories_hidden_and_pending(
     result = run(db, source)
     assert result.events_created == 2
     triumph = by_code(db, "N-1")
-    assert (triumph.visibility, triumph.status, triumph.wa_history_id) == ("mj", "a_valider", H4)
+    assert (triumph.visibility, triumph.wa_history_id) == ("mj", H4)
     assert (triumph.importance, triumph.origin, triumph.start_year) == ("notable", "ajout", 347)
     assert triumph.sort_order == 11
     troll = db.scalar(select(TimelineEvent).where(TimelineEvent.wa_history_id == H5))
     assert troll.code == "WA-aaaaaaaa"
-    assert (troll.visibility, troll.status) == ("mj", "a_valider")
+    assert troll.visibility == "mj"
     assert (troll.chronicle, troll.session, troll.day) == (True, 2, "J2")
     assert troll.sort_order == 92
     assert not troll.modified_by_dm

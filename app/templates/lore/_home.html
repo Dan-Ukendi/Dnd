@@ -17,7 +17,6 @@
     </span>
     <span class="lore-half__foot">
       <span class="lore-half__count">{% if legend_total %}{{ legend_total }} récit{{ "s" if legend_total > 1 }}{% else %}Aucun récit pour l'instant{% endif %}</span>
-      {% if dm and reviews.legendes %}<span class="pill pill--warn">À vérifier · {{ reviews.legendes }}</span>{% endif %}
       <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
     </span>
   </a>
@@ -35,7 +34,6 @@
     </span>
     <span class="lore-half__foot">
       <span class="lore-half__count">{% if artefact_total %}{{ artefact_total }} artefact{{ "s" if artefact_total > 1 }}{% else %}Aucun artefact pour l'instant{% endif %}</span>
-      {% if dm and reviews.artefacts %}<span class="pill pill--warn">À vérifier · {{ reviews.artefacts }}</span>{% endif %}
       <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
     </span>
   </a>
@@ -47,6 +45,6 @@
     <span class="lore-books__desc">Les livres trouvés dans le monde : des sources en jeu, pas forcément exactes.</span>
     {% if book_preview %}<span class="lore-books__list">{% for item in book_preview %}<span>{{ item.story.title }}</span>{% endfor %}</span>{% endif %}
   </span>
-  <span class="lore-books__count">{% if book_total %}{{ book_total }} ouvrage{{ "s" if book_total > 1 }}{% else %}Aucun ouvrage{% endif %}{% if dm and reviews.ouvrages %} · {{ reviews.ouvrages }} à vérifier{% endif %}</span>
+  <span class="lore-books__count">{% if book_total %}{{ book_total }} ouvrage{{ "s" if book_total > 1 }}{% else %}Aucun ouvrage{% endif %}</span>
   <span class="lore-half__chevron" aria-hidden="true">{{ ui("chevron") }}</span>
 </a>

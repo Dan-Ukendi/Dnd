@@ -1,6 +1,6 @@
 {% from "components/icons.html" import ui %}
 {% set event = detail.event %}
-<article class="chrono-detail{% if dm and event.status == 'a_valider' %} is-pending{% endif %}" data-color="{{ detail.era.color }}" aria-labelledby="evenement-titre">
+<article class="chrono-detail" data-color="{{ detail.era.color }}" aria-labelledby="evenement-titre">
   <p class="eyebrow chrono-detail__era">{{ detail.era.name }}</p>
   <h2 class="chrono-detail__title" id="evenement-titre" tabindex="-1">{{ event.title }}</h2>
   <p class="chrono-detail__years">{{ span_label(event.start_year, event.end_year) }}{% if event.is_range %}<span> · {{ duration_label(event.start_year, event.end_year) }}</span>{% endif %}</p>
@@ -8,7 +8,6 @@
     <span class="pill">{{ IMPORTANCE_LABELS[event.importance] }}</span>
     {% if dm %}
     <span class="pill {{ 'pill--ok' if event.visibility == 'joueurs' else 'pill--muted' }}">{{ VISIBILITY_LABELS[event.visibility] }}</span>
-    {% if event.status == "a_valider" %}<span class="chrono-pending">à valider</span>{% endif %}
     {% endif %}
   </div>
   {% if event.place %}<p class="chrono-detail__place">{{ ui("map") }}<span>{{ event.place }}</span></p>{% endif %}
@@ -21,7 +20,6 @@
     <div><dt>Ère</dt><dd>{{ detail.era.name }}</dd></div>
     <div><dt>Importance</dt><dd>{{ IMPORTANCE_LABELS[event.importance] }}</dd></div>
     {% if dm %}
-    <div><dt>Statut</dt><dd>{{ STATUS_LABELS[event.status] }}</dd></div>
     <div><dt>Origine</dt><dd>{{ ORIGIN_LABELS[event.origin] }}</dd></div>
     <div><dt>Code</dt><dd>{{ event.code }}</dd></div>
     {% endif %}
@@ -87,17 +85,6 @@
     <p class="field__hint">Titre, dates, lieu, résumé et importance se modifient sur World Anvil, puis Synchroniser.</p>
     {% endif %}
     <div class="chrono-admin__actions">
-      <form method="post" action="{{ base }}/evenements/{{ event.id }}/statut" class="inline-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <input type="hidden" name="retour" value="{{ current_url }}">
-        {% if event.status == "a_valider" %}
-        <input type="hidden" name="status" value="etabli">
-        <button type="submit" class="btn btn--primary">Valider</button>
-        {% else %}
-        <input type="hidden" name="status" value="a_valider">
-        <button type="submit" class="btn">Remettre à valider</button>
-        {% endif %}
-      </form>
       <form method="post" action="{{ base }}/evenements/{{ event.id }}/visibilite" class="inline-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="retour" value="{{ current_url }}">

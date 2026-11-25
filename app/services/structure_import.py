@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     PLACE_KINDS,
-    STRUCTURE_STATUSES,
     STRUCTURE_VISIBILITIES,
     Place,
     Position,
@@ -76,7 +75,6 @@ PLACE_COLUMNS = (
     "description",
     "gm_notes",
     "visibility",
-    "status",
     "position",
 )
 POSITION_COLUMNS = (
@@ -95,7 +93,6 @@ POSITION_COLUMNS = (
     "source_anchor",
     "gm_notes",
     "visibility",
-    "status",
     "position",
 )
 
@@ -194,11 +191,8 @@ def _common(entry: _Entry, allowed: frozenset[str], articles: _Articles) -> None
         if isinstance(value, str) and len(value.strip()) > limit:
             entry.errors.append(f"'{name}' is longer than {limit} characters")
     visibility = _text(data, "visibility") or "mj"
-    status = _text(data, "status") or "a_valider"
     if visibility not in STRUCTURE_VISIBILITIES:
         entry.errors.append(f"visibility must be one of {', '.join(STRUCTURE_VISIBILITIES)}")
-    if status not in STRUCTURE_STATUSES:
-        entry.errors.append(f"status must be one of {', '.join(STRUCTURE_STATUSES)}")
     source = articles.resolve(entry, "source", required=True)
     anchor = _text(data, "anchor") or ""
     if anchor and source is not None:
@@ -214,7 +208,6 @@ def _common(entry: _Entry, allowed: frozenset[str], articles: _Articles) -> None
             "source_anchor": anchor,
             "gm_notes": _text(data, "gm_notes") or "",
             "visibility": visibility,
-            "status": status,
             "position": entry.position,
         }
     )

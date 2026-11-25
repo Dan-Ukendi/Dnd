@@ -15,7 +15,6 @@ from app.models import (
 )
 from app.services import lore as service
 from app.services.artefact_split import (
-    AUTOMATIC_NOTE,
     QUICK_SHEET_ENTRY,
     artefact_row,
     entry_rows,
@@ -111,9 +110,8 @@ def test_split_keeps_characteristics_on_the_fiche_and_the_story_in_the_lore() ->
     assert by_title["Secrets"].gm_only
     assert not by_title["La forge"].gm_only
     assert all(entry.start_year is None for entry in draft.entries)
-    assert all(AUTOMATIC_NOTE in entry.notes for entry in draft.entries)
-    assert draft.notes[0] == AUTOMATIC_NOTE
-    assert any("Alice" in note for note in draft.notes)
+    assert all("Alice" not in entry.text for entry in draft.entries)
+    assert "review_note" not in artefact_row("x", draft)
     story = " ".join(entry.text for entry in draft.entries)
     assert "forgé dans le secret" in story
     assert "forgé dans le secret" not in draft.properties
@@ -131,16 +129,12 @@ def test_known_articles_follow_the_decided_dates_and_visibility() -> None:
     rows = {row["title"]: row for row in entry_rows(JOUG_ID, draft, {"A1": 41})}
     assert rows["La forge"]["timeline_event_id"] == 41
     assert rows["La forge"]["start_year"] is None
-    assert "A1" in rows["La forge"]["review_note"]
     assert rows["Événements de la session 1"]["start_year"] == 829
     assert rows["Ceux qui la convoitent"]["gm_only"]
-    assert rows["Pouvoirs"]["review_note"]
-    assert rows["La réapparition"]["review_note"]
+    assert all("review_note" not in row for row in rows.values())
     assert rows["La réapparition"]["start_year"] is None
     missing = {row["title"]: row for row in entry_rows(JOUG_ID, draft, {})}
     assert missing["La forge"]["timeline_event_id"] is None
-    assert "introuvable" in missing["La forge"]["review_note"]
-    assert AUTOMATIC_NOTE not in rows["La forge"]["review_note"]
 
 
 def _item(db: Session, wa_id: str, title: str, content: str) -> WaArticle:

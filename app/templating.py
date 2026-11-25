@@ -13,7 +13,6 @@ from app.branding import APP_TAGLINE, APP_TITLE, THEME_COLOR
 from app.chronology import (
     IMPORTANCE_LABELS,
     ORIGIN_LABELS,
-    STATUS_LABELS,
     VISIBILITY_LABELS,
     format_duration,
     format_span,
@@ -146,7 +145,6 @@ templates.env.globals.update(
         "duration_label": format_duration,
         "IMPORTANCE_LABELS": IMPORTANCE_LABELS,
         "ORIGIN_LABELS": ORIGIN_LABELS,
-        "STATUS_LABELS": STATUS_LABELS,
         "VISIBILITY_LABELS": VISIBILITY_LABELS,
         "is_master_key_session": is_master_key_session,
     }

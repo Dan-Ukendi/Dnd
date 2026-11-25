@@ -3,7 +3,7 @@
 {% from "lore/_story_form.html" import story_fields %}
 {% macro story_card(item, dm) -%}
 {% set story = item.story %}
-<a class="lore-story{% if dm and story.review_note | trim %} is-pending{% endif %}" href="{{ item.href }}"{% if item.era %} data-color="{{ item.era.color }}"{% endif %}>
+<a class="lore-story" href="{{ item.href }}"{% if item.era %} data-color="{{ item.era.color }}"{% endif %}>
   <span class="lore-story__mark" aria-hidden="true"></span>
   <span class="lore-story__date">{{ item.label }}</span>
   <span class="lore-story__title">{{ story.title }}</span>
@@ -12,7 +12,6 @@
     <span class="pill pill--muted">{{ item.parts | length }} partie{{ "s" if item.parts | length != 1 }}</span>
     {% if dm %}
     {% if story.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
-    {% if story.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
     {% endif %}
   </span>
 </a>
@@ -37,13 +36,10 @@
   </nav>
 </div>
 <nav class="lore-filters" aria-label="Filtrer par type de récit">
-  <a class="lore-filter" href="{{ list_base }}{{ sort_param }}{{ query_param }}" {% if not filters.type_id and not filters.review %}aria-current="true"{% endif %}>Tous</a>
+  <a class="lore-filter" href="{{ list_base }}{{ sort_param }}{{ query_param }}" {% if not filters.type_id %}aria-current="true"{% endif %}>Tous</a>
   {% for lore_type in lore_types if type_counts.get(lore_type.id, 0) or filters.type_id == lore_type.id %}
   <a class="lore-filter" href="{{ list_base }}&amp;type={{ lore_type.id }}{{ sort_param }}{{ query_param }}" {% if filters.type_id == lore_type.id %}aria-current="true"{% endif %}>{{ lore_type.label }}</a>
   {% endfor %}
-  {% if dm %}
-  <a class="lore-filter lore-filter--review" href="{{ list_base }}&amp;a_verifier=1" {% if filters.review %}aria-current="true"{% endif %}>À vérifier</a>
-  {% endif %}
 </nav>
 
 {% if dm %}
@@ -89,16 +85,4 @@
 {{ empty_state("Aucune légende", "Ajoutez un récit, ou utilisez « Ajouter au Lore » depuis une fiche synchronisée.", "quill") }}
 {% else %}
 {{ empty_state("Les récits sont encore scellés", "Votre MJ n'a encore partagé aucune légende.", "hourglass") }}
-{% endif %}
-
-{% if dm and unplaced %}
-<section class="panel panel--gm lore-unplaced" aria-labelledby="entrees-a-classer">
-  <h2 class="panel__title" id="entrees-a-classer">Entrées à classer</h2>
-  <p class="field__hint">Entrées de Lore qui n'appartiennent encore à aucun récit ni à aucune fiche. Jamais montrées aux joueurs.</p>
-  <ul class="lore-links__list">
-    {% for entry in unplaced %}
-    <li><a class="lore-link" href="/mj/lore/{{ entry.id }}"><span class="lore-link__title">{{ entry.title }}</span>{{ ui("chevron", "icon lore-link__chevron") }}</a></li>
-    {% endfor %}
-  </ul>
-</section>
 {% endif %}

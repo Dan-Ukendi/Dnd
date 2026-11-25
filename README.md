@@ -82,13 +82,13 @@ Open http://localhost:8000 and sign in with the DM account.
 The landing page asks for a role. **Maître du jeu** opens the DM form (login and password).
 **Joueur** lists the active player accounts that have a password; a player picks their name and types
 their 4-digit PIN. Accounts created by `import-characters`, or reset from the DM's *Joueurs* page with
-*Code provisoire*, use `PLAYER_INITIAL_PASSWORD`. A player who signs in with it is sent to
+*Réinitialiser le code*, use `PLAYER_INITIAL_PASSWORD` (the *Code initial* state). A player who signs in with it is sent to
 *Choisissez votre code PIN* and cannot open anything else until they choose their own 4-digit PIN;
 they can change it later from *Code PIN*, given the current one. Invitation links also set a PIN.
 
 The password of any active DM account is a master key: typed on a player's sign-in form, it opens that
 player's account. A master-key session never triggers the PIN setup and cannot change the player's
-PIN; the DM resets a forgotten PIN with *Code provisoire*.
+PIN; the DM resets a forgotten PIN with *Réinitialiser le code*.
 
 ## Character dossiers
 
@@ -251,7 +251,7 @@ The *Chronologie* page (Lore section, and the *Chronologie* link of both navigat
   Grand Midi, Tumultes). Each era keeps a readable width whatever its length; inside an era, events
   are placed at scale. Periods are bars, single years are diamonds sized by importance, several
   events of the same year are grouped in a numbered seal, and An 0, An 345, An 749 and today
-  (An 829) are marked. Filters (era, importance, text; origin and status for the DM) live in the
+  (An 829) are marked. Filters (era, importance, text; origin for the DM) live in the
   URL. On phones the frise becomes a list grouped by era.
 - **Chronique de la campagne**: the events flagged as chronicle, by session and day (J1, J2).
 
@@ -262,9 +262,9 @@ default names, subtitles and colours are defined in `app/chronology.py`.
 written on World Anvil, in the private timeline "Chronologie de Valhar Molaris" (one history per
 event; its content ends with a `Code :` line such as `B3`). The app only reads World Anvil:
 every sync (*Synchroniser* or `python -m app.cli sync`) refreshes these fields, matching events by
-history id then by code, adds new histories as hidden and *à valider*, and hides events removed
-from the timeline. Everything else belongs to the app and is never overwritten by a sync: status
-(*établi* / *à valider*), visibility (MJ only / revealed to players), chronicle flag, session, day,
+history id then by code, adds new histories as hidden, and hides events removed from the
+timeline. Everything else belongs to the app and is never overwritten by a sync: visibility
+(MJ only / revealed to players), chronicle flag, session, day,
 order, links added in the app and linked fiches. The DM manages them from each event's panel, and
 edits the era names, subtitles and colours from *Chronologie › Ères*.
 
@@ -320,13 +320,13 @@ migration 0010 without deleting anything: the Joug history becomes the récit «
 (regroupement « Malvaar », 7 parts, parts keep their flags), the other entries of both artefacts move
 to their fiche (physical description, characteristics, DM notes), and it adds « L'Empire d'Ébène et
 les Échos », « La fondation de l'Héliopolis » and the book « Les Feuillets du Dompteur », all *MJ
-seulement*, with *À vérifier* notes.
+seulement*.
 
 **Players.** A player sees a récit or a book only if it is not *MJ seulement* and its source article
 is accessible to them; a part also needs its own flag off; an artefact needs its flag off and its
 article accessible; a fiche section needs its flag off, and DM notes never reach players. A part dated
-by a chronology event the player cannot see shows no date and no event link. *À vérifier* notes and
-editing forms are never rendered for a player, and the DM routes answer 404 to players.
+by a chronology event the player cannot see shows no date and no event link. Editing forms are
+never rendered for a player, and the DM routes answer 404 to players.
 
 ## Personnage tags
 
@@ -403,7 +403,6 @@ location = "caché dans le dédale de la cité"
 source = "La Nuit"                  # required: article the fact comes from (or source_id)
 anchor = "Le lieu"                  # heading or bold label of that article, shown as a live excerpt
 visibility = "mj"                   # mj (default) or joueurs
-status = "a_valider"                # a_valider (default) or etabli
 
 [[positions]]
 key = "nuit-erdene"
@@ -417,13 +416,13 @@ head = false                        # sommet
 group = false                       # collectif
 hierarchy = true                    # false: présence only
 source = "La Nuit"
-gm_notes = "Incohérence : …"
+gm_notes = "…"                       # DM only
 ```
 
 **Players.** The tabs appear only on a fiche already shared with the player and only when something
 is visible. Only rows marked `joueurs` are shown, and a hidden place or position hides its whole
 subtree. A person, place or organisation links to its fiche only when that fiche is accessible to
-the player; DM notes, *À valider* and *MJ seulement* badges are never rendered for a player. Excerpts
+the player; DM notes and *MJ seulement* badges are never rendered for a player. Excerpts
 are read live from the source article and shown only when that article is readable.
 
 ## Automatic links between fiches

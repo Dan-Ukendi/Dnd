@@ -5,7 +5,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from markupsafe import Markup
 
-from app.chronology import EventStatus, EventVisibility
+from app.chronology import EventVisibility
 from app.deps import CurrentDm, CurrentPlayer, DbSession
 from app.models import TimelineEvent, User
 from app.services import chronology as service
@@ -22,7 +22,6 @@ PLAYER_BASE = "/joueur/chronologie"
 PANEL_TARGET = "chrono-panel"
 
 ERROR_MESSAGES = {
-    "invalid_status": "Statut inconnu.",
     "invalid_visibility": "Visibilité inconnue.",
     "invalid_day": "Le jour doit être J1, J2 ou rester vide.",
     "invalid_session": "La séance doit être un nombre entier positif.",
@@ -172,30 +171,6 @@ def _fail(request: Request, db: DbSession, exc: service.ChronologyError) -> None
 
 
 Back = Annotated[str, Form(max_length=1000)]
-
-
-@dm_router.post("/evenements/{event_id}/statut")
-def update_status(
-    request: Request,
-    event_id: int,
-    db: DbSession,
-    dm: CurrentDm,
-    status: Annotated[str, Form(max_length=20)] = "",
-    retour: Back = "",
-) -> Response:
-    event = _dm_event(db, event_id)
-    try:
-        service.set_status(db, event, status)
-    except service.ChronologyError as exc:
-        _fail(request, db, exc)
-    else:
-        flash(
-            request,
-            f"« {event.title} » est établi."
-            if status == EventStatus.ESTABLISHED
-            else f"« {event.title} » est de nouveau à valider.",
-        )
-    return _back(retour, event)
 
 
 @dm_router.post("/evenements/{event_id}/visibilite")

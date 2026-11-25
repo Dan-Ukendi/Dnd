@@ -4055,16 +4055,6 @@ input[type="file"]:focus-visible {
   color: var(--gold-bright);
 }
 
-.lore-filter--review {
-  border-color: rgba(122, 31, 36, 0.55);
-}
-
-.lore-filter--review[aria-current="true"] {
-  border-color: var(--ares-text);
-  background: var(--danger-wash);
-  color: var(--ares-text);
-}
-
 .lore-filters__hint {
   margin: -0.5rem 0 1.25rem;
 }
@@ -4150,38 +4140,6 @@ input[type="file"]:focus-visible {
   .lore-form__check {
     align-self: end;
   }
-}
-
-.review-note {
-  display: grid;
-  gap: 0.5rem;
-  justify-items: start;
-  margin: 0 0 1.5rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(122, 31, 36, 0.55);
-  border-left-width: 3px;
-  border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(122, 31, 36, 0.16), rgba(122, 31, 36, 0.05));
-}
-
-.review-note__label {
-  margin: 0;
-  color: var(--ares-text);
-  font-family: var(--font-ui);
-  font-size: var(--text-small);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.review-note__text {
-  margin: 0;
-  color: var(--parchment);
-  white-space: pre-line;
-}
-
-.review-note .btn {
-  margin: 0;
 }
 
 .lore-entry {

@@ -416,11 +416,6 @@
   transform: translateX(2px);
 }
 
-.lore-story.is-pending {
-  border-style: dotted;
-  border-left-style: solid;
-}
-
 .lore-story__mark {
   position: absolute;
   top: 1.2rem;
@@ -483,10 +478,6 @@
   box-shadow: var(--glow-gold);
 }
 
-.lore-book.is-pending {
-  border-style: dotted;
-}
-
 .lore-book__spine {
   display: grid;
   place-items: center;
@@ -507,21 +498,6 @@
   font-family: var(--font-display);
   font-size: 1.08rem;
   letter-spacing: 0.05em;
-}
-
-.lore-unplaced {
-  margin-top: 2rem;
-}
-
-.lore-add-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.lore-add-row .lore-link {
-  flex: 1 1 14rem;
 }
 
 .lore-reader {

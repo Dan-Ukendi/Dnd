@@ -35,57 +35,21 @@ HOLDER_LABELS = frozenset({"porteur actuel", "detenteur actuel"})
 GM_ONLY_SECTIONS = frozenset({"secrets", "pistes pour la suite"})
 SESSION_ONE_YEAR = 829
 
-AUTOMATIC_NOTE = "Découpage automatique d'un nouvel article World Anvil : à vérifier."
-MIXED_NOTE = (
-    "Section mélangée (récit et règles) gardée telle quelle dans le Lore : à répartir si besoin."
-)
-DESCRIPTION_NOTE = (
-    "Description physique de l'objet : la fiche n'en garde qu'une ligne (le sous-titre) ; "
-    "à vérifier."
-)
-QUICK_SHEET_NOTE = (
-    "Lignes de la Fiche rapide qui mêlent récit et caractéristiques, gardées telles quelles : "
-    "à vérifier."
-)
-GM_ONLY_NOTE = (
-    "Réservée au MJ : contient des informations que les personnages ignorent ; à vérifier."
-)
-UNDATED_NOTE = "Non datée : le texte ne donne aucune date."
-EVENT_NOTE = (
-    "Rapprochée de l'événement {code} de la Chronologie, dont elle lit la date : à vérifier."
-)
-MISSING_EVENT_NOTE = "L'événement {code} de la Chronologie est introuvable : entrée non datée."
-HOLDER_NOTE = (
-    "« Porteur actuel » sur World Anvil : {value}. Le détenteur affiché vient des inventaires "
-    "des dossiers."
-)
-EMPTY_STATUS_NOTE = "Statut vide : le texte ne le précise pas."
-
 
 @dataclass(frozen=True)
 class ArticleRules:
     gm_only: frozenset[str] = frozenset()
-    mixed: frozenset[str] = frozenset()
-    description: frozenset[str] = frozenset()
-    undated: frozenset[str] = frozenset()
     events: Mapping[str, str] = field(default_factory=dict)
     years: Mapping[str, int] = field(default_factory=dict)
-    artefact_notes: tuple[str, ...] = ()
 
 
 KNOWN_ARTICLES: dict[str, ArticleRules] = {
     "57249abe-74e2-4590-b489-7e388923051b": ArticleRules(
         gm_only=frozenset({"L'amulette de Khaetar", QUICK_SHEET_ENTRY}),
-        mixed=frozenset({"Fonctionnement", "Les degrés de la charge"}),
-        description=frozenset({"Description"}),
         years={"Événements de la session 1": SESSION_ONE_YEAR},
-        artefact_notes=(EMPTY_STATUS_NOTE,),
     ),
     "dcdedb4d-686e-483d-a35d-137823b77eb1": ArticleRules(
         gm_only=frozenset({"Ceux qui la convoitent"}),
-        mixed=frozenset({"Pouvoirs", "Le prix du pouvoir", "La restauration"}),
-        description=frozenset({"Description"}),
-        undated=frozenset({"La réapparition"}),
         events={
             "La forge": "A1",
             "Le règne du Dompteur": "A2",
@@ -105,7 +69,6 @@ class EntryDraft:
     gm_only: bool = False
     start_year: int | None = None
     event_code: str | None = None
-    notes: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -120,7 +83,6 @@ class ArtefactDraft:
     recharge: str = ""
     curse: str = ""
     status: str = ""
-    notes: list[str] = field(default_factory=list)
     entries: list[EntryDraft] = field(default_factory=list)
 
 
@@ -187,11 +149,7 @@ def _parse_quick_sheet(body: str, draft: ArtefactDraft) -> list[str]:
         label = fold(match.group("label")) if match else ""
         if match and label in SHEET_FIELDS and not getattr(draft, SHEET_FIELDS[label]):
             setattr(draft, SHEET_FIELDS[label], to_plain_text(match.group("value")).strip())
-        elif match and label in HOLDER_LABELS:
-            draft.notes.append(
-                HOLDER_NOTE.format(value=to_plain_text(match.group("value")).strip())
-            )
-        else:
+        elif not (match and label in HOLDER_LABELS):
             remaining.append(line.rstrip())
     return remaining
 
@@ -303,10 +261,6 @@ def split_item_article(wa_id: str, title: str, content: str | None) -> ArtefactD
     draft.properties = "\n".join(properties)
     for position, (entry_title, text) in enumerate(narrative):
         draft.entries.append(_entry(entry_title, text, position, rules))
-    if rules is None:
-        draft.notes.insert(0, AUTOMATIC_NOTE)
-    else:
-        draft.notes.extend(rules.artefact_notes)
     return draft
 
 
@@ -314,22 +268,10 @@ def _entry(title: str, text: str, position: int, rules: ArticleRules | None) -> 
     entry = EntryDraft(title=title, text=text, position=position)
     entry.gm_only = fold(title) in GM_ONLY_SECTIONS
     if rules is None:
-        entry.notes.append(AUTOMATIC_NOTE)
         return entry
     if title in rules.gm_only:
         entry.gm_only = True
-        entry.notes.append(GM_ONLY_NOTE)
-    if title == QUICK_SHEET_ENTRY:
-        entry.notes.append(QUICK_SHEET_NOTE)
-    if title in rules.description:
-        entry.notes.append(DESCRIPTION_NOTE)
-    if title in rules.mixed:
-        entry.notes.append(MIXED_NOTE)
-    if title in rules.undated:
-        entry.notes.append(UNDATED_NOTE)
-    if title in rules.events:
-        entry.event_code = rules.events[title]
-        entry.notes.append(EVENT_NOTE.format(code=entry.event_code))
+    entry.event_code = rules.events.get(title)
     entry.start_year = rules.years.get(title)
     return entry
 
@@ -350,7 +292,6 @@ def artefact_row(wa_id: str, draft: ArtefactDraft) -> dict[str, Any]:
         "holder": "",
         "location": "",
         "status": draft.status[:200],
-        "review_note": "\n".join(draft.notes),
     }
 
 
@@ -359,11 +300,7 @@ def entry_rows(
 ) -> list[dict[str, Any]]:
     rows = []
     for entry in draft.entries:
-        notes = list(entry.notes)
         event_id = event_ids.get(entry.event_code) if entry.event_code else None
-        if entry.event_code and event_id is None:
-            notes = [note for note in notes if not note.startswith("Rapprochée")]
-            notes.append(MISSING_EVENT_NOTE.format(code=entry.event_code))
         rows.append(
             {
                 "title": entry.title[:300],
@@ -380,20 +317,6 @@ def entry_rows(
                 "source_article_id": wa_id,
                 "source_section": entry.title[:300],
                 "gm_only": entry.gm_only,
-                "review_note": "\n".join(notes),
             }
         )
     return rows
-
-
-def review_lines(
-    title: str, artefact: Mapping[str, Any], entries: list[dict[str, Any]]
-) -> list[str]:
-    lines = [f"{title} (fiche) : {note}" for note in artefact["review_note"].splitlines() if note]
-    for entry in entries:
-        lines.extend(
-            f"{title} / {entry['title']} : {note}"
-            for note in entry["review_note"].splitlines()
-            if note
-        )
-    return lines

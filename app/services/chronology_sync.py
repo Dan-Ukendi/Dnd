@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.chronology import EventStatus, EventVisibility, Importance, Origin
+from app.chronology import EventVisibility, Importance, Origin
 from app.config import WA_TIMELINE_TITLE, get_settings
 from app.models import SyncRun, TimelineEvent, utcnow
 from app.services.chronology import (
@@ -195,7 +195,6 @@ def sync_timeline(db: Session, source: WorldAnvilSource, world_id: str, run: Syn
             event = TimelineEvent(
                 code=code,
                 wa_history_id=history_id,
-                status=EventStatus.PENDING,
                 visibility=EventVisibility.DM,
                 chronicle=parsed.session is not None,
                 session=parsed.session,

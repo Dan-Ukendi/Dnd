@@ -69,28 +69,6 @@ FEUILLETS_PARTS = (
     "On dit aussi",
     "Questions notées en marge",
 )
-NEW_ENTRY_NOTE = "Créé par la migration 0015 : réservé au MJ par défaut ; à vérifier."
-JOUG_NOTE = (
-    "Récit créé par la migration 0015 à partir des entrées de l'Histoire du Joug : réservé au MJ "
-    "par défaut, ses parties gardent leurs drapeaux d'avant. Décocher « MJ seulement » rend aux "
-    "joueurs exactement les parties qu'ils voyaient ; à vérifier."
-)
-EMPIRE_NOTE = (
-    "Correction du MJ (2026-11-25) : les noms d'États du texte World Anvil (République de Fer, "
-    "Concordance Logique, Dernier Bastion) sont faux ; les bons noms sont les nations actuelles : "
-    "Le Khaanat des Cinq Lances, L'Héliopolis des Harmoniens, Secundum Imperium Sanguicor "
-    "(Sanguis Coronae). Le texte est rendu tel quel depuis World Anvil : à corriger sur World "
-    "Anvil. Dates lues sur B1 (création) et B7 (révolte) ; à vérifier."
-)
-HELIOPOLIS_NOTE = (
-    "Une seule partie : le passage « Histoire Fondatrice » de la section « Fondation et "
-    "Philosophie ». Daté de l'ère des Tumultes seulement (approximatif), sans année ; à vérifier."
-)
-FEUILLETS_NOTE = (
-    "Ouvrage : source en jeu, pas forcément exacte. En-tête = Fiche rapide et Description de "
-    "l'article ; à vérifier."
-)
-
 articles = sa.table(
     "wa_articles",
     sa.column("wa_id", sa.String),
@@ -335,7 +313,6 @@ def _fill(types: sa.Table, groups: sa.Table, stories: sa.Table) -> None:
             wa_article_id=JOUG_ID,
             artefact_id=artefact_ids.get(JOUG_ID),
             gm_only=True,
-            review_note=JOUG_NOTE,
         )
         attached = 0
         for title in JOUG_PARTS:
@@ -351,7 +328,7 @@ def _fill(types: sa.Table, groups: sa.Table, stories: sa.Table) -> None:
             )
             attached += result.rowcount
             if result.rowcount != 1:
-                logger.info("To review: Joug part %s matched %d entries", title, result.rowcount)
+                logger.info("Joug part %s matched %d entries", title, result.rowcount)
         logger.info("Story Le Joug de Malvaar created with %d existing parts", attached)
     if _article_exists(connection, SPECULUM_ID):
         story = _insert(
@@ -363,14 +340,13 @@ def _fill(types: sa.Table, groups: sa.Table, stories: sa.Table) -> None:
             position=2,
             wa_article_id=SPECULUM_ID,
             gm_only=True,
-            review_note=EMPIRE_NOTE,
         )
         for position, (title, code) in enumerate(EMPIRE_PARTS):
             _new_part(
                 connection, story, SPECULUM_ID, title, position, "organisation", event_ids.get(code)
             )
             if code not in event_ids:
-                logger.info("To review: event %s missing, part %s left undated", code, title)
+                logger.info("Event %s missing, part %s left undated", code, title)
         logger.info("Story L'Empire d'Ébène et les Échos created")
     if _article_exists(connection, HELIOPOLIS_ID):
         story = _insert(
@@ -384,7 +360,6 @@ def _fill(types: sa.Table, groups: sa.Table, stories: sa.Table) -> None:
             approximate=True,
             wa_article_id=HELIOPOLIS_ID,
             gm_only=True,
-            review_note=HELIOPOLIS_NOTE,
         )
         _new_part(connection, story, HELIOPOLIS_ID, "Histoire Fondatrice", 0, "organisation")
         logger.info("Story La fondation de l'Héliopolis created")
@@ -400,7 +375,6 @@ def _fill(types: sa.Table, groups: sa.Table, stories: sa.Table) -> None:
             artefact_id=artefact_ids.get(JOUG_ID),
             legend_id=joug_story,
             gm_only=True,
-            review_note=FEUILLETS_NOTE,
         )
         for position, title in enumerate(FEUILLETS_PARTS):
             _new_part(connection, story, FEUILLETS_ID, title, position, "artefact")
@@ -411,8 +385,7 @@ def _fill(types: sa.Table, groups: sa.Table, stories: sa.Table) -> None:
         )
     ).all()
     for row in orphans:
-        logger.info("To review: Lore entry %s (%s) has no story yet", row.id, row.title)
-    logger.info("To review: %s", NEW_ENTRY_NOTE)
+        logger.info("Lore entry %s (%s) has no story yet", row.id, row.title)
 
 
 def downgrade() -> None:

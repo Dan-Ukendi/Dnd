@@ -13,7 +13,7 @@
       {% for item in group.views %}
       {% set story = item.story %}
       <li>
-        <a class="chrono-card lore-card{% if dm and story.review_note | trim %} is-pending{% endif %}" href="{{ item.href }}">
+        <a class="chrono-card lore-card" href="{{ item.href }}">
           <span class="chrono-card__mark{% if item.date.end is not none and item.date.end != item.date.start %} chrono-card__mark--range{% endif %}" aria-hidden="true"></span>
           <span class="chrono-card__years">{{ item.label }}</span>
           <span class="chrono-card__title">{{ story.title }}</span>
@@ -21,7 +21,6 @@
           <span class="chrono-card__meta">
             {% if item.type_label %}<span class="pill pill--muted">{{ item.type_label }}</span>{% endif %}
             {% if dm and story.gm_only %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
-            {% if dm and story.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
           </span>
         </a>
       </li>

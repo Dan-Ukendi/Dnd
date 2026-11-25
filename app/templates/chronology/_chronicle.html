@@ -12,14 +12,13 @@
       <h3 class="chronicle-day__title"><span class="chronicle-day__seal" aria-hidden="true">{{ day or "—" }}</span>{% if day %}Jour {{ day[1:] }}{% else %}Jour non précisé{% endif %}</h3>
       <ol class="saga">
         {% for view in items %}
-        <li class="saga__item{% if dm and view.event.status == 'a_valider' %} is-pending{% endif %}">
+        <li class="saga__item">
           {% if view.event.place %}<p class="saga__session">{{ view.event.place }}</p>{% endif %}
           <h4 class="saga__title"><a href="{{ base }}/evenements/{{ view.id }}">{{ view.event.title }}</a></h4>
           {% if view.event.summary %}<div class="prose"><p>{{ autolink(view.event.summary) }}</p></div>{% endif %}
           {% if dm %}
           <p class="chronicle__meta">
             <span class="pill {{ 'pill--ok' if view.event.visibility == 'joueurs' else 'pill--muted' }}">{{ VISIBILITY_LABELS[view.event.visibility] }}</span>
-            {% if view.event.status == "a_valider" %}<span class="chrono-pending">à valider</span>{% endif %}
           </p>
           {% endif %}
         </li>

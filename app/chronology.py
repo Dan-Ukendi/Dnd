@@ -19,11 +19,6 @@ class Origin(StrEnum):
     ADDITION = "ajout"
 
 
-class EventStatus(StrEnum):
-    ESTABLISHED = "etabli"
-    PENDING = "a_valider"
-
-
 class EventVisibility(StrEnum):
     DM = "mj"
     PLAYERS = "joueurs"
@@ -40,7 +35,6 @@ IMPORTANCE_LABELS = {
     Importance.MINOR: "Mineur",
 }
 ORIGIN_LABELS = {Origin.CANON: "Canon", Origin.ADDITION: "Ajout"}
-STATUS_LABELS = {EventStatus.ESTABLISHED: "Établi", EventStatus.PENDING: "À valider"}
 VISIBILITY_LABELS = {
     EventVisibility.DM: "Réservé au MJ",
     EventVisibility.PLAYERS: "Révélé aux joueurs",

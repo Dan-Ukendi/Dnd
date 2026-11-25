@@ -430,7 +430,7 @@ def invite_player(request: Request, player_id: int, db: DbSession, dm: CurrentDm
     )
 
 
-@router.post("/joueurs/{player_id}/mot-de-passe-provisoire")
+@router.post("/joueurs/{player_id}/code-initial")
 def reset_player_password(
     request: Request, player_id: int, db: DbSession, dm: CurrentDm
 ) -> Response:
@@ -440,7 +440,7 @@ def reset_player_password(
     set_temporary_password(db, player, get_settings().player_initial_password.get_secret_value())
     flash(
         request,
-        f"{player.display_name} se connecte désormais avec le code provisoire "
+        f"{player.display_name} se connecte désormais avec le code initial "
         "et devra choisir son code PIN.",
     )
     return RedirectResponse("/mj/joueurs", status_code=303)

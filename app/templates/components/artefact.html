@@ -10,7 +10,6 @@
   {% if editable %}
   <p class="artefact-block__tools">
     {% if entry.gm_only and not gm %}<span class="pill pill--danger">MJ seulement</span>{% endif %}
-    {% if entry.review_note | trim %}<span class="chrono-pending">à vérifier</span>{% endif %}
     {% if item.text.status == status.STORED and entry.source_article_id %}<span class="field__hint">Section introuvable : texte enregistré affiché.</span>{% endif %}
     <a class="btn btn--compact" href="/mj/lore/{{ entry.id }}">Modifier</a>
   </p>
@@ -19,16 +18,6 @@
 {%- endmacro %}
 <div class="artefact">
   {% if artefact %}
-  {% if editable and artefact.review_note | trim %}
-  <div class="review-note">
-    <p class="review-note__label">À vérifier</p>
-    <p class="review-note__text">{{ artefact.review_note }}</p>
-    <form method="post" action="/mj/artefacts/{{ article.wa_id }}/verifie">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit" class="btn">Marquer vérifié</button>
-    </form>
-  </div>
-  {% endif %}
   {% if editable and artefact.gm_only %}<p class="alert alert--warn">Fiche réservée au MJ : les joueurs ne la voient pas dans le Lore.</p>{% endif %}
   {% set holder = artefact_fiche.holders | join(", ") if artefact_fiche.holders else artefact.holder %}
   {% set rows = [
@@ -160,10 +149,6 @@
         <textarea id="artefact-bonuses" name="bonuses" rows="3">{{ artefact.bonuses }}</textarea>
       </div>
       <label class="check"><input type="checkbox" name="gm_only" value="1" {% if artefact.gm_only %}checked{% endif %}> Fiche réservée au MJ (absente du Lore des joueurs)</label>
-      <div class="field field--gm">
-        <label for="artefact-review">À vérifier <span class="field__hint">note du MJ, jamais montrée aux joueurs</span></label>
-        <textarea id="artefact-review" name="review_note" rows="3">{{ artefact.review_note }}</textarea>
-      </div>
       <div class="row">
         <button type="submit" class="btn btn--primary">Enregistrer</button>
       </div>
@@ -173,7 +158,7 @@
   {% else %}
   <div class="empty-state">
     {{ ui("candle") }}
-    <h2 class="empty-state__title">Caractéristiques à établir</h2>
+    <h2 class="empty-state__title">Aucune caractéristique</h2>
     {% if editable %}
     <p>Cet objet n'est pas encore dans le Lore : utilisez « Ajouter au Lore » ci-dessous pour créer sa fiche d'artefact.</p>
     {% else %}

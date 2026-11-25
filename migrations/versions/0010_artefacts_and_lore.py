@@ -11,12 +11,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-from app.services.artefact_split import (
-    artefact_row,
-    entry_rows,
-    review_lines,
-    split_item_article,
-)
+from app.services.artefact_split import artefact_row, entry_rows, split_item_article
 
 revision: str = "0010"
 down_revision: str | None = "0009"
@@ -153,8 +148,6 @@ def _fill(artefacts: sa.Table, entries: sa.Table) -> None:
         if rows:
             connection.execute(entries.insert(), rows)
         logger.info("Split %s into a fiche and %d Lore entries", item.title, len(rows))
-        for line in review_lines(item.title, fiche, rows):
-            logger.info("To review: %s", line)
 
 
 def downgrade() -> None:

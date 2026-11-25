@@ -29,13 +29,6 @@
         {% for value, label in ORIGIN_LABELS.items() %}<option value="{{ value }}" {% if filters.origin == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
     </div>
-    <div class="field">
-      <label for="chrono-statut">Statut</label>
-      <select id="chrono-statut" name="statut">
-        <option value="">Tous</option>
-        {% for value, label in STATUS_LABELS.items() %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-      </select>
-    </div>
     {% endif %}
     <div class="chrono-filters__actions">
       <button type="submit" class="btn btn--primary">Filtrer</button>

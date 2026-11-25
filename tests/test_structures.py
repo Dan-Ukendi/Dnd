@@ -171,7 +171,7 @@ def documents(**overrides: Any) -> list[tuple[str, dict[str, Any]]]:
             "source": "La Guilde",
             "anchor": "Les réceptionnistes",
             "visibility": "joueurs",
-            "gm_notes": "Incohérence : note réservée au MJ",
+            "gm_notes": "Note réservée au MJ, jamais publiée",
         },
         {
             "key": "guilde-espion",
@@ -341,7 +341,7 @@ def test_import_is_idempotent_by_key(db: Session, world: World) -> None:
     chef = db.scalar(select(Position).where(Position.key == "guilde-chef"))
     assert gronk.superior_id == chef.id
     assert gronk.person_article_id == world.gronk.wa_id
-    assert gronk.status == "a_valider"
+    assert not hasattr(gronk, "status")
     assert db.scalar(select(Place).where(Place.key == "marche")).visibility == "mj"
 
 
@@ -487,8 +487,8 @@ def test_dm_organisation_page_has_territory_and_hierarchy_tabs(
     assert bare_numbers(page) == []
     assert "Brunhild" in page and "Titulaire non nommé" in page
     assert "Tout déplier" in page and "Tout replier" in page
-    assert "Incohérence : note réservée au MJ" in page
-    assert "À valider" in page and "MJ seulement" in page
+    assert "Note réservée au MJ, jamais publiée" in page
+    assert "À valider" not in page and "MJ seulement" in page
     empty = client.get(f"/mj/articles/{world.nuit.wa_id}").text
     assert "Aucune hiérarchie consignée" in empty
     assert "Le marché sombre" in empty and "Aucun territoire consigné" not in empty
@@ -552,7 +552,7 @@ def test_player_never_receives_dm_only_rows_or_their_subtrees(
     assert f'href="/joueur/articles/{world.gronk.wa_id}"' in guild
     assert "L'espion" not in guild and "La recrue de l'espion" not in guild
     assert "Bob" in guild and f"/joueur/articles/{world.bob.wa_id}" not in guild
-    assert "Incohérence" not in guild and "À valider" not in guild
+    assert "Note réservée au MJ" not in guild and "À valider" not in guild
     assert "MJ seulement" not in guild and "Les licences sont fausses" not in guild
     level = client.get(f"/joueur/articles/{world.nation.wa_id}?lieu=cite").text
     assert "La taverne" in level and "La branche de la Guilde" in level

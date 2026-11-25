@@ -330,7 +330,6 @@ def test_migration_builds_the_validated_lore_without_losing_entries(
     assert db.scalar(select(LoreStory).where(LoreStory.wa_article_id == GAGE_ID)) is None
     empire = world.empire
     assert (empire.type.label, empire.group_id, empire.gm_only) == ("Histoire", None, True)
-    assert "Khaanat des Cinq Lances" in empire.review_note
     assert [(part.title, part.event.code, part.text) for part in _parts(db, empire)] == [
         ("L'Empire d'Ébène et les Doublés", "B1", ""),
         ("Le Cataclysme : La Rébellion des Échos", "B7", ""),
@@ -577,7 +576,6 @@ def test_gm_only_content_and_dm_notes_never_reach_players(
         "À vérifier",
         "MJ seulement",
         "Modifier",
-        world.joug.review_note[:40],
         "Ajouter une partie",
     ):
         assert text not in story.text, text

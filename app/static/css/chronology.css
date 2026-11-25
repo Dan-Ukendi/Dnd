@@ -549,24 +549,8 @@
   color: var(--gold-bright);
 }
 
-.frise__range .frise__tip-pending {
-  margin-left: 0.4rem;
-  color: var(--warning);
-  font-style: italic;
-}
-
 .frise__range.importance--mineur .frise__tip {
   font-size: 0.62rem;
-}
-
-.frise__range.is-pending {
-  border-style: dotted;
-  border-color: var(--parchment-dim);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--era) 55%, var(--ebony-0)),
-    color-mix(in srgb, var(--era) 30%, var(--ebony-0))
-  );
 }
 
 .frise__range:hover,
@@ -624,11 +608,6 @@
 
 .importance--mineur {
   --size: 0.58rem;
-}
-
-.frise__point.is-pending::before {
-  border: 1.5px dotted var(--parchment);
-  background: color-mix(in srgb, var(--era) 40%, var(--ebony-0));
 }
 
 .frise__point:hover::before,
@@ -716,11 +695,6 @@
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.frise__point .frise__tip-pending {
-  color: var(--warning);
-  font-style: italic;
 }
 
 .frise__point:hover .frise__tip,
@@ -831,11 +805,6 @@
   transform: translateX(2px);
 }
 
-.chrono-card.is-pending {
-  border-style: dotted;
-  border-left-style: solid;
-}
-
 .chrono-card__mark {
   position: absolute;
   top: 1.05rem;
@@ -853,11 +822,6 @@
   height: 1.5rem;
   border-radius: 999px;
   transform: none;
-}
-
-.chrono-card.is-pending .chrono-card__mark {
-  border-style: dotted;
-  background: color-mix(in srgb, var(--era) 40%, var(--ebony-0));
 }
 
 .chrono-card__years {
@@ -973,12 +937,6 @@
 
 .chrono-detail__facts {
   margin: 0;
-}
-
-.chrono-detail.is-pending .chrono-detail__title {
-  text-decoration: underline dotted var(--warning);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.3em;
 }
 
 .chrono-detail__block {
@@ -1244,11 +1202,6 @@ a.chrono-links__item:hover {
   transform: rotate(45deg);
 }
 
-.chrono-year__item.is-pending .chrono-year__mark {
-  border-style: dotted;
-  background: transparent;
-}
-
 .chrono-year__title {
   flex: 1;
   font-size: 1rem;
@@ -1329,14 +1282,6 @@ a.chrono-links__item:hover {
   height: 0.6rem;
   border-radius: 999px;
   transform: none;
-}
-
-.legend__mark--pending::before {
-  width: 0.9rem;
-  height: 0.9rem;
-  border-style: dotted;
-  border-color: var(--parchment);
-  background: transparent;
 }
 
 .legend__mark--cluster {
@@ -1457,10 +1402,6 @@ a.chrono-links__item:hover {
 
 .chronicle .saga__title a:hover {
   color: var(--gold-bright);
-}
-
-.chronicle .saga__item.is-pending::before {
-  border-style: dotted;
 }
 
 .chronicle .prose p:last-child {
@@ -1704,23 +1645,10 @@ a.chrono-links__item:hover {
   text-transform: uppercase;
 }
 
-.frise__range.is-narrow .frise__tip-pending {
-  margin: 0;
-}
-
 .frise__range.is-narrow:hover .frise__tip,
 .frise__range.is-narrow:focus-visible .frise__tip {
   opacity: 1;
   transform: none;
-}
-
-.chrono-pending {
-  display: inline-flex;
-  align-items: center;
-  color: var(--warning);
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  font-style: italic;
 }
 
 .chrono-detail__facts {

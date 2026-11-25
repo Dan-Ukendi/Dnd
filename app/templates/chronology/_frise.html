@@ -38,10 +38,10 @@
         {% for marker in frise.ranges %}
         {% set view = marker.first %}
         <li>
-          <a class="frise__range importance--{{ marker.importance }}{% if dm and marker.pending %} is-pending{% endif %}{% if view.id == selected_id %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}{% if marker.width < 150 %} is-narrow{% endif %}"
+          <a class="frise__range importance--{{ marker.importance }}{% if view.id == selected_id %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}{% if marker.width < 150 %} is-narrow{% endif %}"
             href="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-get="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-target="#chrono-panel" hx-push-url="true"
             data-x="{{ marker.x | round(1) }}" data-w="{{ marker.width | round(1) }}" data-lane="{{ marker.lane }}" data-color="{{ view.era.color }}" data-frise-marker>
-            <span class="frise__tip"><span class="frise__tip-years">{{ span_label(view.event.start_year, view.event.end_year) }}</span>{{ view.event.title }}{% if dm and marker.pending %}<span class="frise__tip-pending">à valider</span>{% endif %}</span>
+            <span class="frise__tip"><span class="frise__tip-years">{{ span_label(view.event.start_year, view.event.end_year) }}</span>{{ view.event.title }}</span>
           </a>
         </li>
         {% endfor %}
@@ -57,10 +57,10 @@
             <span class="frise__tip"><span class="frise__tip-years">{{ year_label(marker.year) }}</span>{{ marker.events | length }} événements</span>
           </a>
           {% else %}
-          <a class="frise__point importance--{{ marker.importance }}{% if dm and marker.pending %} is-pending{% endif %}{% if view.id == selected_id %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}"
+          <a class="frise__point importance--{{ marker.importance }}{% if view.id == selected_id %} is-selected{% endif %}{% if marker.x > tip_flip %} is-end{% endif %}"
             href="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-get="{{ base }}?{{ filters.query(evenement=view.id) }}" hx-target="#chrono-panel" hx-push-url="true"
             data-x="{{ marker.x | round(1) }}" data-lane="{{ marker.lane }}" data-color="{{ view.era.color }}" data-frise-marker>
-            <span class="frise__tip"><span class="frise__tip-years">{{ year_label(view.event.start_year) }}</span>{{ view.event.title }}{% if dm and marker.pending %}<span class="frise__tip-pending">à valider</span>{% endif %}</span>
+            <span class="frise__tip"><span class="frise__tip-years">{{ year_label(view.event.start_year) }}</span>{{ view.event.title }}</span>
           </a>
           {% endif %}
         </li>

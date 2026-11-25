@@ -26,17 +26,6 @@
     </div>
   </header>
 
-  {% if dm and story.review_note | trim %}
-  <div class="review-note">
-    <p class="review-note__label">À vérifier</p>
-    <p class="review-note__text">{{ story.review_note }}</p>
-    <form method="post" action="/mj/lore/recits/{{ story.id }}/verifie">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit" class="btn">Marquer vérifié</button>
-    </form>
-  </div>
-  {% endif %}
-
   {% if description_html | trim or intro_html | trim %}
   <div class="lore-reader__intro prose">{{ description_html }}{{ intro_html }}</div>
   {% endif %}
@@ -71,7 +60,6 @@
         <h2 class="lore-part__title" id="partie-titre">{{ current.entry.title }}</h2>
         {% if current.label %}<p class="lore-part__date">{{ current.label }}{% if current.event_href %} · <a href="{{ current.event_href }}">{{ current.event.title }}</a>{% endif %}</p>{% endif %}
       </header>
-      {% if dm and current.entry.review_note | trim %}<p class="field__hint lore-part__review">À vérifier : {{ current.entry.review_note }}</p>{% endif %}
       {% if text.html | trim %}
       <div class="prose prose--story">{{ text.html }}</div>
       {% else %}

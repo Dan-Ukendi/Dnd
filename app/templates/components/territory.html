@@ -1,4 +1,4 @@
-{% from "components/structure_macros.html" import place_card, place_details, disclosure_toolbar, explore_link, member_list, review_pills %}
+{% from "components/structure_macros.html" import place_card, place_details, disclosure_toolbar, explore_link, member_list, visibility_pill %}
 {% from "components/ui.html" import empty_state %}
 {% set territory = structure.territory %}
 {% set dm_hint = "" if player_mode else " Ajoutez-les dans source/structures puis lancez import-structures." %}
@@ -30,7 +30,7 @@
   <div class="place-focus__head">
     <h3 class="place-focus__title" id="territoire-niveau" tabindex="-1" data-territory-focus>{{ focus.name }}</h3>
     <span class="pill">{{ focus.kind_label }}</span>
-    {{ review_pills(focus) }}
+    {{ visibility_pill(focus) }}
   </div>
   {% if territory.crumbs | length > 1 %}
   <details class="place-focus__more" open>

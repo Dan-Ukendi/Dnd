@@ -1,6 +1,6 @@
 {% macro event_card(view, base, dm) -%}
 {% set event = view.event %}
-<a class="chrono-card importance--{{ event.importance }}{% if dm and event.status == 'a_valider' %} is-pending{% endif %}" href="{{ base }}/evenements/{{ event.id }}">
+<a class="chrono-card importance--{{ event.importance }}" href="{{ base }}/evenements/{{ event.id }}">
   <span class="chrono-card__mark{% if event.is_range %} chrono-card__mark--range{% endif %}" aria-hidden="true"></span>
   <span class="chrono-card__years">{{ span_label(event.start_year, event.end_year) }}{% if event.is_range %}<span class="chrono-card__duration"> · {{ duration_label(event.start_year, event.end_year) }}</span>{% endif %}</span>
   <span class="chrono-card__title">{{ event.title }}</span>
@@ -9,7 +9,6 @@
     <span class="pill pill--muted">{{ IMPORTANCE_LABELS[event.importance] }}</span>
     {% if dm %}
     {% if event.visibility == "joueurs" %}<span class="pill pill--ok">Révélé</span>{% endif %}
-    {% if event.status == "a_valider" %}<span class="chrono-pending">à valider</span>{% endif %}
     {% endif %}
   </span>
 </a>

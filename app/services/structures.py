@@ -64,7 +64,6 @@ class Member:
     is_group: bool
     organisation: Link | None = None
     gm_notes: str = ""
-    status: str = ""
     visibility: str = ""
 
     @property
@@ -91,7 +90,6 @@ class PlaceCard:
     children: list["PlaceCard"] = field(default_factory=list)
     explore_href: str | None = None
     gm_notes: str = ""
-    status: str = ""
     visibility: str = ""
 
     @property
@@ -254,7 +252,6 @@ class _World:
             return {}
         return {
             "gm_notes": render_plain_text(row.gm_notes, self.context),
-            "status": row.status,
             "visibility": row.visibility,
         }
 

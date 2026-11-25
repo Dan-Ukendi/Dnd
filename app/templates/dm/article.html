@@ -12,15 +12,14 @@
 {% else %}
 {% set _ = pills.append(("Invisible pour les joueurs", "warn")) %}
 {% endif %}
-{% if article.is_wip %}{% set _ = pills.append(("En rédaction", "muted")) %}{% endif %}
 
 {% set visibility %}{% if article.player_visible and not article.removed_at %}Partageable avec les joueurs{% else %}Invisible : {{ article.visibility_reason or "raison inconnue" }}{% endif %}{% endset %}
-{% set status %}{{ "Public" if article.state == "public" else "Privé" }}{% if article.is_draft %}, brouillon{% endif %}{% if article.is_wip %}, en rédaction{% endif %}{% endset %}
+{% set status %}{{ "Public" if article.state == "public" else "Privé" }}{% if article.is_draft %}, non publié{% endif %}{% endset %}
 {% set facts = [
   ("Section", section.label),
   ("Type", article.template_type | template_label),
   ("Visibilité", visibility),
-  ("Statut sur World Anvil", status),
+  ("Publication sur World Anvil", status),
   ("Mise à jour", article.wa_updated_at | datetime_fr),
   ("Synchronisée", article.synced_at | datetime_fr),
 ] %}

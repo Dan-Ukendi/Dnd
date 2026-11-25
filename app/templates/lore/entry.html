@@ -17,17 +17,6 @@
     </div>
   </header>
 
-  {% if entry.review_note | trim %}
-  <div class="review-note">
-    <p class="review-note__label">À vérifier</p>
-    <p class="review-note__text">{{ entry.review_note }}</p>
-    <form method="post" action="/mj/lore/{{ entry.id }}/verifie">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit" class="btn">Marquer vérifié</button>
-    </form>
-  </div>
-  {% endif %}
-
   {% if text.html | trim %}
   <div class="prose prose--story">{{ text.html }}</div>
   {% else %}

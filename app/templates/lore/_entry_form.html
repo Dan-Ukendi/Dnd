@@ -81,8 +81,4 @@
   <p class="field__hint">Affiché seulement quand la section source est introuvable ou absente. BBCode World Anvil accepté.</p>
 </div>
 <label class="check"><input type="checkbox" name="gm_only" value="1" {% if entry.gm_only %}checked{% endif %}> Réservée au MJ (jamais montrée aux joueurs)</label>
-<div class="field field--gm">
-  <label for="{{ id }}-review">À vérifier <span class="field__hint">note du MJ, jamais montrée aux joueurs</span></label>
-  <textarea id="{{ id }}-review" name="review_note" rows="3">{{ entry.review_note }}</textarea>
-</div>
 {% endmacro %}

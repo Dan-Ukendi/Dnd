@@ -9,7 +9,6 @@
   "place": "Forge cachée (lieu non précisé)",
   "summary": "Le sorcier ténébreux Malvaar forge le Joug, amulette de contrôle des volontés, dans une forge cachée. Il le nourrit de sang de troll et grave une incantation dans ses anneaux.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -29,7 +28,6 @@
   "linked": [
    "A1"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -49,7 +47,6 @@
   "linked": [
    "A2"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -69,7 +66,6 @@
   "linked": [
    "A3"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -87,7 +83,6 @@
   "place": "Italie",
   "summary": "Fondation de l'empire, origine du calendrier. Il ne possède alors que l'Italie, qui reste son berceau.",
   "linked": [],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -105,7 +100,6 @@
   "place": "Tout l'empire",
   "summary": "Arès devient la divinité principale de l'empire, plus de cinq siècles avant sa chute.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -123,7 +117,6 @@
   "place": "Terres anciennes de l'empire",
   "summary": "La Guilde des Aventuriers naît pendant la conquête, dans les terres déjà soumises, avant de s'étendre à tout l'empire.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -141,7 +134,6 @@
   "place": "Europe, Afrique du Nord, Proche-Orient",
   "summary": "L'empire possède désormais la totalité de son territoire. Ici s'achève l'ère de la Conquête.",
   "linked": [],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -161,7 +153,6 @@
   "linked": [
    "B5"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -182,7 +173,6 @@
    "B2",
    "B3"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -200,7 +190,6 @@
   "place": "Tout l'empire",
   "summary": "Les Échos se soulèvent. L'empire s'effondre et l'âge des Tumultes commence.",
   "linked": [],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -220,7 +209,6 @@
   "linked": [
    "B7"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -240,7 +228,6 @@
   "linked": [
    "B8"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -260,7 +247,6 @@
   "linked": [
    "B8"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -280,7 +266,6 @@
   "linked": [
    "B8"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -300,7 +285,6 @@
   "linked": [
    "C1"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -320,7 +304,6 @@
   "linked": [
    "C2"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -340,7 +323,6 @@
   "linked": [
    "C3"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -358,7 +340,6 @@
   "place": "Khüchniin Khöndii",
   "summary": "La Nuit et son marché noir Khar Zakh naissent, \"le commerce le plus ancien\" de la ville.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -376,7 +357,6 @@
   "place": "Forêt près de Khüchniin Khöndii",
   "summary": "La route secrète est transmise de génération en génération dans la famille de Sophie.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -396,7 +376,6 @@
   "linked": [
    "C13"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -414,7 +393,6 @@
   "place": "Khaanat",
   "summary": "Naissance de Khaetar, tiefling orphelin.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -434,7 +412,6 @@
   "linked": [
    "C15"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -454,7 +431,6 @@
   "linked": [
    "C3"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -472,7 +448,6 @@
   "place": "Khüchniin Khöndii",
   "summary": "Jean-Charles ouvre la taverne.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -492,7 +467,6 @@
   "linked": [
    "C16"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -512,7 +486,6 @@
   "linked": [
    "C17"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -532,7 +505,6 @@
   "linked": [
    "C7"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -552,7 +524,6 @@
   "linked": [
    "B5"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -572,7 +543,6 @@
   "linked": [
    "C6"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -592,7 +562,6 @@
   "linked": [
    "C13"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -612,7 +581,6 @@
   "linked": [
    "A4"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -632,7 +600,6 @@
   "linked": [
    "C22"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -650,7 +617,6 @@
   "place": "Khüchniin Khöndii",
   "summary": "Zilvra se fait voler tout son argent.",
   "linked": [],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -670,7 +636,6 @@
   "linked": [
    "C22"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -690,7 +655,6 @@
   "linked": [
    "C23"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": false,
   "session": null,
@@ -712,7 +676,6 @@
    "C21",
    "C19"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -732,7 +695,6 @@
   "linked": [
    "S1"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -752,7 +714,6 @@
   "linked": [
    "S2"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -773,7 +734,6 @@
    "S3",
    "A1"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -793,7 +753,6 @@
   "linked": [
    "S3"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -814,7 +773,6 @@
    "S13",
    "C20"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -834,7 +792,6 @@
   "linked": [
    "S14"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -850,12 +807,11 @@
   "importance": "majeur",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Le mage et l'archer en fuite rapportent ce qu'ils ont vu. Pour la Nuit, le vol de l'amulette est une insulte directe au conseil des trois Ezen, et le guerrier tué doit être payé. Les descriptions d'une drow et d'un tiefling circulent parmi les écoutes, qui surveillent les portes de la montagne, les tavernes et la Guilde des Aventuriers.\n\nÀ valider : le moment exact est déduit (la traque suit le retour du mage et de l'archer) ; à la fin de la séance, elle est déjà lancée.",
+  "summary": "Le mage et l'archer en fuite rapportent ce qu'ils ont vu. Pour la Nuit, le vol de l'amulette est une insulte directe au conseil des trois Ezen, et le guerrier tué doit être payé. Les descriptions d'une drow et d'un tiefling circulent parmi les écoutes, qui surveillent les portes de la montagne, les tavernes et la Guilde des Aventuriers.",
   "linked": [
    "S2",
    "C9"
   ],
-  "status": "a_valider",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -876,7 +832,6 @@
    "S15",
    "S4"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -897,7 +852,6 @@
    "S16",
    "C6"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -918,7 +872,6 @@
    "S6",
    "C24"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -938,7 +891,6 @@
   "linked": [
    "S17"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -960,7 +912,6 @@
    "C23",
    "C13"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -980,7 +931,6 @@
   "linked": [
    "S18"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1002,7 +952,6 @@
    "S14",
    "C20"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1024,7 +973,6 @@
    "C10",
    "C19"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1045,7 +993,6 @@
    "S10",
    "C10"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1066,7 +1013,6 @@
    "S9",
    "S10"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1087,7 +1033,6 @@
    "S11",
    "S5"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,
@@ -1107,7 +1052,6 @@
   "linked": [
    "S11"
   ],
-  "status": "etabli",
   "visibility": "mj",
   "chronicle": true,
   "session": 1,

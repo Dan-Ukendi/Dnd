@@ -4,8 +4,7 @@
 {% if item.href %}<a href="{{ item.href }}"{{ item.href | boost }}>{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
 {%- endmacro %}
 
-{% macro review_pills(item) -%}
-{% if item.status == "a_valider" %}<span class="pill pill--warn">À valider</span>{% endif %}
+{% macro visibility_pill(item) -%}
 {% if item.visibility == "mj" %}<span class="pill pill--muted">MJ seulement</span>{% endif %}
 {%- endmacro %}
 
@@ -34,7 +33,7 @@
       {% if member.title %}<span class="member__role">{{ member.title }}</span>{% endif %}
       {% if member.organisation %}<span class="member__org">{{ link_to(member.organisation) }}</span>{% endif %}
     </span>
-    <span class="member__pills">{{ review_pills(member) }}</span>
+    <span class="member__pills">{{ visibility_pill(member) }}</span>
   </li>
   {% endfor %}
 </ul>
@@ -86,7 +85,7 @@
       <span class="place-card__meta">{{ card.kind_label }}{% if card.location %} · {{ card.location }}{% endif %}</span>
     </span>
     <span class="place-card__pills">
-      {{ review_pills(card) }}
+      {{ visibility_pill(card) }}
       {% if card.sub_places %}<span class="place-card__count">{{ card.sub_places | length }} {{ "lieu" if card.sub_places | length == 1 else "lieux" }}</span>{% endif %}
     </span>
     {{ ui("chevron", "icon place-card__chevron") }}
@@ -143,7 +142,7 @@
       {% if node.scope %}<span class="pill tree__scope" title="Étendue du pouvoir">{{ node.scope }}</span>{% endif %}
       {% if node.site %}<span class="pill pill--muted" title="Lieu d'affectation">{{ node.site }}</span>{% endif %}
       {% if node.reports_to %}<span class="pill pill--muted">Relève de {{ node.reports_to }}</span>{% endif %}
-      {{ review_pills(node.member) }}
+      {{ visibility_pill(node.member) }}
     </span>
   </div>
   {% if node.source or node.member.gm_notes %}

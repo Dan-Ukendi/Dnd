@@ -56,7 +56,7 @@ def event_row(code: str, title: str, start: int, end: int | None = None, **extra
 
 
 SMALL_DATASET = [
-    event_row("B1", "Création de l'Empire", 0, visibility="joueurs", status="etabli"),
+    event_row("B1", "Création de l'Empire", 0, visibility="joueurs"),
     event_row("H1", "Complot des Ombres", 120, linked=["B1"]),
     event_row("B7", "Révolte des Échos", 749, visibility="joueurs", linked=["H1"]),
     event_row(
@@ -121,7 +121,6 @@ def test_year_display() -> None:
         ({"start_year": "an 5"}, "invalid_year"),
         ({"importance": "capital"}, "invalid_importance"),
         ({"visibility": "public"}, "invalid_visibility"),
-        ({"status": "valide"}, "invalid_status"),
         ({"day": "J3"}, "invalid_day"),
         ({"order": "deux"}, "invalid_order"),
         ({"session": 0}, "invalid_session"),
@@ -252,7 +251,6 @@ def dm_pages(chrono: Chrono) -> list[str]:
 def dm_actions(chrono: Chrono) -> list[tuple[str, dict[str, str]]]:
     hidden = event_id(chrono, "H1")
     return [
-        (f"/mj/chronologie/evenements/{hidden}/statut", {"status": "etabli"}),
         (f"/mj/chronologie/evenements/{hidden}/visibilite", {"visibility": "joueurs"}),
         (
             f"/mj/chronologie/evenements/{hidden}/chronique",
@@ -283,7 +281,7 @@ def test_anonymous_is_redirected_and_cannot_act(
         assert response.headers["location"] == "/connexion", path
     db.expire_all()
     hidden = db.get(TimelineEvent, event_id(chrono, "H1"))
-    assert (hidden.status, hidden.visibility, hidden.modified_by_dm) == ("a_valider", "mj", False)
+    assert (hidden.visibility, hidden.modified_by_dm) == ("mj", False)
     assert db.scalar(select(func.count()).select_from(TimelineEra)) == 0
 
 
@@ -368,7 +366,7 @@ def test_player_cannot_use_dm_actions(client: TestClient, chrono: Chrono, db: Se
         assert response.status_code == 404, path
     db.expire_all()
     hidden = db.get(TimelineEvent, event_id(chrono, "H1"))
-    assert (hidden.status, hidden.visibility, hidden.chronicle) == ("a_valider", "mj", False)
+    assert (hidden.visibility, hidden.chronicle) == ("mj", False)
     assert not hidden.modified_by_dm
     assert db.scalar(select(func.count()).select_from(TimelineEventLink)) == 3
     assert db.scalar(select(func.count()).select_from(TimelineEventFiche)) == 1
@@ -397,7 +395,7 @@ def test_dm_can_reach_every_page_and_use_every_action(
     assert response.status_code == 303
     db.expire_all()
     hidden = db.get(TimelineEvent, hidden_id)
-    assert (hidden.status, hidden.visibility) == ("etabli", "joueurs")
+    assert hidden.visibility == "joueurs"
     assert (hidden.chronicle, hidden.session, hidden.day, hidden.sort_order) == (True, 2, "J2", 7)
     assert hidden.modified_by_dm
     titles = set(
@@ -453,7 +451,7 @@ def test_dm_sees_hidden_events_and_world_anvil_link(
     page = client.get(f"/mj/chronologie?evenement={event_id(chrono, 'H1')}").text
     assert "Complot des Ombres" in page
     assert "Long sommeil du Joug" in page
-    assert "à valider" in page
+    assert "à valider" not in page and "À valider" not in page
     assert (
         "https://www.worldanvil.com/world/timeline/history/"
         "68065f12-ac60-4e14-b568-a3e211b3741a/edit"
@@ -498,7 +496,6 @@ def test_dm_chronicle_form_is_validated(
 @pytest.mark.parametrize(
     ("path", "data"),
     [
-        ("/statut", {"status": "valide"}),
         ("/visibilite", {"visibility": "tous"}),
         ("/liens", {"target_id": "0"}),
         ("/fiches", {"title": ""}),
@@ -512,7 +509,7 @@ def test_dm_actions_reject_invalid_values(
     post_form(client, f"/mj/chronologie/evenements/{hidden}{path}", data, "/connexion/mj")
     db.expire_all()
     event = db.get(TimelineEvent, hidden)
-    assert (event.status, event.visibility, event.modified_by_dm) == ("a_valider", "mj", False)
+    assert (event.visibility, event.modified_by_dm) == ("mj", False)
 
 
 def test_era_settings_reject_invalid_colors_and_unknown_eras(
@@ -540,8 +537,8 @@ def test_redirect_target_stays_inside_the_chronology(client: TestClient, chrono:
     hidden = event_id(chrono, "H1")
     response = post_form(
         client,
-        f"/mj/chronologie/evenements/{hidden}/statut",
-        {"status": "etabli", "retour": "//evil.example/"},
+        f"/mj/chronologie/evenements/{hidden}/visibilite",
+        {"visibility": "joueurs", "retour": "//evil.example/"},
         "/connexion/mj",
     )
     assert response.headers["location"] == f"/mj/chronologie/evenements/{hidden}"
@@ -561,8 +558,6 @@ def test_csrf_is_required_on_chronology_posts(
 
 
 def test_filters_ignore_unknown_values_and_hide_dm_filters_from_players() -> None:
-    params = {"ere": "inconnue", "importance": "majeur", "origine": "canon", "statut": "etabli"}
+    params = {"ere": "inconnue", "importance": "majeur", "origine": "canon"}
     assert Filters.parse(params, dm=False) == Filters(importance="majeur")
-    assert Filters.parse(params, dm=True) == Filters(
-        importance="majeur", origin="canon", status="etabli"
-    )
+    assert Filters.parse(params, dm=True) == Filters(importance="majeur", origin="canon")

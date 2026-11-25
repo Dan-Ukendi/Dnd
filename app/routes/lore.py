@@ -29,7 +29,6 @@ VIEWS = ("legendes", "artefacts", "ouvrages", "frise", "fiches")
 ERROR_MESSAGES = {
     "title": "Le titre est obligatoire (300 caractères au plus).",
     "text": "Le texte est trop long.",
-    "review_note": "La note « À vérifier » est trop longue.",
     "start_year": "L'année de début doit être un nombre entier (négatif avant l'An 0).",
     "end_year": "L'année de fin doit suivre l'année de début.",
     "era": "Ère inconnue.",
@@ -107,8 +106,6 @@ def lore_page_context(
         "book_preview": books[:3],
         "artefact_preview": cards[:4],
     }
-    if dm:
-        context["reviews"] = service.review_counts(db)
     if view == "legendes":
         context.update(_legend_context(request, db, legends, dm=dm, eras=eras))
     elif view == "artefacts":
@@ -146,7 +143,6 @@ def _legend_context(
     }
     if dm:
         context["story_form"] = _story_options(db, eras)
-        context["unplaced"] = service.unplaced_entries(db)
     return context
 
 
@@ -168,11 +164,6 @@ def _artefact_context(
         "rarities": [(key, label, rarity_counts[key]) for key, label in service.RARITIES],
         "object_types": sorted(types.items(), key=lambda item: item[1][0]),
     }
-    if dm:
-        curated = {card.article.wa_id for card in cards}
-        context["uncurated_items"] = [
-            article for article in service.item_articles(db) if article.wa_id not in curated
-        ]
     return context
 
 
@@ -440,7 +431,6 @@ def _entry_form(
     article_id: str,
     event_id: str,
     gm_only: str,
-    review_note: str,
     story_id: str,
     placement: str,
     position: str,
@@ -458,7 +448,6 @@ def _entry_form(
         article_id=article_id,
         event_id=event_id,
         gm_only=gm_only == "1",
-        review_note=review_note,
         story_id=story_id,
         placement=placement or "part",
         position=position,
@@ -483,7 +472,6 @@ def update_entry(
     article_id: Short = "",
     event_id: Short = "",
     gm_only: Flag = "",
-    review_note: Long = "",
     story_id: Short = "",
     placement: Short = "",
     position: Short = "",
@@ -502,7 +490,6 @@ def update_entry(
         article_id,
         event_id,
         gm_only,
-        review_note,
         story_id,
         placement,
         position,
@@ -515,14 +502,6 @@ def update_entry(
         _fail(request, db, exc, "Entrée non enregistrée")
     else:
         flash(request, f"Entrée « {entry.title} » enregistrée.")
-    return RedirectResponse(f"/mj/lore/{entry_id}", status_code=303)
-
-
-@dm_router.post("/lore/{entry_id:int}/verifie")
-def verify_entry(request: Request, entry_id: int, db: DbSession, dm: CurrentDm) -> Response:
-    entry = _get_dm_entry(db, entry_id)
-    service.clear_entry_review(db, entry)
-    flash(request, f"Entrée « {entry.title} » marquée vérifiée.")
     return RedirectResponse(f"/mj/lore/{entry_id}", status_code=303)
 
 
@@ -574,7 +553,6 @@ def _story_form(
     artefact_id: str,
     legend_id: str,
     gm_only: str,
-    review_note: str,
 ) -> service.StoryForm:
     return service.StoryForm(
         title=title,
@@ -592,7 +570,6 @@ def _story_form(
         artefact_id=artefact_id,
         legend_id=legend_id,
         gm_only=gm_only == "1",
-        review_note=review_note,
     )
 
 
@@ -617,7 +594,6 @@ def create_story(
     artefact_id: Short = "",
     legend_id: Short = "",
     gm_only: Flag = "",
-    review_note: Long = "",
 ) -> Response:
     form = _story_form(
         title,
@@ -635,7 +611,6 @@ def create_story(
         artefact_id,
         legend_id,
         gm_only,
-        review_note,
     )
     view = "ouvrages" if kind == service.BOOK else "legendes"
     try:
@@ -668,7 +643,6 @@ def update_story(
     artefact_id: Short = "",
     legend_id: Short = "",
     gm_only: Flag = "",
-    review_note: Long = "",
 ) -> Response:
     story = _get_dm_story(db, story_id)
     form = _story_form(
@@ -687,7 +661,6 @@ def update_story(
         artefact_id,
         legend_id,
         gm_only,
-        review_note,
     )
     try:
         service.update_story(db, story, form)
@@ -695,14 +668,6 @@ def update_story(
         _fail(request, db, exc, "Récit non enregistré")
     else:
         flash(request, f"« {story.title} » enregistré.")
-    return RedirectResponse(service.story_href(story, service.DM_SCOPE), status_code=303)
-
-
-@dm_router.post("/lore/recits/{story_id}/verifie")
-def verify_story(request: Request, story_id: int, db: DbSession, dm: CurrentDm) -> Response:
-    story = _get_dm_story(db, story_id)
-    service.clear_story_review(db, story)
-    flash(request, f"« {story.title} » marqué vérifié.")
     return RedirectResponse(service.story_href(story, service.DM_SCOPE), status_code=303)
 
 
@@ -896,7 +861,6 @@ def update_artefact(
     holder: Short = "",
     location: Short = "",
     status: Short = "",
-    review_note: Long = "",
     gm_only: Flag = "",
 ) -> Response:
     artefact = _get_artefact(db, wa_id)
@@ -914,7 +878,6 @@ def update_artefact(
         "holder": holder,
         "location": location,
         "status": status,
-        "review_note": review_note,
     }
     try:
         service.update_artefact(db, artefact, values, gm_only == "1")
@@ -923,13 +886,6 @@ def update_artefact(
         flash(request, ARTEFACT_ERROR, "error")
     else:
         flash(request, "Caractéristiques enregistrées.")
-    return RedirectResponse(f"/mj/articles/{wa_id}", status_code=303)
-
-
-@dm_router.post("/artefacts/{wa_id}/verifie")
-def verify_artefact(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -> Response:
-    service.clear_artefact_review(db, _get_artefact(db, wa_id))
-    flash(request, "Fiche marquée vérifiée.")
     return RedirectResponse(f"/mj/articles/{wa_id}", status_code=303)
 
 

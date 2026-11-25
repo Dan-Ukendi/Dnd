@@ -17,7 +17,6 @@ from app.chronology import (
     ERAS_BY_SLUG,
     MILESTONES,
     Era,
-    EventStatus,
     EventVisibility,
     Importance,
     Milestone,
@@ -66,7 +65,6 @@ class EventData:
     place: str | None
     summary: str
     linked: tuple[str, ...] = ()
-    status: str = EventStatus.PENDING
     visibility: str = EventVisibility.DM
     chronicle: bool = False
     session: int | None = None
@@ -167,12 +165,6 @@ def validate_event_data(raw: Mapping[str, Any]) -> EventData:
         place=_text(raw.get("place"), MAX_PLACE) or None,
         summary=_text(raw.get("summary"), MAX_SUMMARY),
         linked=tuple(dict.fromkeys(item.strip() for item in linked if item.strip())),
-        status=_choice(
-            raw.get("status"),
-            [item.value for item in EventStatus],
-            "invalid_status",
-            EventStatus.PENDING,
-        ),
         visibility=_choice(
             raw.get("visibility"),
             [item.value for item in EventVisibility],
@@ -209,7 +201,6 @@ def apply_content(event: TimelineEvent, data: EventData) -> None:
 
 
 def _apply_app_fields(event: TimelineEvent, data: EventData) -> None:
-    event.status = data.status
     event.visibility = data.visibility
     event.chronicle = data.chronicle
     event.session = data.session
@@ -226,7 +217,6 @@ def _event_state(event: TimelineEvent) -> tuple[object, ...]:
         event.place,
         event.importance,
         event.origin,
-        event.status,
         event.visibility,
         event.chronicle,
         event.session,
@@ -383,7 +373,6 @@ class Filters:
     era: str = ""
     importance: str = ""
     origin: str = ""
-    status: str = ""
     q: str = ""
 
     @classmethod
@@ -396,20 +385,18 @@ class Filters:
             era=pick("ere", ERAS_BY_SLUG),
             importance=pick("importance", [item.value for item in Importance]),
             origin=pick("origine", [item.value for item in Origin]) if dm else "",
-            status=pick("statut", [item.value for item in EventStatus]) if dm else "",
             q=params.get("q", "").strip()[:100],
         )
 
     @property
     def active(self) -> bool:
-        return any((self.era, self.importance, self.origin, self.status, self.q))
+        return any((self.era, self.importance, self.origin, self.q))
 
     def params(self) -> dict[str, str]:
         pairs = {
             "ere": self.era,
             "importance": self.importance,
             "origine": self.origin,
-            "statut": self.status,
             "q": self.q,
         }
         return {key: value for key, value in pairs.items() if value}
@@ -424,8 +411,6 @@ class Filters:
         if self.importance and event.importance != self.importance:
             return False
         if self.origin and event.origin != self.origin:
-            return False
-        if self.status and event.status != self.status:
             return False
         if self.q:
             haystack = [event.title, event.summary, event.place or ""]
@@ -535,11 +520,6 @@ def _touch(db: Session, event: TimelineEvent) -> None:
     event.modified_by_dm = True
     event.updated_at = utcnow()
     db.commit()
-
-
-def set_status(db: Session, event: TimelineEvent, status: str) -> None:
-    event.status = _choice(status, [item.value for item in EventStatus], "invalid_status")
-    _touch(db, event)
 
 
 def set_visibility(db: Session, event: TimelineEvent, visibility: str) -> None:
@@ -715,10 +695,6 @@ class Marker:
             if level in levels:
                 return level
         return Importance.MINOR
-
-    @property
-    def pending(self) -> bool:
-        return all(view.event.status == EventStatus.PENDING for view in self.events)
 
 
 @dataclass(frozen=True)

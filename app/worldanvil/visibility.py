@@ -22,7 +22,7 @@ def assess_player_visibility(article: dict[str, Any]) -> Visibility:
     if article.get("state") != "public":
         return Visibility(False, "Article privé sur World Anvil")
     if article.get("isDraft") is not False:
-        return Visibility(False, "Brouillon ou statut de publication inconnu")
+        return Visibility(False, "Non publié sur World Anvil ou statut de publication inconnu")
     if article.get("subscribergroups"):
         return Visibility(False, "Réservé à des groupes d'abonnés")
     if article.get("secrets"):

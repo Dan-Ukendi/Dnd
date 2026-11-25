@@ -488,7 +488,6 @@ class TimelineEvent(Base):
             "importance IN ('majeur', 'notable', 'mineur')", name="ck_timeline_events_importance"
         ),
         CheckConstraint("origin IN ('canon', 'ajout')", name="ck_timeline_events_origin"),
-        CheckConstraint("status IN ('etabli', 'a_valider')", name="ck_timeline_events_status"),
         CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_timeline_events_visibility"),
         CheckConstraint("day IS NULL OR day IN ('J1', 'J2')", name="ck_timeline_events_day"),
         CheckConstraint("session IS NULL OR session >= 1", name="ck_timeline_events_session"),
@@ -504,7 +503,6 @@ class TimelineEvent(Base):
     place: Mapped[str | None] = mapped_column(String(300))
     importance: Mapped[str] = mapped_column(String(10))
     origin: Mapped[str] = mapped_column(String(10))
-    status: Mapped[str] = mapped_column(String(10), default="a_valider", server_default="a_valider")
     visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
     chronicle: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     session: Mapped[int | None] = mapped_column(Integer)
@@ -596,7 +594,6 @@ class Artefact(Base):
     holder: Mapped[str] = mapped_column(String(200), default="", server_default="")
     location: Mapped[str] = mapped_column(String(300), default="", server_default="")
     status: Mapped[str] = mapped_column(String(200), default="", server_default="")
-    review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
     gm_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
@@ -673,7 +670,6 @@ class LoreStory(Base):
         ForeignKey("lore_stories.id", ondelete="SET NULL"), index=True
     )
     gm_only: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
-    review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
     )
@@ -735,7 +731,6 @@ class LoreEntry(Base):
     )
     placement: Mapped[str] = mapped_column(String(20), default="part", server_default="part")
     gm_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
-    review_note: Mapped[str] = mapped_column(Text, default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
     )
@@ -761,7 +756,6 @@ PLACE_KINDS = (
     "lieu",
 )
 STRUCTURE_VISIBILITIES = ("mj", "joueurs")
-STRUCTURE_STATUSES = ("etabli", "a_valider")
 
 
 class Place(Base):
@@ -774,7 +768,6 @@ class Place(Base):
         ),
         CheckConstraint("parent_id IS NULL OR parent_id <> id", name="ck_places_parent"),
         CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_places_visibility"),
-        CheckConstraint("status IN ('etabli', 'a_valider')", name="ck_places_status"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -798,7 +791,6 @@ class Place(Base):
     description: Mapped[str] = mapped_column(Text, default="", server_default="")
     gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
-    status: Mapped[str] = mapped_column(String(10), default="a_valider", server_default="a_valider")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
@@ -816,7 +808,6 @@ class Position(Base):
         ),
         CheckConstraint("superior_id IS NULL OR superior_id <> id", name="ck_positions_superior"),
         CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_positions_visibility"),
-        CheckConstraint("status IN ('etabli', 'a_valider')", name="ck_positions_status"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -848,7 +839,6 @@ class Position(Base):
     source_anchor: Mapped[str] = mapped_column(String(300), default="", server_default="")
     gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
     visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
-    status: Mapped[str] = mapped_column(String(10), default="a_valider", server_default="a_valider")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()

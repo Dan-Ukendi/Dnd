@@ -21,10 +21,11 @@ NEW_RUMOUR = "Elle sait qui a vraiment lancé la rumeur de 813 et a peur de le d
 
 
 @pytest.fixture
-def alembic_config() -> Iterator[Config]:
+def alembic_config(db: Session) -> Iterator[Config]:
     config = Config("alembic.ini")
     config.attributes["configure_logger"] = False
     yield config
+    db.rollback()
     command.upgrade(config, "head")
 
 
@@ -110,6 +111,7 @@ def snapshot(db: Session) -> tuple[object, ...]:
 def test_upgrade_moves_the_present_to_829(
     db: Session, legacy: dict[str, int], alembic_config: Config
 ) -> None:
+    db.rollback()
     command.upgrade(alembic_config, "head")
     shifted, events, relation, lore, backstory, summary = snapshot(db)
     assert shifted == {
@@ -141,6 +143,7 @@ def test_downgrade_restores_the_old_years(
     db: Session, legacy: dict[str, int], alembic_config: Config
 ) -> None:
     before = snapshot(db)
+    db.rollback()
     command.upgrade(alembic_config, "head")
     db.rollback()
     command.downgrade(alembic_config, "0015")
@@ -150,9 +153,11 @@ def test_downgrade_restores_the_old_years(
 def test_migration_is_idempotent(
     db: Session, legacy: dict[str, int], alembic_config: Config
 ) -> None:
+    db.rollback()
     command.upgrade(alembic_config, "head")
     first = snapshot(db)
     db.rollback()
     command.downgrade(alembic_config, "0015")
+    db.rollback()
     command.upgrade(alembic_config, "head")
     assert snapshot(db) == first
