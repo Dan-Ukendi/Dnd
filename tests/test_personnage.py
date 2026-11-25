@@ -223,7 +223,7 @@ def test_dm_tag_list_filters_cards_and_switches_tags(
     login(client, "maitre")
     page = client.get("/mj/articles?section=personnage&tag=encounter").text
     assert 'class="lore-filter tag-chip tag-chip--encounter"' in page
-    assert 'aria-current="true">Rencontre campagne<span>4</span>' in page
+    assert 'aria-current="true">Rencontre campagne</a>' in page
     for title in ("Kratéros", "Tuya", "Gérard", "Octave"):
         assert f'<h3 class="card__title">{title}</h3>' in page
     assert '<h3 class="card__title">Khaetar Voss</h3>' not in page

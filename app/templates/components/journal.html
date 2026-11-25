@@ -2,9 +2,7 @@
 
 {% macro journal_shelf(shelves, base, title, lead, show_names=False) -%}
 <section class="journal-shelf reveal reveal-delay-1" aria-labelledby="journal-shelf-title">
-  {% set total = namespace(count=0) %}
-  {% for shelf in shelves %}{% set total.count = total.count + shelf.entries | length %}{% endfor %}
-  <h2 class="section-group__title" id="journal-shelf-title">{{ ui("quill") }}{{ title }}<span>{{ total.count }}</span></h2>
+  <h2 class="section-group__title" id="journal-shelf-title">{{ ui("quill") }}{{ title }}</h2>
   {% if lead %}<p class="journal-shelf__lead">{{ lead }}</p>{% endif %}
   <div class="journal-shelf__groups{% if show_names %} journal-shelf__groups--named{% endif %}">
   {% for shelf in shelves %}

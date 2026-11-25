@@ -1,8 +1,8 @@
 {% macro tabs(prefix, label, items, modifier="") -%}
 <div class="tabs{% if modifier %} tabs--{{ modifier }}{% endif %}" data-tabs>
   <div class="tabs__list" role="tablist" aria-label="{{ label }}">
-    {% for key, title, count in items %}
-    <button type="button" class="tabs__tab" role="tab" id="{{ prefix }}-tab-{{ key }}" aria-controls="{{ prefix }}-{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab="{{ key }}">{{ title }}{% if count %}<span class="tabs__count">{{ count }}</span>{% endif %}</button>
+    {% for key, title in items %}
+    <button type="button" class="tabs__tab" role="tab" id="{{ prefix }}-tab-{{ key }}" aria-controls="{{ prefix }}-{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab="{{ key }}">{{ title }}</button>
     {% endfor %}
   </div>
 {{ caller() }}

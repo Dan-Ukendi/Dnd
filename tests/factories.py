@@ -108,3 +108,14 @@ def login(client: TestClient, user_login: str, password: str = PASSWORD) -> Resp
 def post_form(client: TestClient, path: str, data: dict[str, str], csrf_page: str) -> Response:
     token = csrf_token(client, csrf_page)
     return client.post(path, data={**data, "csrf_token": token}, follow_redirects=False)
+
+
+BARE_NUMBER_RE = re.compile(
+    r"<span(?![^>]*(?:visually-hidden|resource__uses))[^>]*>\s*\d+\s*</span>"
+)
+COUNT_BADGE_CLASSES = ("tabs__count", "tree__count", "frise__count", "place-focus__level")
+
+
+def bare_numbers(page: str) -> list[str]:
+    found = BARE_NUMBER_RE.findall(page)
+    return found + [name for name in COUNT_BADGE_CLASSES if name in page]

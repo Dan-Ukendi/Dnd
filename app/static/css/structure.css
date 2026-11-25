@@ -422,14 +422,6 @@ a.member__name:hover {
   outline-offset: 4px;
 }
 
-.place-focus__level {
-  margin-left: auto;
-  color: var(--parchment-faint);
-  font-family: var(--font-ui);
-  font-size: var(--text-small);
-  letter-spacing: 0.06em;
-}
-
 .place-focus__more > summary {
   width: fit-content;
   color: var(--parchment-dim);
@@ -462,13 +454,6 @@ a.member__name:hover {
   color: var(--parchment);
   font-size: 1.15rem;
   letter-spacing: var(--tracking-display);
-}
-
-.place-level-head__title span,
-.tree-section__title span {
-  color: var(--parchment-faint);
-  font-family: var(--font-ui);
-  font-size: var(--text-small);
 }
 
 .tree-section {
@@ -589,19 +574,6 @@ a.tree__name:hover {
   letter-spacing: 0.03em;
 }
 
-.tree__count {
-  display: grid;
-  place-items: center;
-  min-width: 1.6rem;
-  height: 1.6rem;
-  padding: 0 0.4rem;
-  border: 1px solid var(--gold-line);
-  border-radius: 999px;
-  color: var(--gold-bright);
-  font-family: var(--font-ui);
-  font-size: 0.74rem;
-}
-
 .tree__extra {
   display: grid;
   gap: 0.5rem;
@@ -690,10 +662,6 @@ a.tree__name:hover {
 
   .tree__extra {
     padding-left: 0.6rem;
-  }
-
-  .place-focus__level {
-    margin-left: 0;
   }
 }
 

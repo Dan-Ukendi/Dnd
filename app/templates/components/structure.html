@@ -22,13 +22,13 @@
 </div>
 {% if hierarchy.heads %}
 <section class="tree-section" aria-labelledby="hierarchie-sommet">
-  <h3 class="tree-section__title" id="hierarchie-sommet">Sommet<span>{{ hierarchy.heads | length }}</span></h3>
+  <h3 class="tree-section__title" id="hierarchie-sommet">Sommet</h3>
   {{ tree(hierarchy.heads, "structure-sommet", "Sommet de la hiérarchie") }}
 </section>
 {% endif %}
 {% if hierarchy.orphans %}
 <section class="tree-section" aria-labelledby="hierarchie-sans-superieur">
-  <h3 class="tree-section__title" id="hierarchie-sans-superieur">Sans supérieur défini<span>{{ hierarchy.orphans | length }}</span></h3>
+  <h3 class="tree-section__title" id="hierarchie-sans-superieur">Sans supérieur défini</h3>
   {{ tree(hierarchy.orphans, "structure-sans-superieur", "Personnes sans supérieur défini") }}
 </section>
 {% endif %}

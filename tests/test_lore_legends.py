@@ -23,7 +23,14 @@ from app.models import (
 from app.services import lore as service
 from app.services.lore_sections import narrative_sections
 from app.services.structure_excerpts import AnchorStatus, find_excerpt
-from tests.factories import login, make_article, make_character, make_user, post_form
+from tests.factories import (
+    bare_numbers,
+    login,
+    make_article,
+    make_character,
+    make_user,
+    post_form,
+)
 from tests.test_sync import FakeSource, run
 
 JOUG_ID = "dcdedb4d-686e-483d-a35d-137823b77eb1"
@@ -506,6 +513,7 @@ def test_gage_is_an_artefact_without_legend(client: TestClient, world: World) ->
     login(client, "maitre")
     grid = client.get("/mj/articles?section=lore&vue=artefacts")
     assert "Le Gage d&#39;Arès" in grid.text
+    assert bare_numbers(grid.text) == []
     assert "Le Joug de Malvaar" in grid.text
     fiche = client.get(f"/mj/articles/{GAGE_ID}")
     assert "Légende associée" not in fiche.text
@@ -727,6 +735,9 @@ def test_legend_types_are_configurable(
     chrono = client.get("/mj/articles?section=lore&vue=legendes").text
     order = [chrono.index(f'lore-story__title">{title}') for title in titles]
     assert order[2] < order[0] < order[1]
+    assert ">Chronique</a>" not in chrono and bare_numbers(chrono) == []
+    empty_type = client.get(f"/mj/articles?section=lore&vue=legendes&type={chronicle.id}").text
+    assert 'aria-current="true">Chronique</a>' in empty_type
     search = client.get("/mj/articles?section=lore&vue=legendes&q=heliopolis")
     assert "La fondation de l&#39;Héliopolis" in search.text
     assert "Le Joug de Malvaar</span>" not in search.text

@@ -31,7 +31,6 @@
     <h3 class="place-focus__title" id="territoire-niveau" tabindex="-1" data-territory-focus>{{ focus.name }}</h3>
     <span class="pill">{{ focus.kind_label }}</span>
     {{ review_pills(focus) }}
-    <span class="place-focus__level">Niveau {{ territory.crumbs | length }}</span>
   </div>
   {% if territory.crumbs | length > 1 %}
   <details class="place-focus__more" open>
@@ -60,7 +59,7 @@
 </section>
 {% if territory.cards %}
 <div class="place-level-head">
-  <h3 class="place-level-head__title">Lieux contenus<span>{{ territory.cards | length }}</span></h3>
+  <h3 class="place-level-head__title">Lieux contenus</h3>
   {{ disclosure_toolbar("structure-places", "Cartes des lieux") }}
 </div>
 <ul class="place-list" id="structure-places">

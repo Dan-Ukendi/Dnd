@@ -143,7 +143,6 @@
       {% if node.scope %}<span class="pill tree__scope" title="Étendue du pouvoir">{{ node.scope }}</span>{% endif %}
       {% if node.site %}<span class="pill pill--muted" title="Lieu d'affectation">{{ node.site }}</span>{% endif %}
       {% if node.reports_to %}<span class="pill pill--muted">Relève de {{ node.reports_to }}</span>{% endif %}
-      {% if count %}<span class="tree__count" aria-hidden="true">{{ count }}</span>{% endif %}
       {{ review_pills(node.member) }}
     </span>
   </div>

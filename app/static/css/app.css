@@ -1751,14 +1751,6 @@ a.ledger-list__title:hover {
   content: "";
 }
 
-.section-group__title span {
-  order: 2;
-  color: var(--parchment-faint);
-  font-family: var(--font-ui);
-  font-size: var(--text-small);
-  letter-spacing: 0.1em;
-}
-
 .form--inline {
   align-items: end;
 }
@@ -2888,18 +2880,6 @@ input[type="file"]:focus-visible {
   transform: scaleX(1);
 }
 
-.tabs__count {
-  min-width: 1.4rem;
-  padding: 0 0.4rem;
-  border: 1px solid var(--gold-hair);
-  border-radius: 999px;
-  color: var(--parchment-dim);
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  text-align: center;
-}
-
 .tabs__panel + .tabs__panel {
   margin-top: 2.5rem;
 }
@@ -2953,13 +2933,6 @@ input[type="file"]:focus-visible {
   height: 1px;
   background: linear-gradient(90deg, var(--gold-line), transparent);
   content: "";
-}
-
-.relation-group__title span {
-  order: 2;
-  color: var(--parchment-faint);
-  font-family: var(--font-ui);
-  font-size: var(--text-small);
 }
 
 .relation-group + .relation-group {
@@ -3492,10 +3465,6 @@ input[type="file"]:focus-visible {
     right: 0.4rem;
     left: 0.4rem;
   }
-
-  .tabs__count {
-    display: none;
-  }
 }
 
 /* Combat actions */
@@ -3913,14 +3882,6 @@ input[type="file"]:focus-visible {
   color: var(--gold);
 }
 
-.journal-notes__title span {
-  margin-left: auto;
-  color: var(--parchment-faint);
-  font-family: var(--font-ui);
-  font-size: var(--text-small);
-  letter-spacing: 0.1em;
-}
-
 .journal-notes__list {
   display: grid;
   gap: 0.6rem;
@@ -4044,11 +4005,6 @@ input[type="file"]:focus-visible {
   letter-spacing: 0.06em;
   text-decoration: none;
   transition: border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
-}
-
-.lore-filter span {
-  color: var(--parchment-faint);
-  font-variant-numeric: tabular-nums;
 }
 
 .lore-filter:hover,

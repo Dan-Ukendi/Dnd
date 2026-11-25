@@ -16,7 +16,7 @@ from app.models import Place, Position, Role, User, WaArticle
 from app.services.structure_excerpts import AnchorStatus, find_excerpt
 from app.services.structure_import import import_structures, load_structure_file
 from app.services.sync import sync_world
-from tests.factories import login, make_article, make_character, make_user
+from tests.factories import bare_numbers, login, make_article, make_character, make_user
 from tests.test_sync import WORLD, FakeSource
 
 GUILD = """[h|g0]La Guilde[/h]
@@ -482,7 +482,9 @@ def test_dm_organisation_page_has_territory_and_hierarchy_tabs(
     assert "Branche présentée" in page
     assert 'role="tree"' in page and 'role="treeitem"' in page and 'role="group"' in page
     assert 'aria-expanded="true"' in page and 'aria-level="2"' in page
-    assert "Sommet" in page and "Sans supérieur défini" in page
+    assert "Sommet</h3>" in page and "Sans supérieur défini</h3>" in page
+    assert ">Territoire</button>" in page and ">Hiérarchie</button>" in page
+    assert bare_numbers(page) == []
     assert "Brunhild" in page and "Titulaire non nommé" in page
     assert "Tout déplier" in page and "Tout replier" in page
     assert "Incohérence : note réservée au MJ" in page
@@ -505,6 +507,8 @@ def test_dm_monde_page_navigates_levels_with_a_breadcrumb(
     crumbs = re.search(r'aria-label="Niveau du territoire">(.*?)</nav>', level, re.S).group(1)
     assert "Le Khaanat" in crumbs and 'aria-current="location">La Cité' in crumbs
     assert "La taverne" in level and "Le marché sombre" in level
+    assert "Lieux contenus</h3>" in level
+    assert bare_numbers(page) == [] and bare_numbers(level) == []
     assert "La Nuit" in level and "Note secrète du MJ sur la taverne" in level
     fragment = client.get(
         f"/mj/articles/{world.nation.wa_id}/territoire?lieu=taverne",

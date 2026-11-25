@@ -14,17 +14,17 @@
   </form>
 </div>
 <nav class="lore-filters" aria-label="Filtrer par rareté">
-  <a class="lore-filter" href="{{ list_base }}{{ query_param }}" {% if not filters.rarity and not filters.type and not filters.review %}aria-current="true"{% endif %}>Tous<span>{{ artefact_total }}</span></a>
+  <a class="lore-filter" href="{{ list_base }}{{ query_param }}" {% if not filters.rarity and not filters.type and not filters.review %}aria-current="true"{% endif %}>Tous</a>
   {% for key, label, count in rarities if count %}
-  <a class="lore-filter" href="{{ list_base }}&amp;rarete={{ key }}{{ query_param }}" {% if filters.rarity == key %}aria-current="true"{% endif %}>{{ label }}<span>{{ count }}</span></a>
+  <a class="lore-filter" href="{{ list_base }}&amp;rarete={{ key }}{{ query_param }}" {% if filters.rarity == key %}aria-current="true"{% endif %}>{{ label }}</a>
   {% endfor %}
   {% if object_types | length > 1 %}
   {% for key, (label, count) in object_types %}
-  <a class="lore-filter" href="{{ list_base }}&amp;type={{ key | urlencode }}{{ query_param }}" {% if filters.type == key %}aria-current="true"{% endif %}>{{ label }}<span>{{ count }}</span></a>
+  <a class="lore-filter" href="{{ list_base }}&amp;type={{ key | urlencode }}{{ query_param }}" {% if filters.type == key %}aria-current="true"{% endif %}>{{ label }}</a>
   {% endfor %}
   {% endif %}
   {% if dm %}
-  <a class="lore-filter lore-filter--review" href="{{ list_base }}&amp;a_verifier=1" {% if filters.review %}aria-current="true"{% endif %}>À vérifier<span>{{ reviews.artefacts }}</span></a>
+  <a class="lore-filter lore-filter--review" href="{{ list_base }}&amp;a_verifier=1" {% if filters.review %}aria-current="true"{% endif %}>À vérifier</a>
   {% endif %}
 </nav>
 

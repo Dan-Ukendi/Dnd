@@ -20,7 +20,7 @@
 {% for key, items in groups %}
 {% set group_section = SECTIONS_BY_KEY[key] %}
 <section class="section-group" data-section="{{ key }}" aria-labelledby="groupe-{{ key }}">
-  {% if not section %}<h2 class="section-group__title" id="groupe-{{ key }}">{{ group_section.label }}<span>{{ items | length }}</span></h2>{% elif journals %}<h2 class="section-group__title" id="groupe-{{ key }}">Comptes rendus de session<span>{{ items | length }}</span></h2>{% endif %}
+  {% if not section %}<h2 class="section-group__title" id="groupe-{{ key }}">{{ group_section.label }}</h2>{% elif journals %}<h2 class="section-group__title" id="groupe-{{ key }}">Comptes rendus de session</h2>{% endif %}
   <ul class="card-grid stagger" {% if section %}aria-label="{{ group_section.label }}"{% endif %}>
     {% for article in items | natural_order %}
     <li>{{ card(article, "/joueur/articles/" ~ article.wa_id, True, person_badges.get(article.wa_id, []) if person_badges is defined else none) }}</li>

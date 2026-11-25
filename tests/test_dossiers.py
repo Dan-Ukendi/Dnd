@@ -13,6 +13,7 @@ from app.models import Character, CharacterArticle, CharacterRelation, Role, WaA
 from app.services.access import dm_render_context
 from app.services.dossiers import DossierError, build_dossier, import_dossier
 from tests.factories import (
+    bare_numbers,
     csrf_token,
     login,
     make_article,
@@ -175,6 +176,8 @@ def test_dm_sees_the_dossier_with_links(client: TestClient, db: Session, table: 
     assert "Né orphelin dans le Khaanat." in page
     assert f'href="/mj/articles/{table.krateros.wa_id}"' in page
     assert "Amulette bénie" in page
+    assert ">Relations</button>" in page and ">Inventaire</button>" in page
+    assert bare_numbers(page) == []
 
 
 def test_empty_dossier_shows_placeholders_for_characters(

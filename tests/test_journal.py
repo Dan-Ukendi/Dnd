@@ -12,7 +12,7 @@ from app.cli import main as cli_main
 from app.models import Character, CharacterArticle, CharacterJournalEntry, Role, WaArticle
 from app.services.access import dm_render_context
 from app.services.dossiers import DossierError, build_dossier, import_dossier
-from tests.factories import login, make_article, make_character, make_user
+from tests.factories import bare_numbers, login, make_article, make_character, make_user
 
 KHAETAR: dict[str, Any] = {
     "character": "Khaetar Voss",
@@ -179,7 +179,8 @@ def test_owner_reads_a_journal_entry(client: TestClient, db: Session, party: Par
     assert "Journal de Khaetar Voss" in page
     assert "Jours 1 et 2" in page
     assert "<strong>Gronk, fils de Brok</strong>" in page
-    assert "Pistes et questions" in page
+    assert "Pistes et questions</h2>" in page
+    assert bare_numbers(page) == []
     assert "<script>alert" not in page
     assert f'href="/joueur/journal/{party.keator.id}/2"' in page
     assert f'href="/joueur/articles/{party.khaetar_article.wa_id}"' in page

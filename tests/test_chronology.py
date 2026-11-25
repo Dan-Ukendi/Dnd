@@ -37,7 +37,7 @@ from app.services.chronology import (
     to_views,
     validate_event_data,
 )
-from tests.factories import login, make_article, make_user, post_form
+from tests.factories import bare_numbers, login, make_article, make_user, post_form
 
 
 def event_row(code: str, title: str, start: int, end: int | None = None, **extra: object) -> dict:
@@ -206,6 +206,16 @@ def test_frise_layout_clusters_same_year_events_and_keeps_bands_readable(db: Ses
     assert xs == sorted(xs)
 
 
+def test_frise_clusters_show_no_bare_count(client: TestClient, db: Session) -> None:
+    load_seed(db)
+    make_user(db, "maitre", Role.DM)
+    login(client, "maitre")
+    page = client.get("/mj/chronologie").text
+    assert 'class="frise__cluster' in page
+    assert re.search(r'frise__tip-years">An 829</span>\d+ événements</span>', page)
+    assert bare_numbers(page) == []
+
+
 @dataclass
 class Chrono:
     dm: User
@@ -371,7 +381,9 @@ def test_dm_can_reach_every_page_and_use_every_action(
     article = make_article(db, "Khaanat", template_type="settlement")
     login(client, "maitre")
     for path in dm_pages(chrono):
-        assert client.get(path).status_code == 200, path
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert bare_numbers(response.text) == [], path
     for path, data in dm_actions(chrono):
         response = post_form(client, path, data, "/connexion/mj")
         assert response.status_code == 303, path

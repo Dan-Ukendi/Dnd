@@ -29,7 +29,7 @@
   <div class="journal-notes reveal reveal-delay-2">
     {% for group in entry.lists %}
     <section class="journal-notes__panel journal-notes__panel--{{ group.key }}" aria-labelledby="notes-{{ group.key }}">
-      <h2 class="journal-notes__title" id="notes-{{ group.key }}">{{ ui(list_icons[group.key]) }}{{ group.label }}<span>{{ group.lines | length }}</span></h2>
+      <h2 class="journal-notes__title" id="notes-{{ group.key }}">{{ ui(list_icons[group.key]) }}{{ group.label }}</h2>
       <ul class="journal-notes__list">
         {% for line in group.lines %}<li>{{ line }}</li>{% endfor %}
       </ul>

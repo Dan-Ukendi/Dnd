@@ -37,12 +37,12 @@
   </nav>
 </div>
 <nav class="lore-filters" aria-label="Filtrer par type de récit">
-  <a class="lore-filter" href="{{ list_base }}{{ sort_param }}{{ query_param }}" {% if not filters.type_id and not filters.review %}aria-current="true"{% endif %}>Tous<span>{{ legend_total }}</span></a>
-  {% for lore_type in lore_types %}
-  <a class="lore-filter" href="{{ list_base }}&amp;type={{ lore_type.id }}{{ sort_param }}{{ query_param }}" {% if filters.type_id == lore_type.id %}aria-current="true"{% endif %}>{{ lore_type.label }}<span>{{ type_counts.get(lore_type.id, 0) }}</span></a>
+  <a class="lore-filter" href="{{ list_base }}{{ sort_param }}{{ query_param }}" {% if not filters.type_id and not filters.review %}aria-current="true"{% endif %}>Tous</a>
+  {% for lore_type in lore_types if type_counts.get(lore_type.id, 0) or filters.type_id == lore_type.id %}
+  <a class="lore-filter" href="{{ list_base }}&amp;type={{ lore_type.id }}{{ sort_param }}{{ query_param }}" {% if filters.type_id == lore_type.id %}aria-current="true"{% endif %}>{{ lore_type.label }}</a>
   {% endfor %}
   {% if dm %}
-  <a class="lore-filter lore-filter--review" href="{{ list_base }}&amp;a_verifier=1" {% if filters.review %}aria-current="true"{% endif %}>À vérifier<span>{{ reviews.legendes }}</span></a>
+  <a class="lore-filter lore-filter--review" href="{{ list_base }}&amp;a_verifier=1" {% if filters.review %}aria-current="true"{% endif %}>À vérifier</a>
   {% endif %}
 </nav>
 

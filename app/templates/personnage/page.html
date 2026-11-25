@@ -45,7 +45,7 @@
 {% else %}
 <nav class="lore-filters tag-bar reveal reveal-delay-1" aria-label="Changer de tag">
   {% for tile in tiles %}
-  <a class="lore-filter tag-chip tag-chip--{{ tile.key }}" href="{{ tile.href }}"{% if tile.key == tag %} aria-current="true"{% endif %}>{{ tile.label }}<span>{{ tile.count }}</span></a>
+  <a class="lore-filter tag-chip tag-chip--{{ tile.key }}" href="{{ tile.href }}"{% if tile.key == tag %} aria-current="true"{% endif %}>{{ tile.label }}</a>
   {% endfor %}
 </nav>
 
@@ -86,7 +86,7 @@
 {% if groups | length > 1 %}
 <nav class="lore-filters tag-bar tag-bar--pj" aria-label="Changer de personnage joué">
   {% for item in groups %}
-  <a class="lore-filter" href="{{ item.href }}"{% if item.character.id == group.character.id %} aria-current="true"{% endif %}>{{ item.character.name }}<span>{{ item.entries | length }}</span></a>
+  <a class="lore-filter" href="{{ item.href }}"{% if item.character.id == group.character.id %} aria-current="true"{% endif %}>{{ item.character.name }}</a>
   {% endfor %}
 </nav>
 {% endif %}

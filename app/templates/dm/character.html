@@ -57,8 +57,8 @@
       <label class="visually-hidden" for="type-fiche">Type de fiche</label>
       <select id="type-fiche" name="type">
         <option value="">Tous les types</option>
-        {% for value, count in types %}
-        <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }} ({{ count }})</option>
+        {% for value, _ in types %}
+        <option value="{{ value }}" {% if value == selected_type %}selected{% endif %}>{{ value | template_label }}</option>
         {% endfor %}
       </select>
     </div>

@@ -103,16 +103,16 @@
       {% if has_dossier %}
       {% set tabs_prefix = "dossier-" ~ dossier.character.id %}
       {% set tabs_label = "Dossier de " ~ dossier.character.name %}
-      {% set _ = fiche_tabs.extend([("actions", "Actions", dossier.action_count), ("relations", "Relations", dossier.relation_count), ("histoire", "Histoire", dossier.events | length + dossier.journal | length), ("inventaire", "Inventaire", dossier.items | length)]) %}
+      {% set _ = fiche_tabs.extend([("actions", "Actions"), ("relations", "Relations"), ("histoire", "Histoire"), ("inventaire", "Inventaire")]) %}
       {% endif %}
       {% set has_structure = structure is defined and structure and structure.show_tabs %}
       {% if has_structure %}
       {% set tabs_prefix = "structure" %}
       {% set tabs_label = "Sections de " ~ article.title %}
-      {% set _ = fiche_tabs.extend([("territoire", "Territoire", structure.territory.total), ("hierarchie", "Hiérarchie", structure.hierarchy.total)]) %}
+      {% set _ = fiche_tabs.extend([("territoire", "Territoire"), ("hierarchie", "Hiérarchie")]) %}
       {% endif %}
       {% if fiche_tabs %}
-      {% call tabs(tabs_prefix, tabs_label, [("fiche", "Fiche", 0)] + fiche_tabs) %}
+      {% call tabs(tabs_prefix, tabs_label, [("fiche", "Fiche")] + fiche_tabs) %}
       {% call tab_panel(tabs_prefix, "fiche", "Fiche", "fiche") %}
 {{ fiche_content }}
       {% endcall %}

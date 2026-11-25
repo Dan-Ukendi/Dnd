@@ -226,7 +226,7 @@
   {% if dossier.action_groups %}
   {% for group in dossier.action_groups %}
   <section class="action-group action-group--{{ group.key }}" aria-labelledby="{{ prefix }}-actions-{{ group.key }}">
-    <h3 class="relation-group__title" id="{{ prefix }}-actions-{{ group.key }}">{{ group.label }}<span>{{ group.actions | length }}</span></h3>
+    <h3 class="relation-group__title" id="{{ prefix }}-actions-{{ group.key }}">{{ group.label }}</h3>
     <ul class="action-list">
       {% for action in group.actions %}
       <li class="action-card">
@@ -270,7 +270,7 @@
   {% if dossier.relation_groups %}
   {% for group in dossier.relation_groups %}
   <section class="relation-group" aria-labelledby="{{ prefix }}-groupe-{{ group.key }}">
-    <h3 class="relation-group__title" id="{{ prefix }}-groupe-{{ group.key }}">{{ group.label }}<span>{{ group.people | length }}</span></h3>
+    <h3 class="relation-group__title" id="{{ prefix }}-groupe-{{ group.key }}">{{ group.label }}</h3>
     <ul class="relation-list">
       {% for person in group.people %}
       {% set portrait = (person.article | article_media("portrait")) if person.article else none %}
@@ -348,8 +348,8 @@
 
 {% call tab_panel(prefix, "histoire", "Histoire") %}
   {% set story = prefix ~ "-histoire" %}
-  {% set story_tabs = [("recit", "Récit", 0), ("evenements", "Événements marquants", dossier.events | length)] %}
-  {% if dossier.journal %}{% set story_tabs = story_tabs + [("journal", "Journal", dossier.journal | length)] %}{% endif %}
+  {% set story_tabs = [("recit", "Récit"), ("evenements", "Événements marquants")] %}
+  {% if dossier.journal %}{% set story_tabs = story_tabs + [("journal", "Journal")] %}{% endif %}
   {% call tabs(story, "Histoire de " ~ dossier.character.name, story_tabs, "sub") %}
   {% call tab_panel(story, "recit", "Récit") %}
     {% if dossier.backstory | trim %}
