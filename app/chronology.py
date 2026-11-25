@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-CURRENT_YEAR = 987
+CURRENT_YEAR = 829
 CREATION_YEAR = 0
 CONQUEST_END_YEAR = 345
 EMPIRE_END_YEAR = 749

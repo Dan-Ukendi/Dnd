@@ -115,14 +115,14 @@ def source() -> FakeTimelineSource:
     fake.put(
         H2,
         "Zilvra et Khaetar se disputent l'amulette ; Zilvra l'emporte",
-        "987",
+        "829",
         content("Dispute.", "S1", chronicle="séance 1, jour J1"),
         significance=3,
     )
     fake.put(
         H3,
         "Poursuite par les veilleurs",
-        "987",
+        "829",
         content(
             "Fuite.",
             "S2",
@@ -152,7 +152,7 @@ def seeded(db: Session) -> dict[str, TimelineEvent]:
         {
             "code": "S1",
             "title": "Zilvra et Khaetar se disputent l'amulette ; Zilvra l'emporte",
-            "start_year": 987,
+            "start_year": 829,
             "importance": "notable",
             "origin": "canon",
             "summary": "Dispute.",
@@ -165,7 +165,7 @@ def seeded(db: Session) -> dict[str, TimelineEvent]:
         {
             "code": "S2",
             "title": "Poursuite par les veilleurs",
-            "start_year": 987,
+            "start_year": 829,
             "importance": "mineur",
             "origin": "canon",
             "summary": "Fuite.",
@@ -284,7 +284,7 @@ def test_sync_inserts_new_histories_hidden_and_pending(
     source.put(
         H5,
         "Le troll se réveille",
-        "987",
+        "829",
         content("Un grondement.", None, chronicle="séance 2, jour J2"),
     )
     result = run(db, source)
@@ -315,7 +315,7 @@ def test_sync_resolves_links_by_title_even_with_separators_in_titles(
     source.put(
         H3,
         "Poursuite par les veilleurs",
-        "987",
+        "829",
         content("Fuite.", "S2"),
         significance=1,
         updated="2026-11-25 10:00:00",

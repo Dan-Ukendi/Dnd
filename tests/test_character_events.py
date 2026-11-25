@@ -39,7 +39,7 @@ DOSSIER: dict[str, Any] = {
             {
                 "session": "Séance 1, jour 2",
                 "title": "Au Temple Blanc d'Arès",
-                "year": 987,
+                "year": 829,
                 "place": "Temple Blanc d'Arès",
                 "text": "Un vieux prêtre le prend à part.",
                 "people": [
@@ -53,12 +53,12 @@ DOSSIER: dict[str, Any] = {
             {"title": "Il grandit en volant", "place": "la cour de boulangerie"},
             {
                 "title": "Naissance",
-                "year": 956,
+                "year": 798,
                 "approximate": True,
                 "place_article": "Khüchniin Khöndii",
             },
-            {"title": "Le lynchage et le pacte", "year": 971, "age": 15},
-            {"title": "Le sang de Zariel", "year": 968, "age": 12, "approximate": True},
+            {"title": "Le lynchage et le pacte", "year": 813, "age": 15},
+            {"title": "Le sang de Zariel", "year": 810, "age": 12, "approximate": True},
             {"title": "Un âge sans date", "age": 8},
         ],
     },
@@ -102,7 +102,7 @@ def _event(character: Character, title: str) -> CharacterEvent:
 def test_import_stores_every_event_field(db: Session, table: Table) -> None:
     character = _import(db)
     temple = _event(character, "Au Temple Blanc d'Arès")
-    assert (temple.world_year, temple.age, temple.date_approximate) == (987, None, False)
+    assert (temple.world_year, temple.age, temple.date_approximate) == (829, None, False)
     assert temple.session == "Séance 1, jour 2"
     assert temple.place_name == "Temple Blanc d'Arès"
     assert temple.place_article_id is None
@@ -137,9 +137,9 @@ def test_events_are_sorted_by_date_with_undated_events_apart(db: Session, table:
         "Un âge sans date",
     ]
     whens = {event.title: event.when for event in dossier.events}
-    assert whens["Naissance"] == "Vers l'an 956"
-    assert whens["Le sang de Zariel"] == "Vers l'an 968 · vers 12 ans"
-    assert whens["Le lynchage et le pacte"] == "An 971 · 15 ans"
+    assert whens["Naissance"] == "Vers l'an 798"
+    assert whens["Le sang de Zariel"] == "Vers l'an 810 · vers 12 ans"
+    assert whens["Le lynchage et le pacte"] == "An 813 · 15 ans"
     assert whens["Un âge sans date"] == "8 ans"
     assert whens["Il grandit en volant"] is None
 
@@ -160,12 +160,12 @@ def test_date_labels() -> None:
         {"title": "X", "people": [{"role": "Allié"}]},
         {"title": "X", "organizations": [{"name": "Z", "article": "Inconnue"}]},
         {"title": "X", "place_article": "Lieu inconnu"},
-        {"title": "X", "year": "vers 956"},
-        {"title": "X", "year": 956.5},
+        {"title": "X", "year": "vers 798"},
+        {"title": "X", "year": 798.5},
         {"title": "X", "age": -1},
         {"title": "X", "approximate": "oui"},
         {"title": "X", "people": "Kratéros"},
-        {"year": 987},
+        {"year": 829},
     ],
 )
 def test_invalid_events_are_rejected(db: Session, table: Table, event: dict[str, Any]) -> None:
@@ -253,7 +253,7 @@ def test_dm_creates_edits_and_deletes_an_event(
         client,
         f"/mj/personnages/{table.keator.id}/evenements",
         _event_form(
-            year="987",
+            year="829",
             age="31",
             approximate="1",
             place_article="Khüchniin Khöndii",
@@ -273,7 +273,7 @@ def test_dm_creates_edits_and_deletes_an_event(
     assert character.profile.events_edited_at is not None
     event = character.events[0]
     assert response.headers["location"] == f"{page}#evenement-{event.id}"
-    assert (event.world_year, event.age, event.date_approximate) == (987, 31, True)
+    assert (event.world_year, event.age, event.date_approximate) == (829, 31, True)
     assert (event.place_name, event.place_article_id) == ("Khüchniin Khöndii", table.city.wa_id)
     assert [(p.name, p.role, p.wa_article_id) for p in event.people] == [
         ("Kratéros", None, table.krateros.wa_id),
@@ -315,7 +315,7 @@ def test_dm_creates_edits_and_deletes_an_event(
     ("values", "message"),
     [
         ({"title": " "}, "le titre est obligatoire"),
-        ({"year": "vers 956"}, "l&#39;année doit être un nombre entier"),
+        ({"year": "vers 798"}, "l&#39;année doit être un nombre entier"),
         ({"age": "-3"}, "l&#39;âge doit être un nombre entier positif"),
         ({"place_article": "Nulle part"}, "aucune fiche World Anvil"),
         ({"person_role": ["Allié"]}, "chaque personne doit avoir un nom"),
@@ -439,7 +439,7 @@ def test_world_chronology_is_untouched(client: TestClient, db: Session, table: T
     post_form(
         client,
         f"/mj/personnages/{table.keator.id}/evenements",
-        _event_form(title="Événement personnel", year="987"),
+        _event_form(title="Événement personnel", year="829"),
         f"/mj/articles/{table.khaetar.wa_id}",
     )
     assert db.scalar(select(func.count()).select_from(TimelineEvent)) == before

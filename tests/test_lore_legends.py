@@ -216,7 +216,7 @@ def world(db: Session, restore_head: None) -> World:
                 code="A4",
                 title="Sommeil",
                 start_year=-485,
-                end_year=987,
+                end_year=829,
                 importance="majeur",
                 origin="canon",
             ),
@@ -318,7 +318,7 @@ def test_migration_builds_the_validated_lore_without_losing_entries(
         (GAGE_ID, "Secrets"): "dm_note",
         (GAGE_ID, "Événements de la session 1"): "dm_note",
     }
-    assert _entry(db, GAGE_ID, "Événements de la session 1").start_year == 987
+    assert _entry(db, GAGE_ID, "Événements de la session 1").start_year == 829
     assert not _entry(db, GAGE_ID, "Le patron démoniaque").gm_only
     assert db.scalar(select(LoreStory).where(LoreStory.wa_article_id == GAGE_ID)) is None
     empire = world.empire
@@ -404,7 +404,7 @@ def test_malvaar_group_holds_the_joug_legend_with_seven_parts_and_navigation(
     assert "Récit du sorcier." in first.text
     assert f'href="{base}/parties/2" rel="next"' in first.text
     assert 'rel="prev"' not in first.text
-    assert "523 av. É. – An 987" in first.text
+    assert "523 av. É. – An 829" in first.text
     middle = client.get(f"{base}/parties/4")
     assert "Récit de la chute." in middle.text
     assert f'href="{base}/parties/3" rel="prev"' in middle.text

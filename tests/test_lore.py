@@ -132,7 +132,7 @@ def test_known_articles_follow_the_decided_dates_and_visibility() -> None:
     assert rows["La forge"]["timeline_event_id"] == 41
     assert rows["La forge"]["start_year"] is None
     assert "A1" in rows["La forge"]["review_note"]
-    assert rows["Événements de la session 1"]["start_year"] == 987
+    assert rows["Événements de la session 1"]["start_year"] == 829
     assert rows["Ceux qui la convoitent"]["gm_only"]
     assert rows["Pouvoirs"]["review_note"]
     assert rows["La réapparition"]["review_note"]
@@ -211,7 +211,7 @@ def test_sort_key_orders_eras_before_year_zero_and_keeps_undated_last() -> None:
         return LoreEntry(id=entry_id, sort_order=0, position=0, approximate=False, **fields)
 
     rows = [
-        entry(1, start_year=987, end_year=None, era=None),
+        entry(1, start_year=829, end_year=None, era=None),
         entry(2, start_year=None, end_year=None, era=None),
         entry(3, start_year=-120, end_year=None, era=None),
         entry(4, start_year=None, end_year=None, era="aubes-anciennes"),

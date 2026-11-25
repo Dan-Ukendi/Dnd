@@ -62,14 +62,14 @@ SMALL_DATASET = [
     event_row(
         "S1",
         "Dispute pour l'amulette",
-        987,
+        829,
         visibility="joueurs",
         chronicle=True,
         session=1,
         day="J1",
     ),
-    event_row("S2", "Le secret du troll", 987, chronicle=True, session=1, day="J2"),
-    event_row("A4", "Long sommeil du Joug", -485, 987, importance="notable"),
+    event_row("S2", "Le secret du troll", 829, chronicle=True, session=1, day="J2"),
+    event_row("A4", "Long sommeil du Joug", -485, 829, importance="notable"),
 ]
 
 
@@ -90,7 +90,7 @@ def seed(db: Session) -> dict[str, TimelineEvent]:
         (346, "grand-midi"),
         (748, "grand-midi"),
         (749, "tumultes"),
-        (987, "tumultes"),
+        (829, "tumultes"),
     ],
 )
 def test_era_boundaries(year: int, slug: str) -> None:
@@ -98,7 +98,7 @@ def test_era_boundaries(year: int, slug: str) -> None:
 
 
 def test_calendar_constants() -> None:
-    assert (CURRENT_YEAR, CREATION_YEAR, CONQUEST_END_YEAR, EMPIRE_END_YEAR) == (987, 0, 345, 749)
+    assert (CURRENT_YEAR, CREATION_YEAR, CONQUEST_END_YEAR, EMPIRE_END_YEAR) == (829, 0, 345, 749)
 
 
 def test_year_display() -> None:
@@ -106,7 +106,7 @@ def test_year_display() -> None:
     assert format_year(0) == "An 0"
     assert format_year(345) == "An 345"
     assert format_span(-4, -1) == "4 av. É. – 1 av. É."
-    assert format_span(987, 987) == "An 987"
+    assert format_span(829, 829) == "An 829"
     assert format_duration(61, 74) == "14 ans"
     assert format_duration(-1, 0) == "2 ans"
     assert format_duration(345, None) == "1 an"
@@ -145,8 +145,8 @@ def test_dataset_is_coherent() -> None:
     assert len(codes) == 56
     assert not any(re.fullmatch(r"E-\d+", code) for code in codes)
     for event in events:
-        assert -523 <= event.start_year <= 987, event.code
-        assert event.end_year is None or event.start_year <= event.end_year <= 987, event.code
+        assert -523 <= event.start_year <= 829, event.code
+        assert event.end_year is None or event.start_year <= event.end_year <= 829, event.code
         assert set(event.linked) <= codes, event.code
         assert event.wa_history_id, event.code
     assert len({event.wa_history_id for event in events}) == 56
@@ -199,7 +199,7 @@ def test_frise_layout_clusters_same_year_events_and_keeps_bands_readable(db: Ses
     assert [band.era.slug for band in frise.bands] == [era.slug for era in eras]
     assert all(band.width >= 300 for band in frise.bands)
     clusters = [marker for marker in frise.points if marker.kind == "cluster"]
-    assert any(marker.year == 987 and len(marker.events) >= 12 for marker in clusters)
+    assert any(marker.year == 829 and len(marker.events) >= 12 for marker in clusters)
     sleep = next(marker for marker in frise.ranges if marker.first.event.code == "A4")
     assert sleep.x < frise.bands[1].x + frise.bands[1].width < sleep.x + sleep.width
     xs = [mark.x for mark in frise.milestones]
@@ -233,7 +233,7 @@ def dm_pages(chrono: Chrono) -> list[str]:
         "/mj/chronologie",
         "/mj/chronologie?vue=chronique",
         f"/mj/chronologie?evenement={event_id(chrono, 'H1')}",
-        "/mj/chronologie?annee=987",
+        "/mj/chronologie?annee=829",
         f"/mj/chronologie/evenements/{event_id(chrono, 'H1')}",
         "/mj/chronologie/eres",
     ]
@@ -287,7 +287,7 @@ def test_player_only_receives_revealed_events(client: TestClient, chrono: Chrono
         "/joueur/chronologie?q=troll",
         "/joueur/chronologie?ere=ascension&importance=majeur",
         "/joueur/chronologie?statut=a_valider&origine=canon",
-        "/joueur/chronologie?annee=987",
+        "/joueur/chronologie?annee=829",
         f"/joueur/chronologie?evenement={event_id(chrono, 'B1')}",
         f"/joueur/chronologie?evenement={event_id(chrono, 'B7')}",
         f"/joueur/chronologie/evenements/{event_id(chrono, 'B7')}",

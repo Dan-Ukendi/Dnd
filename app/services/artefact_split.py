@@ -33,7 +33,7 @@ SHEET_FIELDS = {
 }
 HOLDER_LABELS = frozenset({"porteur actuel", "detenteur actuel"})
 GM_ONLY_SECTIONS = frozenset({"secrets", "pistes pour la suite"})
-SESSION_ONE_YEAR = 987
+SESSION_ONE_YEAR = 829
 
 AUTOMATIC_NOTE = "Découpage automatique d'un nouvel article World Anvil : à vérifier."
 MIXED_NOTE = (

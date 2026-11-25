@@ -124,9 +124,9 @@ Un vieux prêtre lui révèle que son sang vient de Zariel.
 [[history.events]]                    # memorable events; every field but title is optional
 title = "Dispute pour l'amulette"
 session = "Séance 1, jour 1"          # shown as a badge
-year = 987                            # world calendar, An 0 = creation of the Empire d'Ébène
+year = 829                            # world calendar, An 0 = creation of the Empire d'Ébène
 age = 31                              # the character's age
-approximate = false                   # true shows "Vers l'an 987", "vers 31 ans"
+approximate = false                   # true shows "Vers l'an 829", "vers 31 ans"
 place = "Marché noir de Khar Zakh"
 place_article = "..."                 # exact title of a Monde fiche (or place_article_id)
 text = "Au marché noir de Khar Zakh..."
@@ -251,7 +251,7 @@ The *Chronologie* page (Lore section, and the *Chronologie* link of both navigat
   Grand Midi, Tumultes). Each era keeps a readable width whatever its length; inside an era, events
   are placed at scale. Periods are bars, single years are diamonds sized by importance, several
   events of the same year are grouped in a numbered seal, and An 0, An 345, An 749 and today
-  (An 987) are marked. Filters (era, importance, text; origin and status for the DM) live in the
+  (An 829) are marked. Filters (era, importance, text; origin and status for the DM) live in the
   URL. On phones the frise becomes a list grouped by era.
 - **Chronique de la campagne**: the events flagged as chronicle, by session and day (J1, J2).
 

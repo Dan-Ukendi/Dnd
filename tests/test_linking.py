@@ -422,7 +422,7 @@ def test_chronology_summaries_are_linked_for_players(
         code="T1",
         title="Rencontre",
         summary="Sophie croise Octave.",
-        start_year=987,
+        start_year=829,
         importance="notable",
         origin="canon",
         visibility="joueurs",

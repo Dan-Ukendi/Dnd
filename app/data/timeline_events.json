@@ -61,7 +61,7 @@
   "code": "A4",
   "title": "Long sommeil du Joug",
   "start_year": -485,
-  "end_year": 987,
+  "end_year": 829,
   "importance": "majeur",
   "origin": "canon",
   "place": null,
@@ -211,8 +211,8 @@
  {
   "code": "B8",
   "title": "Éclatement de l'ancien empire en trois nations",
-  "start_year": 751,
-  "end_year": null,
+  "start_year": 757,
+  "end_year": 760,
   "importance": "majeur",
   "origin": "canon",
   "place": "Ancien empire",
@@ -231,8 +231,8 @@
  {
   "code": "C1",
   "title": "Fondation du Khaanat des Cinq Lances",
-  "start_year": 752,
-  "end_year": null,
+  "start_year": 757,
+  "end_year": 760,
   "importance": "majeur",
   "origin": "canon",
   "place": "Centre : Italie, Afrique du Nord, Balkans",
@@ -369,7 +369,7 @@
  {
   "code": "C13",
   "title": "La famille de Sophie reçoit la route secrète de la forêt",
-  "start_year": 836,
+  "start_year": 678,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -387,7 +387,7 @@
  {
   "code": "C14",
   "title": "Naissance de Sophie, marchande naine",
-  "start_year": 933,
+  "start_year": 775,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -407,7 +407,7 @@
  {
   "code": "C15",
   "title": "Naissance de Khaetar Voss, tiefling orphelin",
-  "start_year": 956,
+  "start_year": 798,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -425,7 +425,7 @@
  {
   "code": "C16",
   "title": "Un vieux prêtre révèle à Khaetar que son sang vient de Zariel",
-  "start_year": 968,
+  "start_year": 810,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -445,7 +445,7 @@
  {
   "code": "C8",
   "title": "Le Khan Tömörzorig devient maître de la Voie de la Volonté",
-  "start_year": 958,
+  "start_year": 800,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -465,7 +465,7 @@
  {
   "code": "C11",
   "title": "Jean-Charles ouvre la taverne Le Troll qui Rit",
-  "start_year": 964,
+  "start_year": 806,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -483,7 +483,7 @@
  {
   "code": "C17",
   "title": "Le lynchage de Khaetar et son pacte",
-  "start_year": 971,
+  "start_year": 813,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
@@ -503,7 +503,7 @@
  {
   "code": "C18",
   "title": "Khaetar prend le nom de Khaetar Voss",
-  "start_year": 972,
+  "start_year": 814,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -523,7 +523,7 @@
  {
   "code": "C9",
   "title": "Erdene, Tsetseg et Ganbold forment le conseil des trois Ezen de la Nuit",
-  "start_year": 972,
+  "start_year": 814,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -543,7 +543,7 @@
  {
   "code": "C10",
   "title": "Kratéros devient évêque d'Arès de Khüchniin Khöndii",
-  "start_year": 979,
+  "start_year": 821,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -563,7 +563,7 @@
  {
   "code": "C12",
   "title": "Gronk, fils de Brok, devient réceptionniste de la Guilde",
-  "start_year": 981,
+  "start_year": 823,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -583,8 +583,8 @@
  {
   "code": "C23",
   "title": "Un troll bloque la route secrète de Sophie",
-  "start_year": 987,
-  "end_year": 987,
+  "start_year": 829,
+  "end_year": 829,
   "importance": "mineur",
   "origin": "canon",
   "place": "Route secrète de la forêt",
@@ -603,7 +603,7 @@
  {
   "code": "C22",
   "title": "Le Joug réapparaît à l'étal d'Erdene",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
@@ -623,7 +623,7 @@
  {
   "code": "C21",
   "title": "Zilvra entend parler de l'amulette de contrôle",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -643,7 +643,7 @@
  {
   "code": "C20",
   "title": "Zilvra se fait voler tout son argent",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -661,7 +661,7 @@
  {
   "code": "C19",
   "title": "Le patron de Khaetar lui ordonne de récupérer l'amulette",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -681,7 +681,7 @@
  {
   "code": "C24",
   "title": "Sophie dépose une quête de rang D contre le troll",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -701,7 +701,7 @@
  {
   "code": "S1",
   "title": "Zilvra et Khaetar se disputent l'amulette ; Zilvra l'emporte",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
@@ -723,7 +723,7 @@
  {
   "code": "S2",
   "title": "Poursuivis par les veilleurs, ils tuent un guerrier et mettent en fuite un mage et un archer",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -743,7 +743,7 @@
  {
   "code": "S3",
   "title": "Refuge au Troll qui Rit",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -763,7 +763,7 @@
  {
   "code": "S4",
   "title": "Le pacte du soir : rendre son pouvoir à l'amulette",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
@@ -784,7 +784,7 @@
  {
   "code": "S13",
   "title": "Zilvra gagne la faveur de Jean-Charles en payant en or",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -804,7 +804,7 @@
  {
   "code": "S14",
   "title": "Bob, pickpocket halfelin, vole la bourse de Zilvra",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -825,7 +825,7 @@
  {
   "code": "S15",
   "title": "Première nuit au Troll qui Rit",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -845,7 +845,7 @@
  {
   "code": "S5",
   "title": "La Nuit lance la traque des voleurs de l'amulette",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
@@ -866,7 +866,7 @@
  {
   "code": "S16",
   "title": "Jean-Charles leur donne deux pistes pour le sang de troll",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -887,7 +887,7 @@
  {
   "code": "S6",
   "title": "Licence de rang B obtenue sans épreuve auprès de Gronk",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -908,7 +908,7 @@
  {
   "code": "S17",
   "title": "Ils choisissent la quête de rang D de Sophie",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -929,7 +929,7 @@
  {
   "code": "S7",
   "title": "Chez Sophie, Zilvra vide un coffre caché",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -949,7 +949,7 @@
  {
   "code": "S18",
   "title": "Sophie leur expose la mission du troll et Khaetar flatte sa barbe",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -971,7 +971,7 @@
  {
   "code": "S8",
   "title": "Contrat magique de confidentialité : Zilvra signe « Maelys »",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -991,7 +991,7 @@
  {
   "code": "S9",
   "title": "Zilvra enquête sur le vol, Jean-Charles lui parle de Bob",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
@@ -1013,7 +1013,7 @@
  {
   "code": "S10",
   "title": "Khaetar au Temple Blanc : Kratéros le coupe de l'influence de son patron",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
@@ -1035,7 +1035,7 @@
  {
   "code": "S20",
   "title": "Kratéros voit en Khaetar la quête qu'il attendait d'Arès",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -1056,7 +1056,7 @@
  {
   "code": "S11",
   "title": "Bob retrouvé, menacé et chassé du Troll qui Rit",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -1077,7 +1077,7 @@
  {
   "code": "S19",
   "title": "Humilié, Bob compte vendre les deux voleurs à la Nuit",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
@@ -1098,7 +1098,7 @@
  {
   "code": "S12",
   "title": "Deuxième nuit au Troll qui Rit : coucher tôt avant la quête",
-  "start_year": 987,
+  "start_year": 829,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
