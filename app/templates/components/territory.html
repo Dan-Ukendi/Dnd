@@ -1,0 +1,72 @@
+{% from "components/structure_macros.html" import place_card, place_details, disclosure_toolbar, explore_link, member_list, review_pills %}
+{% from "components/ui.html" import empty_state %}
+{% set territory = structure.territory %}
+{% set dm_hint = "" if player_mode else " Ajoutez-les dans source/structures puis lancez import-structures." %}
+{% if territory.mode == "organisation" %}
+{% if territory.cards %}
+{{ disclosure_toolbar("structure-places", "Cartes du territoire") }}
+<ul class="place-list" id="structure-places">
+  {% for card in territory.cards %}<li>{{ place_card(card, "organisation", structure) }}</li>{% endfor %}
+</ul>
+{% else %}
+{{ empty_state("Aucun territoire consigné", "Aucun bâtiment ni aucune terre de cette organisation n'est encore consigné." ~ dm_hint, "map") }}
+{% endif %}
+{% elif not territory.has_root %}
+{{ empty_state("Aucun lieu consigné", "Cette rubrique n'a pas encore d'endroits rattachés." ~ dm_hint, "map") }}
+{% else %}
+{% set focus = territory.focus %}
+<nav class="breadcrumb territory-crumbs" aria-label="Niveau du territoire">
+  <ol>
+    {% for crumb in territory.crumbs %}
+    {% if crumb.href %}
+    <li>{{ explore_link(crumb, structure, loop.first) }}</li>
+    {% else %}
+    <li><span aria-current="location">{{ crumb.label }}</span></li>
+    {% endif %}
+    {% endfor %}
+  </ol>
+</nav>
+<section class="place-focus" aria-labelledby="territoire-niveau">
+  <div class="place-focus__head">
+    <h3 class="place-focus__title" id="territoire-niveau" tabindex="-1" data-territory-focus>{{ focus.name }}</h3>
+    <span class="pill">{{ focus.kind_label }}</span>
+    {{ review_pills(focus) }}
+    <span class="place-focus__level">Niveau {{ territory.crumbs | length }}</span>
+  </div>
+  {% if territory.crumbs | length > 1 %}
+  <details class="place-focus__more" open>
+    <summary>Détails de ce lieu</summary>
+    <div class="place-focus__body">
+      {{ place_details(focus, "monde") }}
+      {% if focus.href %}<a class="btn btn--compact" href="{{ focus.href }}">Voir la fiche</a>{% endif %}
+    </div>
+  </details>
+  {% elif focus.members or focus.organisations %}
+  <div class="place-focus__body">
+    {% if focus.organisations %}
+    <section class="place-section">
+      <h3 class="place-section__title">Organisations présentes</h3>
+      <ul class="chip-list">{% for organisation in focus.organisations %}<li class="chip">{% if organisation.href %}<a href="{{ organisation.href }}">{{ organisation.label }}</a>{% else %}{{ organisation.label }}{% endif %}</li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+    {% if focus.members %}
+    <section class="place-section">
+      <h3 class="place-section__title">Personnes notables</h3>
+      {{ member_list(focus.members, "Personnes notables de " ~ focus.name, "") }}
+    </section>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% if territory.cards %}
+<div class="place-level-head">
+  <h3 class="place-level-head__title">Lieux contenus<span>{{ territory.cards | length }}</span></h3>
+  {{ disclosure_toolbar("structure-places", "Cartes des lieux") }}
+</div>
+<ul class="place-list" id="structure-places">
+  {% for card in territory.cards %}<li>{{ place_card(card, "monde", structure) }}</li>{% endfor %}
+</ul>
+{% else %}
+{{ empty_state("Aucun lieu à ce niveau", "Aucun endroit n'est consigné à l'intérieur de " ~ focus.name ~ ".", "map") }}
+{% endif %}
+{% endif %}

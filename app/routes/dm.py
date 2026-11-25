@@ -27,6 +27,7 @@ from app.models import (
 )
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
 from app.routes.personnage import PERSON_SECTION, dm_page_context
+from app.routes.structures import territory_response
 from app.sections import ADVENTURE_KEY, section_counts
 from app.services import articles as article_service
 from app.services import characters as character_service
@@ -43,6 +44,7 @@ from app.services.accounts import (
 )
 from app.services.dossiers import build_dossier
 from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError
+from app.services.structures import Viewer, build_structure
 from app.services.sync import SyncAlreadyRunningError, latest_run, run_sync_job, start_run
 from app.templating import flash, is_htmx, render
 from app.worldanvil.bbcode import render_bbcode
@@ -232,7 +234,13 @@ def journal_entry(
 
 
 @router.get("/articles/{wa_id}")
-def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -> Response:
+def article_detail(
+    request: Request,
+    wa_id: str,
+    db: DbSession,
+    dm: CurrentDm,
+    lieu: Annotated[str, Query(max_length=80)] = "",
+) -> Response:
     article = _get_article(db, wa_id)
     render_context = dm_render_context(db)
     extra_fields = [
@@ -261,7 +269,22 @@ def article_detail(request: Request, wa_id: str, db: DbSession, dm: CurrentDm) -
             "artefact_fiche": artefact_fiche(db, article, render_context, dm=True),
             "person_badges": person_service.dm_badge_index(db),
             "person_tags": person_service.fiche_tags(db, article),
+            "structure": build_structure(db, article, Viewer(dm=True), render_context, lieu),
         },
+    )
+
+
+@router.get("/articles/{wa_id}/territoire")
+def article_territory(
+    request: Request,
+    wa_id: str,
+    db: DbSession,
+    dm: CurrentDm,
+    lieu: Annotated[str, Query(max_length=80)] = "",
+) -> Response:
+    article = _get_article(db, wa_id)
+    return territory_response(
+        request, db, article, Viewer(dm=True), dm_render_context(db), lieu, player_mode=False
     )
 
 

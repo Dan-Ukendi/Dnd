@@ -315,6 +315,75 @@ character) and *Liens* (their own character's links). A linked person whose fich
 the player shows as a name (and the relation's role) without link, portrait or content, as in the
 dossier. Players never see the other tags, nor the links of other characters.
 
+## Territoire and Hiérarchie
+
+The fiches of the Organisation and Monde sections get two tabs next to *Fiche*: **Territoire** and
+**Hiérarchie** (anchors `#territoire` and `#hierarchie`). One shared model serves both sections:
+
+- `places`: places with their geographical nesting (`parent`), a kind (territoire, région, ville,
+  quartier, bâtiment, terre, niveau, pièce, lieu), an optional article of the place, an optional
+  owning organisation, a free location and a passage of a source article.
+- `positions`: people, posts and collectives, attached either to an organisation or to a place
+  (the extent of their power), with a direct superior, an assignment site, a *sommet* flag, a
+  *collectif* flag and a *présence* flag (`hierarchy = false`: a notable person on a place, outside
+  the hierarchy).
+
+An organisation's Territoire lists the places it owns as collapsible cards (nested places inside),
+each with its *Personnel* (the organisation's positions assigned to that site). A Monde fiche's
+Territoire starts from the place linked to the article and goes down level by level (`?lieu=<key>`,
+loaded without reload), with a breadcrumb; each card lists the organisations and notable people
+present. Hiérarchie is a keyboard-navigable tree (arrows, Home/End, Enter opens the fiche, Space
+toggles, `*` opens the siblings) split into *Sommet* and *Sans supérieur défini*; a Monde hierarchy
+includes the positions of every place it contains, with *Relève de …* when the superior is outside.
+
+**Where the data lives.** Read-only in the app: the rows come from the git-ignored TOML files of
+`source/structures/` and are imported with:
+
+```
+python -m app.cli import-structures source/structures            # created / updated / unchanged / failed
+python -m app.cli import-structures source/structures --dry-run  # check only, nothing written
+python -m app.cli import-structures source/structures --prune    # also delete rows whose key left the files
+```
+
+The import is idempotent by `key` and all-or-nothing: an unknown article title, a cycle, a superior
+from another organisation or an anchor inside *Secrets*, *Pistes pour la suite* or *Événements de la
+session 1* fails the whole run. Rows missing from the files are kept unless `--prune` is given. Sync
+never reads or writes these tables.
+
+```toml
+[[places]]
+key = "marche-noir"                 # stable identifier
+name = "Le marché noir (Khar Zakh)"
+kind = "lieu"
+parent = "khuchniin-khondii"        # key of another place
+owner = "La Nuit"                   # organisation article (exact title, or owner_id)
+location = "caché dans le dédale de la cité"
+source = "La Nuit"                  # required: article the fact comes from (or source_id)
+anchor = "Le lieu"                  # heading or bold label of that article, shown as a live excerpt
+visibility = "mj"                   # mj (default) or joueurs
+status = "a_valider"                # a_valider (default) or etabli
+
+[[positions]]
+key = "nuit-erdene"
+organisation = "La Nuit"            # or place = "<place key>"
+name = "Erdene"                     # or person = "<person article title>"
+title = "l'Ezen du Grand Étal"
+scope = "Le commerce illicite et le marché noir"
+superior = "nuit-conseil"           # key of another position
+site = "marche-noir"                # place key
+head = false                        # sommet
+group = false                       # collectif
+hierarchy = true                    # false: présence only
+source = "La Nuit"
+gm_notes = "Incohérence : …"
+```
+
+**Players.** The tabs appear only on a fiche already shared with the player and only when something
+is visible. Only rows marked `joueurs` are shown, and a hidden place or position hides its whole
+subtree. A person, place or organisation links to its fiche only when that fiche is accessible to
+the player; DM notes, *À valider* and *MJ seulement* badges are never rendered for a player. Excerpts
+are read live from the source article and shown only when that article is readable.
+
 ## Useful commands
 
 | Command | Purpose |
@@ -326,6 +395,7 @@ dossier. Players never see the other tags, nor the links of other characters.
 | `python -m app.cli wait-db` | Wait until the database accepts connections (used at start-up while Neon wakes up). |
 | `python -m app.cli import-media FOLDER [--manifest PATH]` | Import the portraits, maps and PDFs listed in the manifest (see below). |
 | `python -m app.cli import-characters [--manifest PATH]` | Create the player accounts and characters listed in the manifest. |
+| `python -m app.cli import-structures PATH... [--dry-run] [--prune]` | Import the places and positions of the Territoire and Hiérarchie tabs (see above). |
 | `alembic upgrade head` | Apply migrations. |
 | `ruff format . && ruff check .` | Format and lint. |
 | `pytest` | Run the test suite (see below). |

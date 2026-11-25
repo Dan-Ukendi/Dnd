@@ -1,0 +1,170 @@
+{% from "components/icons.html" import ui %}
+
+{% macro link_to(item) -%}
+{% if item.href %}<a href="{{ item.href }}">{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
+{%- endmacro %}
+
+{% macro review_pills(item) -%}
+{% if item.status == "a_valider" %}<span class="pill pill--warn">À valider</span>{% endif %}
+{% if item.visibility == "mj" %}<span class="pill pill--muted">MJ seulement</span>{% endif %}
+{%- endmacro %}
+
+{% macro gm_notes(item) -%}
+{% if item.gm_notes %}
+<div class="gm-note">
+  <p class="gm-note__label">Notes du MJ</p>
+  <p class="structure-note">{{ item.gm_notes }}</p>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro avatar(member, class) -%}
+{% set portrait = (member.article | article_media("portrait")) if member.article else none %}
+<span class="{{ class }}{% if member.is_group %} {{ class }}--group{% endif %}" aria-hidden="true">{% if portrait %}<img src="{{ portrait | media_url('thumb') }}" alt="" loading="lazy" decoding="async">{% elif member.is_group %}{{ ui("users") }}{% else %}{{ member.initial }}{% endif %}</span>
+{%- endmacro %}
+
+{% macro member_list(members, label, empty) -%}
+{% if members %}
+<ul class="member-list" aria-label="{{ label }}">
+  {% for member in members %}
+  <li class="member">
+    {{ avatar(member, "member__avatar") }}
+    <span class="member__identity">
+      {% if member.href %}<a class="member__name" href="{{ member.href }}">{{ member.name }}</a>{% else %}<span class="member__name">{{ member.name }}</span>{% endif %}
+      {% if member.title %}<span class="member__role">{{ member.title }}</span>{% endif %}
+      {% if member.organisation %}<span class="member__org">{{ link_to(member.organisation) }}</span>{% endif %}
+    </span>
+    <span class="member__pills">{{ review_pills(member) }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="structure-empty">{{ empty }}</p>
+{% endif %}
+{%- endmacro %}
+
+{% macro place_details(card, mode) -%}
+<dl class="place-facts">
+  <div><dt>Type</dt><dd>{{ card.kind_label }}</dd></div>
+  {% if card.location %}<div><dt>Emplacement</dt><dd>{{ card.location }}</dd></div>{% endif %}
+  {% if card.parent %}<div><dt>Dans</dt><dd>{{ card.parent.label }}</dd></div>{% endif %}
+  {% if mode == "monde" and card.owner %}<div><dt>Propriétaire</dt><dd>{{ link_to(card.owner) }}</dd></div>{% endif %}
+</dl>
+{% if card.excerpt %}<div class="prose place-excerpt">{{ card.excerpt }}</div>{% endif %}
+{% if card.description %}<div class="prose place-excerpt">{{ card.description }}</div>{% endif %}
+{% if card.source %}<p class="structure-source">{{ ui("scroll") }}<span>Source : {{ link_to(card.source) }}</span></p>{% endif %}
+{% if mode == "organisation" %}
+<section class="place-section">
+  <h3 class="place-section__title">Personnel</h3>
+  {{ member_list(card.members, "Personnel de " ~ card.name, "Aucune personne de l'organisation n'est affectée à ce site.") }}
+</section>
+{% else %}
+<section class="place-section">
+  <h3 class="place-section__title">Organisations présentes</h3>
+  {% if card.organisations %}
+  <ul class="chip-list">
+    {% for organisation in card.organisations %}<li class="chip">{{ link_to(organisation) }}</li>{% endfor %}
+  </ul>
+  {% else %}
+  <p class="structure-empty">Aucune organisation n'est consignée ici.</p>
+  {% endif %}
+</section>
+<section class="place-section">
+  <h3 class="place-section__title">Personnes notables</h3>
+  {{ member_list(card.members, "Personnes notables de " ~ card.name, "Aucune personne notable n'est consignée ici.") }}
+</section>
+{% endif %}
+{{ gm_notes(card) }}
+{%- endmacro %}
+
+{% macro place_card(card, mode, structure) -%}
+<details class="place-card" data-place="{{ card.key }}">
+  <summary>
+    <span class="place-card__glyph" aria-hidden="true">{{ ui("map") }}</span>
+    <span class="place-card__identity">
+      <span class="place-card__name">{{ card.name }}</span>
+      <span class="place-card__meta">{{ card.kind_label }}{% if card.location %} · {{ card.location }}{% endif %}</span>
+    </span>
+    <span class="place-card__pills">
+      {{ review_pills(card) }}
+      {% if card.sub_places %}<span class="place-card__count">{{ card.sub_places | length }} {{ "lieu" if card.sub_places | length == 1 else "lieux" }}</span>{% endif %}
+    </span>
+    {{ ui("chevron", "icon place-card__chevron") }}
+  </summary>
+  <div class="place-card__body">
+    {{ place_details(card, mode) }}
+    {% if card.children %}
+    <section class="place-section">
+      <h3 class="place-section__title">Lieux contenus</h3>
+      <ul class="place-list place-list--nested">
+        {% for child in card.children %}<li>{{ place_card(child, mode, structure) }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% elif card.sub_places %}
+    <section class="place-section">
+      <h3 class="place-section__title">Lieux contenus</h3>
+      <ul class="chip-list">
+        {% for sub in card.sub_places %}<li class="chip">{{ explore_link(sub, structure) }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+    <div class="place-card__actions">
+      {% if card.explore_href %}<a class="btn btn--compact" href="{{ card.explore_href }}#territoire" hx-get="{{ structure.fragment_url }}?lieu={{ card.key }}" hx-target="#structure-territoire-body" hx-swap="innerHTML" hx-push-url="{{ card.explore_href }}#territoire">Explorer ce lieu</a>{% endif %}
+      {% if card.href %}<a class="btn btn--compact" href="{{ card.href }}">Voir la fiche</a>{% endif %}
+    </div>
+  </div>
+</details>
+{%- endmacro %}
+
+{% macro explore_link(item, structure, root=False) -%}
+{% set query = "" if root else "?lieu=" ~ item.key %}
+<a href="{{ item.href }}#territoire" hx-get="{{ structure.fragment_url }}{{ query }}" hx-target="#structure-territoire-body" hx-swap="innerHTML" hx-push-url="{{ item.href }}#territoire">{{ item.label }}</a>
+{%- endmacro %}
+
+{% macro disclosure_toolbar(target, label) -%}
+<div class="structure-toolbar" role="group" aria-label="{{ label }}">
+  <button type="button" class="btn btn--compact" data-disclosure-all="open" aria-controls="{{ target }}">{{ ui("expand") }}Tout déplier</button>
+  <button type="button" class="btn btn--compact" data-disclosure-all="close" aria-controls="{{ target }}">{{ ui("close") }}Tout replier</button>
+</div>
+{%- endmacro %}
+
+{% macro tree_item(node, level, posinset, setsize) -%}
+{% set count = node.children | length %}
+<li class="tree__item" role="treeitem" aria-level="{{ level }}" aria-posinset="{{ posinset }}" aria-setsize="{{ setsize }}" aria-labelledby="noeud-{{ node.key }}"{% if count %} aria-expanded="true"{% endif %}{% if node.member.href %} data-href="{{ node.member.href }}"{% endif %}>
+  <div class="tree__row">
+    {% if count %}<span class="tree__toggle" data-tree-toggle aria-hidden="true">{{ ui("chevron") }}</span>{% else %}<span class="tree__toggle tree__toggle--leaf" aria-hidden="true"></span>{% endif %}
+    {{ avatar(node.member, "tree__avatar") }}
+    <span class="tree__identity" id="noeud-{{ node.key }}">
+      {% if node.member.href %}<a class="tree__name" href="{{ node.member.href }}">{{ node.member.name }}</a>{% else %}<span class="tree__name">{{ node.member.name }}</span>{% endif %}
+      {% if node.member.title %}<span class="tree__title">{{ node.member.title }}</span>{% endif %}
+      {% if count %}<span class="visually-hidden">, {{ count }} {{ "subordonné direct" if count == 1 else "subordonnés directs" }}</span>{% endif %}
+    </span>
+    <span class="tree__pills">
+      {% if node.scope %}<span class="pill tree__scope" title="Étendue du pouvoir">{{ node.scope }}</span>{% endif %}
+      {% if node.site %}<span class="pill pill--muted" title="Lieu d'affectation">{{ node.site }}</span>{% endif %}
+      {% if node.reports_to %}<span class="pill pill--muted">Relève de {{ node.reports_to }}</span>{% endif %}
+      {% if count %}<span class="tree__count" aria-hidden="true">{{ count }}</span>{% endif %}
+      {{ review_pills(node.member) }}
+    </span>
+  </div>
+  {% if node.source or node.member.gm_notes %}
+  <div class="tree__extra">
+    {% if node.source %}<p class="structure-source">{{ ui("scroll") }}<span>Source : {{ node.source.label }}</span></p>{% endif %}
+    {{ gm_notes(node.member) }}
+  </div>
+  {% endif %}
+  {% if count %}
+  <div class="tree__panel">
+    <ul class="tree__group" role="group">
+      {% for child in node.children %}{{ tree_item(child, level + 1, loop.index, loop.length) }}{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</li>
+{%- endmacro %}
+
+{% macro tree(nodes, id, label) -%}
+<ul class="tree" role="tree" id="{{ id }}" aria-label="{{ label }}" data-tree>
+  {% for node in nodes %}{{ tree_item(node, 1, loop.index, loop.length) }}{% endfor %}
+</ul>
+{%- endmacro %}

@@ -9,6 +9,7 @@ from app.deps import CurrentPlayer, DbSession, log_in
 from app.models import Character, WaArticle
 from app.routes.lore import LORE_SECTION, artefact_fiche, lore_page_context
 from app.routes.personnage import PERSON_SECTION, player_page_context
+from app.routes.structures import territory_response
 from app.sections import ADVENTURE_KEY
 from app.services.access import (
     accessible_article_ids,
@@ -27,6 +28,7 @@ from app.services.dossiers import (
 )
 from app.services.media import player_section_banner
 from app.services.person_tags import player_badge_index
+from app.services.structures import Viewer, build_structure
 from app.templating import flash, render
 from app.worldanvil.bbcode import render_bbcode
 
@@ -138,7 +140,13 @@ def journal_entry(
 
 
 @router.get("/articles/{wa_id}")
-def shared_article(request: Request, wa_id: str, db: DbSession, player: CurrentPlayer) -> Response:
+def shared_article(
+    request: Request,
+    wa_id: str,
+    db: DbSession,
+    player: CurrentPlayer,
+    lieu: Annotated[str, Query(max_length=80)] = "",
+) -> Response:
     article = get_player_article(db, player, wa_id)
     if article is None:
         raise HTTPException(status_code=404)
@@ -163,7 +171,31 @@ def shared_article(request: Request, wa_id: str, db: DbSession, player: CurrentP
             "dossier": dossier,
             "artefact_fiche": artefact_fiche(db, article, render_context, dm=False, player=player),
             "person_badges": player_badge_index(db, player),
+            "structure": build_structure(
+                db,
+                article,
+                Viewer(dm=False, accessible=frozenset(accessible)),
+                render_context,
+                lieu,
+            ),
         },
+    )
+
+
+@router.get("/articles/{wa_id}/territoire")
+def shared_article_territory(
+    request: Request,
+    wa_id: str,
+    db: DbSession,
+    player: CurrentPlayer,
+    lieu: Annotated[str, Query(max_length=80)] = "",
+) -> Response:
+    article = get_player_article(db, player, wa_id)
+    if article is None:
+        raise HTTPException(status_code=404)
+    viewer = Viewer(dm=False, accessible=frozenset(accessible_article_ids(db, player)))
+    return territory_response(
+        request, db, article, viewer, player_render_context(db, player), lieu, player_mode=True
     )
 
 

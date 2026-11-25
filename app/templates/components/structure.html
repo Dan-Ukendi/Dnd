@@ -1,0 +1,39 @@
+{% from "components/tabs.html" import tab_panel %}
+{% from "components/ui.html" import empty_state %}
+{% from "components/structure_macros.html" import tree %}
+{% set hierarchy = structure.hierarchy %}
+{% set dm_hint = "" if player_mode else " Ajoutez-les dans source/structures puis lancez import-structures." %}
+
+{% call tab_panel("structure", "territoire", "Territoire") %}
+<div class="structure" id="structure-territoire-body" data-territory>
+{% include "components/territory.html" %}
+</div>
+{% endcall %}
+
+{% call tab_panel("structure", "hierarchie", "Hiérarchie") %}
+<div class="structure">
+{% if hierarchy.heads or hierarchy.orphans %}
+{% set tree_ids = [] %}
+{% if hierarchy.heads %}{% set _ = tree_ids.append("structure-sommet") %}{% endif %}
+{% if hierarchy.orphans %}{% set _ = tree_ids.append("structure-sans-superieur") %}{% endif %}
+<div class="structure-toolbar" role="group" aria-label="Arbre de la hiérarchie">
+  <button type="button" class="btn btn--compact" data-tree-all="expand" aria-controls="{{ tree_ids | join(' ') }}">Tout déplier</button>
+  <button type="button" class="btn btn--compact" data-tree-all="collapse" aria-controls="{{ tree_ids | join(' ') }}">Tout replier</button>
+</div>
+{% if hierarchy.heads %}
+<section class="tree-section" aria-labelledby="hierarchie-sommet">
+  <h3 class="tree-section__title" id="hierarchie-sommet">Sommet<span>{{ hierarchy.heads | length }}</span></h3>
+  {{ tree(hierarchy.heads, "structure-sommet", "Sommet de la hiérarchie") }}
+</section>
+{% endif %}
+{% if hierarchy.orphans %}
+<section class="tree-section" aria-labelledby="hierarchie-sans-superieur">
+  <h3 class="tree-section__title" id="hierarchie-sans-superieur">Sans supérieur défini<span>{{ hierarchy.orphans | length }}</span></h3>
+  {{ tree(hierarchy.orphans, "structure-sans-superieur", "Personnes sans supérieur défini") }}
+</section>
+{% endif %}
+{% else %}
+{{ empty_state("Aucune hiérarchie consignée", "Personne n'est encore rattaché à cette " ~ ("organisation." if structure.mode == "organisation" else "rubrique.") ~ dm_hint, "users") }}
+{% endif %}
+</div>
+{% endcall %}
