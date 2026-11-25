@@ -140,6 +140,26 @@ class WaArticle(Base):
         return self.removed_at is None
 
 
+PERSON_CATEGORIES = ("lore", "character", "encounter")
+
+
+class ArticleCategory(Base):
+    __tablename__ = "article_categories"
+    __table_args__ = (
+        CheckConstraint(
+            "category IN ('lore', 'character', 'encounter')", name="ck_article_categories_category"
+        ),
+    )
+
+    wa_id: Mapped[str] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), primary_key=True
+    )
+    category: Mapped[str] = mapped_column(String(10))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
 class WaImage(Base):
     __tablename__ = "wa_images"
 

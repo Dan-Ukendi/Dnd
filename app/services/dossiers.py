@@ -533,7 +533,7 @@ def import_dossier(
     return character
 
 
-def _mark_relations_edited(character: Character) -> None:
+def mark_relations_edited(character: Character) -> None:
     if character.profile is None:
         character.profile = CharacterProfile(character_id=character.id)
     character.profile.relations_edited_at = utcnow()
@@ -544,7 +544,7 @@ def add_relation(db: Session, character: Character, entry: dict[str, Any]) -> Ch
     position = max((relation.position for relation in character.relations), default=-1) + 1
     relation = CharacterRelation(position=position, **values)
     character.relations.append(relation)
-    _mark_relations_edited(character)
+    mark_relations_edited(character)
     db.commit()
     return relation
 
@@ -554,13 +554,13 @@ def update_relation(
 ) -> None:
     for key, value in relation_values(db, entry).items():
         setattr(relation, key, value)
-    _mark_relations_edited(character)
+    mark_relations_edited(character)
     db.commit()
 
 
 def delete_relation(db: Session, character: Character, relation: CharacterRelation) -> None:
     character.relations.remove(relation)
-    _mark_relations_edited(character)
+    mark_relations_edited(character)
     db.commit()
 
 
