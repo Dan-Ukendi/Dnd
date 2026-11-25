@@ -85,8 +85,13 @@ document.addEventListener("click", (event) => {
   }
 });
 
+function ownTabs(container) {
+  const list = container.querySelector(":scope > .tabs__list");
+  return list ? Array.from(list.querySelectorAll(':scope > [role="tab"]')) : [];
+}
+
 function selectTab(container, tab, focus) {
-  container.querySelectorAll('[role="tab"]').forEach((item) => {
+  ownTabs(container).forEach((item) => {
     const active = item === tab;
     item.setAttribute("aria-selected", String(active));
     item.tabIndex = active ? 0 : -1;
@@ -110,21 +115,38 @@ function selectTab(container, tab, focus) {
   }
 }
 
+function revealTab(tab) {
+  let current = tab;
+  while (current) {
+    const container = current.closest("[data-tabs]");
+    if (!container) {
+      return;
+    }
+    selectTab(container, current, false);
+    const panel = container.closest('[role="tabpanel"]');
+    current = panel ? document.querySelector(`[role="tab"][aria-controls="${CSS.escape(panel.id)}"]`) : null;
+  }
+}
+
+function tabFromHash() {
+  const key = window.location.hash.slice(1);
+  return key ? document.querySelector(`[data-tabs] [role="tab"][data-tab="${CSS.escape(key)}"]`) : null;
+}
+
 document.querySelectorAll("[data-tabs]").forEach((container) => {
-  const tabs = Array.from(container.querySelectorAll('[role="tab"]'));
+  const tabs = ownTabs(container);
   if (!tabs.length) {
     return;
   }
-  const fromHash = tabs.find((tab) => window.location.hash === `#${tab.dataset.tab}`);
   container.classList.add("tabs--ready");
-  selectTab(container, fromHash || tabs[0], false);
+  selectTab(container, tabs[0], false);
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       selectTab(container, tab, false);
       history.replaceState(null, "", `#${tab.dataset.tab}`);
     });
   });
-  container.querySelector('[role="tablist"]').addEventListener("keydown", (event) => {
+  container.querySelector(":scope > .tabs__list").addEventListener("keydown", (event) => {
     const index = tabs.indexOf(document.activeElement);
     if (index < 0) {
       return;
@@ -140,14 +162,16 @@ document.querySelectorAll("[data-tabs]").forEach((container) => {
   });
 });
 
+const initialTab = tabFromHash();
+if (initialTab) {
+  revealTab(initialTab);
+}
+
 window.addEventListener("hashchange", () => {
-  const key = window.location.hash.slice(1);
-  document.querySelectorAll("[data-tabs]").forEach((container) => {
-    const tab = container.querySelector(`[role="tab"][data-tab="${CSS.escape(key)}"]`);
-    if (tab) {
-      selectTab(container, tab, false);
-    }
-  });
+  const tab = tabFromHash();
+  if (tab) {
+    revealTab(tab);
+  }
 });
 
 document.addEventListener("submit", (event) => {

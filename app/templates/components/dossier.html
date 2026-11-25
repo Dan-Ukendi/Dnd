@@ -1,4 +1,5 @@
 {% from "components/icons.html" import ui %}
+{% from "components/tabs.html" import tab_panel %}
 {% set prefix = "dossier-" ~ dossier.character.id %}
 {% set dm_hint = "" if player_mode else " Complétez le dossier du personnage puis lancez la commande import-dossiers." %}
 {% set editable = dossier.dm and not player_mode %}
@@ -36,8 +37,7 @@
 </div>
 {% endmacro %}
 
-<section class="tabs__panel" id="{{ prefix }}-actions" role="tabpanel" aria-labelledby="{{ prefix }}-tab-actions" tabindex="0">
-  <h2 class="tabs__heading">Actions</h2>
+{% call tab_panel(prefix, "actions", "Actions") %}
   {% if dossier.combat_stats %}
   <dl class="combat-strip">
     {% for stat in dossier.combat_stats %}
@@ -90,10 +90,9 @@
     <p>Armes, sorts et capacités utilisables en combat apparaîtront ici.{{ dm_hint }}</p>
   </div>
   {% endif %}
-</section>
+{% endcall %}
 
-<section class="tabs__panel" id="{{ prefix }}-relations" role="tabpanel" aria-labelledby="{{ prefix }}-tab-relations" tabindex="0">
-  <h2 class="tabs__heading">Relations</h2>
+{% call tab_panel(prefix, "relations", "Relations") %}
   {% if editable %}
   {% if dossier.relations_edited_at %}
   <p class="alert alert--warn">Relations modifiées dans l'application le {{ dossier.relations_edited_at | datetime_fr }}. Un nouvel import {% if dossier.source_file %}de {{ dossier.source_file }} {% endif %}met à jour le reste du dossier mais ne les remplace plus. Pour revenir au fichier : import-dossiers --replace-relations.</p>
@@ -178,10 +177,9 @@
     {% for item in relation_articles %}<option value="{{ item.title }}">{% endfor %}
   </datalist>
   {% endif %}
-</section>
+{% endcall %}
 
-<section class="tabs__panel" id="{{ prefix }}-histoire" role="tabpanel" aria-labelledby="{{ prefix }}-tab-histoire" tabindex="0">
-  <h2 class="tabs__heading">Histoire</h2>
+{% call tab_panel(prefix, "histoire", "Histoire") %}
   <section class="dossier-block" aria-labelledby="{{ prefix }}-backstory">
     <h3 class="dossier-block__title" id="{{ prefix }}-backstory">Backstory</h3>
     {% if dossier.backstory | trim %}
@@ -226,10 +224,9 @@
     <p class="muted">Aucun événement marquant pour l'instant.</p>
     {% endif %}
   </section>
-</section>
+{% endcall %}
 
-<section class="tabs__panel" id="{{ prefix }}-inventaire" role="tabpanel" aria-labelledby="{{ prefix }}-tab-inventaire" tabindex="0">
-  <h2 class="tabs__heading">Inventaire</h2>
+{% call tab_panel(prefix, "inventaire", "Inventaire") %}
   {% if dossier.items %}
   <ul class="inventory">
     {% for item in dossier.items %}
@@ -262,4 +259,4 @@
     <p>Les objets portés par {{ dossier.character.name }} apparaîtront ici.{{ dm_hint }}</p>
   </div>
   {% endif %}
-</section>
+{% endcall %}
