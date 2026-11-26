@@ -122,21 +122,21 @@ Un vieux prêtre lui révèle que son sang vient de Zariel.
 """
 
 [[history.events]]                    # memorable events; every field but title is optional
-title = "Dispute pour l'amulette"
-session = "Séance 1, jour 1"          # shown as a badge
-year = 829                            # world calendar, An 0 = creation of the Empire d'Ébène
-age = 31                              # the character's age
-approximate = false                   # true shows "Vers l'an 829", "vers 31 ans"
-place = "Marché noir de Khar Zakh"
+title = "Le lynchage et le pacte"
+session = "Séance 3"                  # optional badge, only for a session event the DM asks for
+year = 813                            # world calendar, An 0 = creation of the Empire d'Ébène
+age = 15                              # the character's age
+approximate = false                   # true shows "Vers l'an 813", "vers 15 ans"
+place = "..."                         # free place name
 place_article = "..."                 # exact title of a Monde fiche (or place_article_id)
-text = "Au marché noir de Khar Zakh..."
+text = "Une foule d'une trentaine de personnes..."
 consequences = "L'impact sur le personnage..."
 gm_notes = "Ce que le joueur ignore"  # shown to the DM only
 
 [[history.events.people]]             # repeat per person
-name = "Zilvra"
-role = "Rivale, puis alliée"          # optional
-article = "Zilvra"                    # optional: exact fiche title, otherwise a free name
+name = "La voix"
+role = "Patron"                       # optional
+article = "..."                       # optional: exact fiche title, otherwise a free name
 
 [[history.events.organizations]]      # repeat per organisation
 name = "La Guilde des Aventuriers"
@@ -167,9 +167,9 @@ uses = 2
 recharge = "Repos court ou long"
 
 [[actions]]
-type = "action"                       # action, bonus, reaction or free
+type = "action"                       # action, bonus, reaction or free (Caractéristique)
 name = "Trait de feu (Fire Bolt)"
-category = "Sort mineur"              # optional
+category = "Sort mineur"              # optional; "Sort…" files it under Sorts (see below)
 hit = "+5"                            # optional
 damage = "1d10 feu"                   # optional, shown as "Effet"
 save = "DEX 13"                       # optional
@@ -200,6 +200,14 @@ quests = ["Déloger le troll de Sophie."]                          # Quêtes et 
 leads = ["Où l'amulette a-t-elle été forgée ?"]                   # Pistes et questions
 ```
 
+The **Actions** tab shows one collapsible menu per action type, in this order: **Action**,
+**Action bonus**, **Réaction** and **Caractéristique** (`type = "free"`, passive traits). Inside
+**Action**, the actions are split into **Attaques**, **Sorts** and, when needed, **Divers**; inside
+**Action bonus**, into **Sorts** and **Divers**. An action is a spell when its `category` starts with
+"Sort" ("Sort mineur", "Sort niv. 1…"), an attack when it has a `hit` bonus or its category names an
+attack ("Attaque, arme de guerre", "remplace une attaque…"), and goes under Divers otherwise.
+Empty sub-menus are not shown; *Tout déplier* and *Tout replier* open or close every menu.
+
 `gm_notes` and the aliases follow the dossier rules: the aliases are shown to the DM and the
 character's player, `gm_notes` only to the DM (they are never part of a player's page).
 
@@ -214,6 +222,8 @@ was shared the character's article. Re-importing a file replaces that character'
 
 ### Memorable events
 
+Memorable events are the exceptional or life-changing moments of the character's life; what happens
+during a session belongs in the adventure journal, unless the DM explicitly wants it here.
 The **Événements marquants** sub-tab lists the events with a world year on a frieze sorted by year
 (then by file order), and groups the undated ones apart. Each card shows the title, the date and
 age, the session, the place and the people; opening it shows the full event (what happened, place,
