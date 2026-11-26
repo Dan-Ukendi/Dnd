@@ -149,7 +149,7 @@ category = "famille"
 name = "Mère inconnue"
 role = "Mère"                         # optional
 status = "Disparue"                   # optional
-article = "Kratéros"                  # optional: links the World Anvil fiche (or article_id = "...")
+article = "Kratos"                    # optional: links the World Anvil fiche (or article_id = "...")
 text = "Ce qu'il sait d'elle..."
 gm_notes = "Ce que le joueur ignore"  # optional, shown to the DM only
 
@@ -423,15 +423,15 @@ key = "marche-noir"                 # stable identifier
 name = "Le marché noir (Khar Zakh)"
 kind = "lieu"
 parent = "khuchniin-khondii"        # key of another place
-owner = "La Nuit"                   # organisation article (exact title, or owner_id)
+owner = "Shönö"                     # organisation article (exact title, or owner_id)
 location = "caché dans le dédale de la cité"
-source = "La Nuit"                  # required: article the fact comes from (or source_id)
+source = "Shönö"                    # required: article the fact comes from (or source_id)
 anchor = "Le lieu"                  # heading or bold label of that article, shown as a live excerpt
 visibility = "mj"                   # mj (default) or joueurs
 
 [[positions]]
 key = "nuit-erdene"
-organisation = "La Nuit"            # or place = "<place key>"
+organisation = "Shönö"              # or place = "<place key>"
 name = "Erdene"                     # or person = "<person article title>"
 title = "l'Ezen du Grand Étal"
 scope = "Le commerce illicite et le marché noir"
@@ -440,7 +440,7 @@ site = "marche-noir"                # place key
 head = false                        # sommet
 group = false                       # collectif
 hierarchy = true                    # false: présence only
-source = "La Nuit"
+source = "Shönö"
 gm_notes = "…"                       # DM only
 ```
 
@@ -482,14 +482,14 @@ key = "erdene"
 name = "Erdene"
 title = "l'Ezen du Grand Étal"
 gender = "homme"                   # also race, age, standing (Statut)
-organisation = "La Nuit"           # organisation article title (or organisation_id)
+organisation = "Shönö"             # organisation article title (or organisation_id)
 place = "comptoir-des-creances"    # optional place key
 statblock = "crime-boss-a5e"       # stat block key
 tag = "lore"                       # lore (default), character or encounter
 visibility = "joueurs"             # mj (default) or joueurs
 description = "…"
 gm_notes = "…"                     # DM only
-article = "Kratéros"               # optional: attach the sheet to an existing World Anvil person
+article = "Kratos"                 # optional: attach the sheet to an existing World Anvil person
 [[npcs.sections]]                  # optional titled sections, e.g. Histoire, Apparence, Secret
 [[npcs.relations]]                 # npc = "<key>" or article = "<title>", label, reverse_label
 
@@ -516,6 +516,8 @@ rendered like a rulebook stat block, for the DM only, with the source and its li
 `/credits` (linked in the footer of every page) lists the sources and licences: SRD 5.1 (CC BY 4.0),
 Level Up Advanced 5th Edition Monstrous Menagerie (EN Publishing), Monsters of the Multiverse and
 Volo's Guide to Monsters (Wizards of the Coast), Creature Codex and Black Flag SRD (Kobold Press).
+A stat block adapted from a published one names its base in `src` (for example « D'après War
+Priest (MotM p. 254), adapté au niveau 12 ») and keeps that book's credit.
 
 **Players** open a place page only when the place and every enclosing place are marked `joueurs` and
 the place, an enclosing place or its owner is a fiche shared with them; an NPC or role page only when
@@ -533,7 +535,9 @@ whole words, case- and accent-insensitive, longest match first, optional leading
 Les, L'), elisions and contractions (`l'`, `d'`, `du`, `au`), names under 3 letters ignored,
 first occurrence per text section, never in headings, existing links or code, never to the fiche
 being read. A name borne by several fiches is not linked, logged by `app.linking` and listed on
-`/mj/liens`. Character dossier aliases (Maelys) never create a link.
+`/mj/liens`. Character dossier aliases (Maelys) never create a link. An exclusion blocks a
+phrase that contains a fiche name: « Süüdriin shönö », the Khaanat's monthly night, never links
+to the fiche Shönö.
 
 A player gets a link only to a fiche he can open; any other name stays plain text, with no
 tooltip. The hover and focus preview reads `/joueur/liens/apercus` (or `/mj/liens/apercus`), a JSON
