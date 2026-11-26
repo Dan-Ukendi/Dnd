@@ -5,7 +5,7 @@ from markupsafe import Markup
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Place, Position, WaArticle
+from app.models import Npc, NpcRole, Place, Position, WaArticle
 from app.sections import section_of
 from app.services.structure_excerpts import AnchorStatus, find_excerpt
 from app.worldanvil.bbcode import RenderContext, render_bbcode, render_plain_text
@@ -45,6 +45,10 @@ class Viewer:
 
     def href(self, article: WaArticle | None) -> str | None:
         return f"{self.base}/{article.wa_id}" if article and self.can_read(article) else None
+
+    @property
+    def root(self) -> str:
+        return "/mj" if self.dm else "/joueur"
 
 
 @dataclass
@@ -89,6 +93,7 @@ class PlaceCard:
     sub_places: list[Link] = field(default_factory=list)
     children: list["PlaceCard"] = field(default_factory=list)
     explore_href: str | None = None
+    page_href: str | None = None
     gm_notes: str = ""
     visibility: str = ""
 
@@ -143,6 +148,8 @@ class _World:
         self.context = context
         self.places = {row.id: row for row in db.scalars(select(Place))}
         self.positions = {row.id: row for row in db.scalars(select(Position))}
+        self.npcs = {row.id: row for row in db.scalars(select(Npc))}
+        self.roles = {row.id: row for row in db.scalars(select(NpcRole))}
         ids = {
             wa_id
             for row in [*self.places.values(), *self.positions.values()]
@@ -198,6 +205,56 @@ class _World:
             self._position_visible[position.id] = visible
         return self._position_visible[position.id]
 
+    def place_reachable(self, place: Place | None) -> bool:
+        if place is None or not self.place_visible(place):
+            return False
+        if self.viewer.dm:
+            return True
+        seen: set[int] = set()
+        current: Place | None = place
+        while current is not None and current.id not in seen:
+            seen.add(current.id)
+            for wa_id in (current.wa_article_id, current.owner_id):
+                if self.viewer.can_read(self.article(wa_id)):
+                    return True
+            current = self.places.get(current.parent_id) if current.parent_id else None
+        return False
+
+    def place_href(self, place: Place | None) -> str | None:
+        if place is None or not self.place_reachable(place):
+            return None
+        return f"{self.viewer.root}/lieux/{place.key}"
+
+    def npc_visible(self, npc: Npc | None) -> bool:
+        if npc is None:
+            return False
+        if self.viewer.dm:
+            return True
+        if npc.visibility != "joueurs":
+            return False
+        if any(
+            position.npc_id == npc.id and self.position_visible(position)
+            for position in self.positions.values()
+        ):
+            return True
+        return self.place_reachable(self.places.get(npc.place_id) if npc.place_id else None)
+
+    def role_visible(self, role: NpcRole | None) -> bool:
+        if role is None:
+            return False
+        if self.viewer.dm:
+            return True
+        return role.visibility == "joueurs" and any(
+            position.npc_role_id == role.id and self.position_visible(position)
+            for position in self.positions.values()
+        )
+
+    def npc_href(self, npc: Npc | None) -> str | None:
+        return f"{self.viewer.root}/pnj/{npc.key}" if npc and self.npc_visible(npc) else None
+
+    def role_href(self, role: NpcRole | None) -> str | None:
+        return f"{self.viewer.root}/roles/{role.key}" if role and self.role_visible(role) else None
+
     def link(self, wa_id: str | None) -> Link | None:
         article = self.article(wa_id)
         if article is None or not (self.viewer.dm or self.viewer.can_read(article)):
@@ -234,13 +291,22 @@ class _World:
 
     def member(self, position: Position, with_organisation: bool = False) -> Member:
         article = self.article(position.person_article_id)
-        name = position.name or (article.title if article else "") or UNNAMED
+        npc = self.npcs.get(position.npc_id) if position.npc_id else None
+        role = self.roles.get(position.npc_role_id) if position.npc_role_id else None
+        name = (
+            position.name
+            or (article.title if article else "")
+            or (npc.name if npc else "")
+            or (role.name if role else "")
+            or UNNAMED
+        )
         organisation = self.link(position.organisation_id) if with_organisation else None
+        href = self.viewer.href(article) or self.npc_href(npc) or self.role_href(role)
         return Member(
             key=position.key,
             name=name,
             title=position.title,
-            href=self.viewer.href(article),
+            href=href,
             article=article,
             is_group=position.is_group,
             organisation=organisation,
@@ -296,6 +362,7 @@ class _World:
                 for child in visible_children
             ],
             explore_href=f"{explore}{place.key}" if explore and visible_children else None,
+            page_href=self.place_href(place),
             **self._dm_fields(place),
         )
         if depth != 0:
@@ -327,7 +394,12 @@ class _World:
                 )
             if not matches:
                 continue
-            identity = position.person_article_id or position.name or position.key
+            identity = (
+                position.person_article_id
+                or (f"npc:{position.npc_id}" if position.npc_id else "")
+                or position.name
+                or position.key
+            )
             if identity in seen:
                 continue
             seen.add(identity)

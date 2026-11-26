@@ -620,6 +620,31 @@ def render_plain_text(
     return Markup(sanitize_html("".join(f"<p>{renderer.text(part)}</p>" for part in parts)))
 
 
+BULLET_RE = re.compile(r"^\s*[•\-*]\s+")
+
+
+def render_text_blocks(source: str | None, context: RenderContext) -> Markup:
+    if not source or not source.strip():
+        return Markup("")
+    renderer = _Renderer(context)
+    output: list[str] = []
+    items: list[str] = []
+    for line in source.splitlines():
+        if not line.strip():
+            continue
+        bullet = BULLET_RE.match(line)
+        if bullet:
+            items.append(f"<li>{renderer.text(line[bullet.end() :].strip())}</li>")
+            continue
+        if items:
+            output.append(f"<ul>{''.join(items)}</ul>")
+            items = []
+        output.append(f"<p>{renderer.text(line.strip())}</p>")
+    if items:
+        output.append(f"<ul>{''.join(items)}</ul>")
+    return Markup(sanitize_html("".join(output)))
+
+
 def to_plain_text(source: str | None) -> str:
     if not source:
         return ""

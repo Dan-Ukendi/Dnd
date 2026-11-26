@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/static/css/structure.css?v={{ ASSET_VERSION }}">
   <link rel="stylesheet" href="/static/css/lore.css?v={{ ASSET_VERSION }}">
   <link rel="stylesheet" href="/static/css/monde.css?v={{ ASSET_VERSION }}">
+  <link rel="stylesheet" href="/static/css/fiches.css?v={{ ASSET_VERSION }}">
   <script src="/static/vendor/htmx.min.js?v=2.0.4" defer></script>
   <script src="/static/app.js?v={{ ASSET_VERSION }}" defer></script>
 </head>
@@ -59,6 +60,11 @@
     {{ flash_message(pop_flash()) }}
     {% block content %}{% endblock %}
   </main>
+  {% if current_user %}
+  <footer class="site-footer">
+    <a href="/credits"{% if request.url.path == "/credits" %} aria-current="page"{% endif %}>Crédits et licences</a>
+  </footer>
+  {% endif %}
 {% endblock %}
 </body>
 </html>

@@ -10,6 +10,7 @@ from app.models import (
     ArticleCategory,
     Character,
     CharacterRelation,
+    Npc,
     User,
     WaArticle,
 )
@@ -189,6 +190,28 @@ def _previews(entries: Iterable[PersonEntry]) -> list[Preview]:
     ]
 
 
+GM_BADGE = Badge("MJ seulement", "muted")
+
+
+def app_npc_entries(db: Session, category: str, query: str = "") -> list[PersonEntry]:
+    needle = query.strip().casefold()
+    rows = db.scalars(
+        select(Npc).where(Npc.category == category, Npc.wa_article_id.is_(None)).order_by(Npc.name)
+    )
+    entries = []
+    for npc in rows:
+        text = " ".join((npc.name, npc.title, npc.race, npc.description)).casefold()
+        if needle and needle not in text:
+            continue
+        badges = [category_badge(category)]
+        if npc.visibility == "mj":
+            badges.append(GM_BADGE)
+        entries.append(
+            PersonEntry(npc.name, None, f"/mj/pnj/{npc.key}", npc.title or None, badges, None)
+        )
+    return entries
+
+
 def dm_badge_index(db: Session) -> dict[str, list[Badge]]:
     categories = category_map(db)
     index = {
@@ -262,6 +285,8 @@ def dm_tiles(db: Session) -> list[Tile]:
     entries: dict[str, list[PersonEntry]] = {category: [] for category in PERSON_CATEGORIES}
     for article in person_articles(db):
         entries[category_of(categories, article.wa_id)].append(_dm_entry(article, badges))
+    for category in PERSON_CATEGORIES:
+        entries[category].extend(app_npc_entries(db, category))
     linked: dict[str, PersonEntry] = {}
     for group in dm_link_groups(db, badges):
         for entry in group.entries:

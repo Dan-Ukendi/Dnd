@@ -1,14 +1,19 @@
-{% from "components/ui.html" import card, empty_state %}
+{% from "components/ui.html" import card, empty_state, person_card %}
 {% set results_section = request.query_params.get("section", "") %}
 {% set visible_articles = articles | in_section(results_section) %}
 {% if results_section == "lore" %}{% set visible_articles = visible_articles | rejectattr("template_type", "equalto", "item") | list %}{% endif %}
 {% if not q %}{% set visible_articles = visible_articles | natural_order %}{% endif %}
+{% set extra_people = app_people if app_people is defined else [] %}
+{% set total = visible_articles | length + extra_people | length %}
 <section id="article-results" class="results" aria-live="polite">
-  <p class="result-count">{{ visible_articles | length }} fiche{{ "s" if visible_articles | length != 1 }}{% if q %} pour « {{ q }} »{% endif %}</p>
-  {% if visible_articles %}
+  <p class="result-count">{{ total }} fiche{{ "s" if total != 1 }}{% if q %} pour « {{ q }} »{% endif %}</p>
+  {% if total %}
   <ul class="card-grid stagger">
     {% for article in visible_articles %}
     <li>{{ card(article, "/mj/articles/" ~ article.wa_id, False, person_badges.get(article.wa_id, []) if person_badges is defined else none) }}</li>
+    {% endfor %}
+    {% for entry in extra_people %}
+    <li>{{ person_card(entry) }}</li>
     {% endfor %}
   </ul>
   {% elif q or selected_type %}

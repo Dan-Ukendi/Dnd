@@ -81,7 +81,7 @@
   <summary>
     <span class="place-card__glyph" aria-hidden="true">{{ ui("map") }}</span>
     <span class="place-card__identity">
-      <span class="place-card__name">{{ card.name }}</span>
+      {% if card.page_href %}<a class="place-card__name place-card__name--link" href="{{ card.page_href }}"{{ card.page_href | boost }}>{{ card.name }}</a>{% else %}<span class="place-card__name">{{ card.name }}</span>{% endif %}
       <span class="place-card__meta">{{ card.kind_label }}{% if card.location %} · {{ card.location }}{% endif %}</span>
     </span>
     <span class="place-card__pills">
@@ -109,6 +109,7 @@
     {% endif %}
     <div class="place-card__actions">
       {% if card.explore_href %}<a class="btn btn--compact" href="{{ card.explore_href }}#territoire" hx-get="{{ structure.fragment_url }}?lieu={{ card.key }}" hx-target="#structure-territoire-body" hx-swap="innerHTML" hx-push-url="{{ card.explore_href }}#territoire">Explorer ce lieu</a>{% endif %}
+      {% if card.page_href %}<a class="btn btn--compact" href="{{ card.page_href }}"{{ card.page_href | boost }}>Page du lieu</a>{% endif %}
       {% if card.href %}<a class="btn btn--compact" href="{{ card.href }}"{{ card.href | boost }}>Voir la fiche</a>{% endif %}
     </div>
   </div>

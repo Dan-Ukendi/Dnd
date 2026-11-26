@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "fiches/_macros.html" import crumbs, hero, facts_panel, sections, gm_notes, gm_pill, position_list, link_to, statblock %}
+{% block title %}{{ page.name }}{% endblock %}
+{% block main_attrs %}data-section="personnage"{% endblock %}
+{% block content %}
+<div data-section="personnage" class="fiche-page">
+  {% if dm %}
+  {% set trail = [{"label": "Personnage", "href": "/mj/articles?section=personnage"}, {"label": page.category_label, "href": "/mj/articles?section=personnage&tag=" ~ page.category}] %}
+  {% else %}
+  {% set trail = [] %}
+  {% endif %}
+  {{ crumbs(home, "Accueil" if dm else "Mon personnage", trail, page.name) }}
+  {% set pills %}{% if dm %}<span class="pill pill--{{ page.category }}">{{ page.category_label }}</span>{% else %}<span class="pill">Personnage</span>{% endif %}{{ gm_pill(page.visibility) }}{% endset %}
+  {{ hero("Personnage", page.name, page.title, pills, "mask") }}
+  <div class="fiche-layout">
+    {{ facts_panel(page.facts) }}
+    <div class="fiche-main reveal reveal-delay-2">
+      {% if page.description %}
+      <section class="fiche-section" aria-labelledby="description">
+        <h2 class="fiche-section__title" id="description">Description</h2>
+        <div class="prose">{{ page.description }}</div>
+      </section>
+      {% endif %}
+      {{ sections(page.sections) }}
+      {% if page.positions %}
+      <section class="fiche-section" aria-labelledby="postes">
+        <h2 class="fiche-section__title" id="postes">Postes</h2>
+        {{ position_list(page.positions, "Postes de " ~ page.name) }}
+      </section>
+      {% endif %}
+      {% if page.relations %}
+      <section class="fiche-section" aria-labelledby="liens">
+        <h2 class="fiche-section__title" id="liens">Liens</h2>
+        <ul class="chip-list">
+          {% for relation in page.relations %}<li class="chip">{% if relation.label %}{{ relation.label }} : {% endif %}{{ link_to(relation.target) }} {{ gm_pill(relation.visibility) }}</li>{% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {{ gm_notes(page.gm_notes) }}
+      {% if page.stat_block %}{{ statblock(page.stat_block) }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

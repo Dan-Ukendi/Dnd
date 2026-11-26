@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "fiches/_macros.html" import crumbs, hero, facts_panel, sections, gm_notes, gm_pill, position_list, statblock %}
+{% block title %}{{ page.name }}{% endblock %}
+{% block main_attrs %}data-section="personnage"{% endblock %}
+{% block content %}
+<div data-section="personnage" class="fiche-page">
+  {{ crumbs(home, "Accueil" if dm else "Mon personnage", [], page.name) }}
+  {% set pills %}<span class="pill">Fiche de groupe</span>{{ gm_pill(page.visibility) }}{% endset %}
+  {{ hero("Rôle", page.name, "", pills, "users") }}
+  <div class="fiche-layout">
+    {{ facts_panel(page.facts) }}
+    <div class="fiche-main reveal reveal-delay-2">
+      {% if page.description %}
+      <section class="fiche-section" aria-labelledby="description">
+        <h2 class="fiche-section__title" id="description">Description</h2>
+        <div class="prose">{{ page.description }}</div>
+      </section>
+      {% endif %}
+      {{ sections(page.sections) }}
+      {% if page.positions %}
+      <section class="fiche-section" aria-labelledby="postes">
+        <h2 class="fiche-section__title" id="postes">Postes</h2>
+        {{ position_list(page.positions, "Postes tenus par ce rôle") }}
+      </section>
+      {% endif %}
+      {{ gm_notes(page.gm_notes) }}
+      {% if page.stat_block %}{{ statblock(page.stat_block) }}{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

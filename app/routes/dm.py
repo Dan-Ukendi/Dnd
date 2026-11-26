@@ -47,6 +47,7 @@ from app.services.accounts import (
     set_temporary_password,
 )
 from app.services.dossiers import build_dossier
+from app.services.fiches import article_npc_sheet
 from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError
 from app.services.structures import Viewer, build_structure
 from app.services.sync import SyncAlreadyRunningError, latest_run, run_sync_job, start_run
@@ -211,6 +212,9 @@ def article_list(
         "types": article_service.template_type_counts(db),
         "tag": tag,
         "person_badges": person_service.dm_badge_index(db),
+        "app_people": person_service.app_npc_entries(db, tag, q)
+        if tag in person_service.CATEGORY_LABELS and type in ("", "person")
+        else [],
     }
     if is_htmx(request) and request.headers.get("hx-target") == "article-results":
         return render(request, "dm/_article_results.html", context)
@@ -301,6 +305,7 @@ def article_detail(
             "person_badges": person_service.dm_badge_index(db),
             "person_tags": person_service.fiche_tags(db, article),
             "structure": build_structure(db, article, Viewer(dm=True), render_context, lieu),
+            "npc_sheet": article_npc_sheet(db, wa_id, render_context),
             "world_fiche": world_service.world_fiche(db, article, Viewer(dm=True)),
             "world_options": world_service.CATEGORY_LABELS
             if world_service.is_eligible(article)

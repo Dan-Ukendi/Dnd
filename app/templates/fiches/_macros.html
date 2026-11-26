@@ -1,0 +1,147 @@
+{% from "components/icons.html" import ui %}
+
+{% macro link_to(item) -%}
+{% if item.href %}<a href="{{ item.href }}"{{ item.href | boost }}>{{ item.label }}</a>{% else %}{{ item.label }}{% endif %}
+{%- endmacro %}
+
+{% macro gm_pill(visibility) -%}
+{% if visibility == "mj" %}<span class="pill pill--muted">MJ seulement</span>{% endif %}
+{%- endmacro %}
+
+{% macro crumbs(home, home_label, items, current) -%}
+<nav class="breadcrumb" aria-label="Fil d'Ariane">
+  <ol>
+    <li><a href="{{ home }}">{{ home_label }}</a></li>
+    {% for item in items %}
+    <li>{% if item.href %}<a href="{{ item.href }}"{{ item.href | boost }}>{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}</li>
+    {% endfor %}
+    <li><span aria-current="page">{{ current }}</span></li>
+  </ol>
+</nav>
+{%- endmacro %}
+
+{% macro hero(eyebrow, title, subtitle, pills, icon) -%}
+<header class="fiche-hero fiche-hero--compact reveal">
+  <div class="fiche-hero__media"><div class="placeholder" aria-hidden="true">{{ ui(icon) }}</div></div>
+  <div class="fiche-hero__content">
+    <div class="eyebrow">{{ eyebrow }}</div>
+    <h1 class="fiche-hero__title">{{ title }}</h1>
+    {% if subtitle %}<p class="fiche-hero__tagline">{{ subtitle }}</p>{% endif %}
+    <div class="fiche-hero__pills">{{ pills }}</div>
+  </div>
+  <div class="frieze" aria-hidden="true"></div>
+</header>
+{%- endmacro %}
+
+{% macro facts_panel(facts) -%}
+{% if facts %}
+<details class="fiche-panel reveal reveal-delay-1" open data-responsive-panel>
+  <summary>Informations clés {{ ui("chevron") }}</summary>
+  <div class="fiche-panel__body">
+    <dl class="facts">
+      {% for label, value in facts %}<div><dt>{{ label }}</dt><dd>{{ link_to(value) }}</dd></div>{% endfor %}
+    </dl>
+  </div>
+</details>
+{% endif %}
+{%- endmacro %}
+
+{% macro sections(items) -%}
+{% for section in items %}
+<section class="fiche-section{% if section.visibility == 'mj' %} fiche-section--gm{% endif %}" aria-labelledby="section-{{ loop.index }}">
+  <div class="fiche-section__head">
+    <h2 class="fiche-section__title" id="section-{{ loop.index }}">{{ section.title }}</h2>
+    {{ gm_pill(section.visibility) }}
+  </div>
+  <div class="prose">{{ section.html }}</div>
+</section>
+{% endfor %}
+{%- endmacro %}
+
+{% macro gm_notes(html, label="Notes du MJ") -%}
+{% if html %}
+<section class="panel panel--gm prose-panel">
+  <h2 class="panel__title">{{ label }}</h2>
+  <div class="prose">{{ html }}</div>
+</section>
+{% endif %}
+{%- endmacro %}
+
+{% macro position_list(positions, label, show_site=True) -%}
+<ul class="member-list fiche-positions" aria-label="{{ label }}">
+  {% for item in positions %}
+  <li class="member">
+    <span class="member__avatar{% if item.member.is_group %} member__avatar--group{% endif %}" aria-hidden="true">{% if item.member.is_group %}{{ ui("users") }}{% else %}{{ item.member.initial }}{% endif %}</span>
+    <span class="member__identity">
+      {% if item.member.href %}<a class="member__name" href="{{ item.member.href }}"{{ item.member.href | boost }}>{{ item.member.name }}</a>{% else %}<span class="member__name">{{ item.member.name }}</span>{% endif %}
+      {% if item.member.title %}<span class="member__role">{{ item.member.title }}</span>{% endif %}
+      {% if item.scope %}<span class="member__org">{{ item.scope }}</span>{% endif %}
+      {% if item.organisation or (show_site and item.site) or item.reports_to %}
+      <span class="member__org">
+        {%- if item.organisation %}{{ link_to(item.organisation) }}{% endif %}
+        {%- if show_site and item.site %}{% if item.organisation %} · {% endif %}{{ link_to(item.site) }}{% endif %}
+        {%- if item.reports_to %}{% if item.organisation or (show_site and item.site) %} · {% endif %}Relève de {{ link_to(item.reports_to) }}{% endif -%}
+      </span>
+      {% endif %}
+    </span>
+    <span class="member__pills">{{ gm_pill(item.member.visibility) }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro stat_entry(entry) -%}
+<div class="statblock__entry">
+  <p><strong class="statblock__entry-name">{{ entry.name }}.</strong> {{ entry.html }}</p>
+  {% if entry.spells %}
+  <ul class="statblock__spells">
+    {% for label, names in entry.spells %}<li>{{ label }} : <em>{{ names }}</em></li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro statblock(block) -%}
+<section class="statblock" aria-labelledby="statblock-{{ block.key }}">
+  <header class="statblock__head">
+    <p class="statblock__eyebrow">Caractéristiques · MJ seulement</p>
+    <h2 class="statblock__name" id="statblock-{{ block.key }}">{{ block.name }}</h2>
+    {% if block.subtitle %}<p class="statblock__subtitle">{{ block.subtitle }}</p>{% endif %}
+  </header>
+  <div class="statblock__rule" aria-hidden="true"></div>
+  <dl class="statblock__lines">
+    {% if block.armor %}<div><dt>Classe d'armure</dt><dd>{{ block.armor }}</dd></div>{% endif %}
+    {% if block.hit_points %}<div><dt>Points de vie</dt><dd>{{ block.hit_points }}</dd></div>{% endif %}
+    {% if block.speed %}<div><dt>Vitesse</dt><dd>{{ block.speed }}</dd></div>{% endif %}
+  </dl>
+  {% if block.abilities %}
+  <div class="statblock__rule" aria-hidden="true"></div>
+  <table class="statblock__abilities">
+    <caption class="visually-hidden">Caractéristiques de {{ block.name }}</caption>
+    <thead><tr>{% for label, score, mod in block.abilities %}<th scope="col">{{ label }}</th>{% endfor %}</tr></thead>
+    <tbody><tr>{% for label, score, mod in block.abilities %}<td>{{ score }} ({{ mod }})</td>{% endfor %}</tr></tbody>
+  </table>
+  {% endif %}
+  {% if block.properties %}
+  <div class="statblock__rule" aria-hidden="true"></div>
+  <dl class="statblock__lines">
+    {% for label, value in block.properties %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}
+  </dl>
+  {% endif %}
+  {% if block.traits %}
+  <div class="statblock__rule" aria-hidden="true"></div>
+  {% for entry in block.traits %}{{ stat_entry(entry) }}{% endfor %}
+  {% endif %}
+  {% for label, entries in block.groups %}
+  <h3 class="statblock__group">{{ label }}</h3>
+  {% for entry in entries %}{{ stat_entry(entry) }}{% endfor %}
+  {% endfor %}
+  <footer class="statblock__credit">
+    {% if block.credit %}
+    <p>Source : {{ block.source or block.credit.name }} · {{ block.credit.publisher }}{% if block.credit.licence %} · {{ block.credit.licence }}{% endif %} · <a href="/credits#{{ block.credit.anchor }}">Crédits</a></p>
+    {% elif block.source %}
+    <p>Source : {{ block.source }} · <a href="/credits">Crédits</a></p>
+    {% endif %}
+  </footer>
+</section>
+{%- endmacro %}

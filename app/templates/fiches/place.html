@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "fiches/_macros.html" import crumbs, hero, facts_panel, sections, gm_notes, gm_pill, position_list, link_to %}
+{% from "components/icons.html" import ui %}
+{% block title %}{{ page.name }}{% endblock %}
+{% block main_attrs %}data-section="monde"{% endblock %}
+{% block content %}
+<div data-section="monde" class="fiche-page">
+  {{ crumbs(home, "Accueil" if dm else "Mon personnage", page.crumbs, page.name) }}
+  {% set pills %}<span class="pill">{{ page.kind_label }}</span>{{ gm_pill(page.visibility) }}{% endset %}
+  {{ hero("Lieu", page.name, page.location, pills, "map") }}
+  {% set facts = [("Type", {"label": page.kind_label})] %}
+  {% if page.location %}{% set _ = facts.append(("Emplacement", {"label": page.location})) %}{% endif %}
+  {% if page.parent %}{% set _ = facts.append(("Dans", page.parent)) %}{% endif %}
+  {% if page.owner %}{% set _ = facts.append(("Propriétaire", page.owner)) %}{% endif %}
+  {% if page.article %}{% set _ = facts.append(("Fiche", page.article)) %}{% endif %}
+  <div class="fiche-layout">
+    {{ facts_panel(facts) }}
+    <div class="fiche-main reveal reveal-delay-2">
+      {% if page.description %}<div class="prose fiche-summary">{{ page.description }}</div>{% endif %}
+      {{ sections(page.sections) }}
+      {% if page.children %}
+      <section class="fiche-section" aria-labelledby="lieux-contenus">
+        <h2 class="fiche-section__title" id="lieux-contenus">Lieux contenus</h2>
+        <ul class="fiche-places">
+          {% for child in page.children %}
+          <li class="fiche-place">
+            <span class="fiche-place__glyph" aria-hidden="true">{{ ui("map") }}</span>
+            <span class="fiche-place__body">
+              <span class="fiche-place__head">{{ link_to({"label": child.name, "href": child.href}) }}<span class="fiche-place__kind">{{ child.kind_label }}</span>{{ gm_pill(child.visibility) }}</span>
+              {% if child.description %}<span class="fiche-place__text">{{ child.description }}</span>{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {% if page.positions %}
+      <section class="fiche-section" aria-labelledby="postes-lies">
+        <h2 class="fiche-section__title" id="postes-lies">Postes liés</h2>
+        {{ position_list(page.positions, "Postes liés à " ~ page.name, False) }}
+      </section>
+      {% endif %}
+      {{ gm_notes(page.gm_notes) }}
+    </div>
+  </div>
+</div>
+{% endblock %}

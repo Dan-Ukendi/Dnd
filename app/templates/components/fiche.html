@@ -97,6 +97,12 @@
         <div class="prose">{{ html }}</div>
       </section>
       {% endfor %}
+      {% if npc_sheet is defined and npc_sheet and not player_mode %}
+      {% from "fiches/_macros.html" import sections as fiche_sections, gm_notes as fiche_gm_notes, statblock %}
+      {{ fiche_sections(npc_sheet.sections) }}
+      {{ fiche_gm_notes(npc_sheet.gm_notes) }}
+      {% if npc_sheet.stat_block %}{{ statblock(npc_sheet.stat_block) }}{% endif %}
+      {% endif %}
       {% if lore_add is defined and lore_add and not player_mode %}{% include "lore/_add.html" %}{% endif %}
       {% if media_admin %}{% include "dm/_media_admin.html" %}{% endif %}
       {% endset %}
