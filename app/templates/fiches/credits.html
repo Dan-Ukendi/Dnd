@@ -5,7 +5,7 @@
 {{ breadcrumb([("Accueil" if home == "/mj" else "Mon personnage", home), ("Crédits", "")]) }}
 {{ page_head("Crédits", eyebrow="Archives", lead="Les sources des blocs de caractéristiques et leurs licences.") }}
 <div class="credits">
-  <p class="credits__intro">Les blocs de caractéristiques viennent du catalogue <a href="{{ catalogue_url }}" rel="noopener noreferrer" target="_blank">{{ catalogue_name }}</a>. Chaque bloc indique sa source en pied de page.</p>
+  <p class="credits__intro">Les blocs de caractéristiques viennent des ouvrages ci-dessous, pour la plupart par le catalogue <a href="{{ catalogue_url }}" rel="noopener noreferrer" target="_blank">{{ catalogue_name }}</a>. Chaque bloc indique sa source en pied de page.</p>
   {% for credit in credits %}
   <section class="panel credits__entry" id="{{ credit.anchor }}" aria-labelledby="{{ credit.anchor }}-titre">
     <h2 class="panel__title" id="{{ credit.anchor }}-titre">{{ credit.name }}</h2>
