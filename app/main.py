@@ -16,6 +16,7 @@ from app.db import get_engine, ping
 from app.deps import ACCOUNT_SETUP_PATH, NotAuthenticatedError, PasswordChangeRequiredError
 from app.routes import (
     auth,
+    battles,
     chronology,
     dm,
     fiches,
@@ -229,10 +230,12 @@ def create_app() -> FastAPI:
     app.include_router(fiches.player_router)
     app.include_router(fiches.router)
     app.include_router(monde.dm_router)
+    app.include_router(battles.dm_router)
     app.include_router(dm.router)
     app.include_router(chronology.player_router)
     app.include_router(lore.player_router)
     app.include_router(links.player_router)
+    app.include_router(battles.player_router)
     app.include_router(player.router)
     app.include_router(play.router)
     app.include_router(media.router)

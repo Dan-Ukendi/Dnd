@@ -970,3 +970,119 @@ document.addEventListener("htmx:afterSettle", (event) => {
   }
 });
 document.addEventListener("htmx:historyRestore", () => initDice());
+
+const TOKEN_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+function placeBattleTokens(root = document) {
+  root.querySelectorAll("[data-battle-grid]").forEach((grid) => {
+    const cols = Number.parseInt(grid.dataset.cols, 10);
+    const rows = Number.parseInt(grid.dataset.rows, 10);
+    if (!(cols > 0 && rows > 0)) {
+      return;
+    }
+    grid.style.setProperty("--cell-width", `${grid.clientWidth / cols}px`);
+    grid.querySelectorAll("[data-battle-token]").forEach((token) => {
+      const col = Number.parseInt(token.dataset.col, 10);
+      const row = Number.parseInt(token.dataset.row, 10);
+      if (Number.isFinite(col) && Number.isFinite(row)) {
+        token.style.left = `${((col + 0.5) / cols) * 100}%`;
+        token.style.top = `${((row + 0.5) / rows) * 100}%`;
+      }
+    });
+  });
+  root.querySelectorAll("[data-battle-token][data-color]").forEach((token) => {
+    if (TOKEN_COLOR.test(token.dataset.color)) {
+      token.style.setProperty("--token-color", token.dataset.color);
+    }
+  });
+}
+
+function battleCell(grid, x, y) {
+  const rect = grid.getBoundingClientRect();
+  if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+    return null;
+  }
+  const cols = Number.parseInt(grid.dataset.cols, 10);
+  const rows = Number.parseInt(grid.dataset.rows, 10);
+  return {
+    col: Math.min(cols - 1, Math.floor(((x - rect.left) / rect.width) * cols)),
+    row: Math.min(rows - 1, Math.floor(((y - rect.top) / rect.height) * rows)),
+  };
+}
+
+function resetDraggedToken(token) {
+  token.classList.remove("is-dragging");
+  ["left", "top", "width", "height"].forEach((property) => token.style.removeProperty(property));
+}
+
+async function saveTokenCell(board, token, cell) {
+  const body = new URLSearchParams({ col: String(cell.col), row: String(cell.row) });
+  try {
+    const response = await fetch(`${board.dataset.moveUrl}${token.dataset.battleToken}`, {
+      method: "POST",
+      headers: { "X-CSRF-Token": csrfToken(), "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      credentials: "same-origin",
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+document.addEventListener("pointerdown", (event) => {
+  const token = event.target instanceof Element ? event.target.closest("[data-battle-dm] [data-battle-token]") : null;
+  const board = token ? token.closest("[data-battle-dm]") : null;
+  const grid = board ? board.querySelector("[data-battle-grid]") : null;
+  if (!token || !grid || event.button !== 0) {
+    return;
+  }
+  event.preventDefault();
+  const size = token.getBoundingClientRect();
+  token.style.width = `${size.width}px`;
+  token.style.height = `${size.height}px`;
+  token.classList.add("is-dragging");
+  const follow = (moveEvent) => {
+    token.style.left = `${moveEvent.clientX}px`;
+    token.style.top = `${moveEvent.clientY}px`;
+  };
+  follow(event);
+  token.setPointerCapture(event.pointerId);
+  token.addEventListener("pointermove", follow);
+  token.addEventListener(
+    "pointercancel",
+    () => {
+      token.removeEventListener("pointermove", follow);
+      resetDraggedToken(token);
+      placeBattleTokens(board);
+    },
+    { once: true },
+  );
+  token.addEventListener(
+    "pointerup",
+    async (upEvent) => {
+      token.removeEventListener("pointermove", follow);
+      const cell = battleCell(grid, upEvent.clientX, upEvent.clientY);
+      resetDraggedToken(token);
+      if (cell && (await saveTokenCell(board, token, cell))) {
+        if (token.parentElement !== grid) {
+          token.parentElement.removeChild(token);
+          grid.append(token);
+        }
+        token.dataset.col = String(cell.col);
+        token.dataset.row = String(cell.row);
+      }
+      placeBattleTokens(board);
+    },
+    { once: true },
+  );
+});
+
+placeBattleTokens();
+document.addEventListener("htmx:afterSettle", () => placeBattleTokens());
+window.addEventListener("resize", () => placeBattleTokens());
+document.addEventListener("load", (event) => {
+  if (event.target instanceof HTMLImageElement && event.target.closest(".battle-map")) {
+    placeBattleTokens();
+  }
+}, true);

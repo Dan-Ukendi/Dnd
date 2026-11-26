@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import page_head, empty_state %}
+{% block title %}Combat{% endblock %}
+{% block content %}
+{% if battle is none %}
+{{ page_head("Combat", eyebrow="Plan de bataille") }}
+{{ empty_state("Aucun combat", "Aucune carte de combat n'est enregistrée.", "map") }}
+{% else %}
+{{ page_head(battle.name, eyebrow="Plan de bataille", lead="Glissez chaque pion sur une case de la carte : la position est enregistrée aussitôt.") }}
+<div class="battle-dm" data-battle-dm data-move-url="/mj/combat/{{ battle.id }}/pions/">
+  <div class="battle-tray" data-battle-tray aria-label="Pions">
+    {% for token in battle.tokens %}
+    <div class="battle-tray__item">
+      {% if not token.placed %}
+      <button type="button" class="battle-token battle-token--{{ token.size }}" data-battle-token="{{ token.id }}" data-color="{{ token.color }}" title="{{ token.label }}" aria-label="{{ token.label }}"></button>
+      {% endif %}
+      <span>{{ token.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% if battle.image_sha256 %}
+  <div class="battle-map">
+    <img src="/mj/combat/{{ battle.id }}/carte?v={{ battle.image_sha256[:12] }}" alt="Carte du combat" draggable="false">
+    <div class="battle-grid" data-battle-grid data-cols="{{ battle.cols }}" data-rows="{{ battle.rows }}">
+      {% for token in battle.tokens if token.placed %}
+      <button type="button" class="battle-token battle-token--{{ token.size }}" data-battle-token="{{ token.id }}" data-color="{{ token.color }}" data-col="{{ token.col }}" data-row="{{ token.row }}" title="{{ token.label }}" aria-label="{{ token.label }}"></button>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  {{ empty_state("Carte absente", "La carte de ce combat n'est pas encore enregistrée.", "map") }}
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

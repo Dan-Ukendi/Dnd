@@ -10,6 +10,7 @@ from app.config import get_settings
 from app.db import get_engine, get_session_factory, wait_for_database
 from app.models import Role, SyncStatus
 from app.services.accounts import AccountError, create_user
+from app.services.battles import FIRST_BATTLE, BattleError, install_battle
 from app.services.chronology import ChronologyError, load_seed
 from app.services.dossiers import (
     DossierError,
@@ -215,6 +216,23 @@ def cmd_load_timeline(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_import_battle_map(args: argparse.Namespace) -> int:
+    path = Path(args.image)
+    if not path.is_file():
+        logger.error("File not found: %s", path)
+        return 1
+    with get_session_factory()() as db:
+        try:
+            battle, notes = install_battle(db, FIRST_BATTLE, path.read_bytes())
+        except BattleError as exc:
+            logger.error("Invalid battle map: %s", exc)
+            return 1
+        for note in notes:
+            print(note)
+        print(f"Battle '{battle.name}' ready")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -281,6 +299,12 @@ def build_parser() -> argparse.ArgumentParser:
         "load-timeline", help="Insert the chronology events of the versioned dataset"
     )
     timeline.set_defaults(handler=cmd_load_timeline)
+
+    battle = commands.add_parser(
+        "import-battle-map", help="Create the first battle, its tokens and store its map image"
+    )
+    battle.add_argument("image", help="Map image (WebP, PNG or JPEG) divided into a square grid")
+    battle.set_defaults(handler=cmd_import_battle_map)
     return parser
 
 

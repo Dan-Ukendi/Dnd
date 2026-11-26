@@ -1128,3 +1128,55 @@ class LinkExclusion(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
     )
+
+
+class Battle(Base):
+    __tablename__ = "battles"
+    __table_args__ = (CheckConstraint("cols > 0 AND rows > 0", name="ck_battles_grid"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    cols: Mapped[int] = mapped_column(Integer)
+    rows: Mapped[int] = mapped_column(Integer)
+    image: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    image_type: Mapped[str | None] = mapped_column(String(50))
+    image_sha256: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+    tokens: Mapped[list["BattleToken"]] = relationship(
+        back_populates="battle",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="BattleToken.position",
+    )
+
+
+class BattleToken(Base):
+    __tablename__ = "battle_tokens"
+    __table_args__ = (
+        CheckConstraint("size IN ('small', 'medium', 'large')", name="ck_battle_tokens_size"),
+        CheckConstraint("(col IS NULL) = (row IS NULL)", name="ck_battle_tokens_cell"),
+        CheckConstraint("col IS NULL OR (col >= 0 AND row >= 0)", name="ck_battle_tokens_range"),
+        UniqueConstraint("battle_id", "label", name="uq_battle_tokens_label"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    battle_id: Mapped[int] = mapped_column(ForeignKey("battles.id", ondelete="CASCADE"), index=True)
+    label: Mapped[str] = mapped_column(String(60))
+    color: Mapped[str] = mapped_column(String(7))
+    size: Mapped[str] = mapped_column(String(10), default="medium", server_default="medium")
+    character_id: Mapped[int | None] = mapped_column(
+        ForeignKey("characters.id", ondelete="SET NULL"), index=True
+    )
+    col: Mapped[int | None] = mapped_column(Integer)
+    row: Mapped[int | None] = mapped_column(Integer)
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+    battle: Mapped[Battle] = relationship(back_populates="tokens")
+    character: Mapped[Character | None] = relationship()
+
+    @property
+    def placed(self) -> bool:
+        return self.col is not None and self.row is not None
