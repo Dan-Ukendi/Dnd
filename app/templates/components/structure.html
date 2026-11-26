@@ -1,6 +1,6 @@
 {% from "components/tabs.html" import tab_panel %}
 {% from "components/ui.html" import empty_state %}
-{% from "components/structure_macros.html" import hierarchy_view, architecture_view, household_view %}
+{% from "components/structure_macros.html" import hierarchy_view, architecture_view, household_view, inhabitants_view %}
 {% set hierarchy = structure.hierarchy %}
 {% set building = structure.building %}
 {% set dm_hint = "" if player_mode else " Ajoutez-les dans source/structures puis lancez import-structures." %}
@@ -43,6 +43,17 @@
 </div>
 {% endcall %}
 
+{% if structure.inhabitants is not none %}
+{% call tab_panel("structure", "habitants", "Habitants") %}
+<div class="structure">
+{% if structure.inhabitants.count %}
+{{ inhabitants_view(structure.inhabitants, structure.article.title) }}
+{% else %}
+{{ empty_state("Aucun habitant consigné", "Personne n'est encore rattaché à cette ville." ~ dm_hint, "users") }}
+{% endif %}
+</div>
+{% endcall %}
+{% else %}
 {% call tab_panel("structure", "hierarchie", "Hiérarchie") %}
 <div class="structure">
 {% if not hierarchy.empty %}
@@ -52,4 +63,5 @@
 {% endif %}
 </div>
 {% endcall %}
+{% endif %}
 {% endif %}

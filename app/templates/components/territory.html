@@ -54,7 +54,7 @@
   <details class="place-focus__more" open>
     <summary>Détails de ce lieu</summary>
     <div class="place-focus__body">
-      {{ place_details(focus, "monde") }}
+      {{ place_details(focus, territory.card_mode) }}
       {% if focus.page_href %}<a class="btn btn--compact" href="{{ focus.page_href }}"{{ focus.page_href | boost }}>Page du lieu</a>{% endif %}
       {% if focus.href %}<a class="btn btn--compact" href="{{ focus.href }}"{{ focus.href | boost }}>Voir la fiche</a>{% endif %}
     </div>
@@ -82,7 +82,7 @@
   {{ disclosure_toolbar("structure-places", "Cartes des lieux") }}
 </div>
 <ul class="place-list" id="structure-places">
-  {% for card in territory.cards %}<li>{{ place_card(card, "monde", structure) }}</li>{% endfor %}
+  {% for card in territory.cards %}<li>{{ place_card(card, territory.card_mode, structure) }}</li>{% endfor %}
 </ul>
 {% else %}
 {{ empty_state("Aucun lieu à ce niveau", "Aucun endroit n'est consigné à l'intérieur de " ~ focus.name ~ ".", "map") }}

@@ -41,7 +41,10 @@ KIND_LABELS = {
 UNNAMED = "Titulaire non nommé"
 ORGANISATION_DEPTH = 2
 ARCHITECTURE = "architecture"
+CITY = "ville"
+CITY_CATEGORY = WORLD_CATEGORIES[1]
 BUILDING_CATEGORY = WORLD_CATEGORIES[2]
+OTHER_INHABITANTS = "Autres habitants"
 BRANCH, DWELLING = BUILDING_TYPES
 BUILDING_TYPE_LABELS = {BRANCH: "Branche d'une organisation", DWELLING: "Habitation"}
 PERSON_TEMPLATE = "person"
@@ -95,6 +98,7 @@ class Member:
     organisation: Link | None = None
     gm_notes: str = ""
     visibility: str = ""
+    place: Link | None = None
 
     @property
     def initial(self) -> str:
@@ -158,6 +162,7 @@ class Territory:
     total: int
     has_root: bool
     entries: list[PlaceCard] = field(default_factory=list)
+    card_mode: str = MONDE
 
 
 @dataclass
@@ -188,6 +193,17 @@ class HouseholdGroup:
     key: str
     label: str
     members: list[Member]
+    link: Link | None = None
+
+
+@dataclass
+class Inhabitants:
+    leaders: list[Member]
+    groups: list[HouseholdGroup]
+
+    @property
+    def count(self) -> int:
+        return len(self.leaders) + sum(len(group.members) for group in self.groups)
 
 
 @dataclass
@@ -224,6 +240,7 @@ class Structure:
     page_url: str
     show_tabs: bool
     building: Building | None = None
+    inhabitants: Inhabitants | None = None
 
 
 class _World:
@@ -484,6 +501,113 @@ class _World:
         household = self.household(place) if building_type == DWELLING else []
         return Building(building_type, default, rooms, household)
 
+    def identity(self, position: Position | None = None, npc: Npc | None = None) -> str:
+        if position is not None:
+            if position.person_article_id:
+                return position.person_article_id
+            npc = self.npcs.get(position.npc_id) if position.npc_id else None
+            if npc is None:
+                if position.npc_role_id:
+                    return f"role:{position.npc_role_id}"
+                return f"name:{position.name or position.key}"
+        if npc is None:
+            return ""
+        return npc.wa_article_id or f"npc:{npc.id}"
+
+    def _located_member(self, position: Position, place: Place | None) -> Member:
+        member = self.member(position)
+        if place is not None:
+            member.place = Link(place.name, self.place_href(place), place.key)
+        return member
+
+    def _npc_member(self, npc: Npc, place: Place | None) -> Member:
+        article = self.article(npc.wa_article_id)
+        return Member(
+            key=f"npc-{npc.key}",
+            name=article.title if article else npc.name,
+            title=npc.title,
+            href=self.viewer.href(article) or self.npc_href(npc),
+            article=article,
+            is_group=False,
+            place=Link(place.name, self.place_href(place), place.key) if place else None,
+            **({"visibility": npc.visibility} if self.viewer.dm else {}),
+        )
+
+    def inhabitants(self, city: Place | None) -> Inhabitants:
+        if city is None or not self.place_visible(city):
+            return Inhabitants([], [])
+        scope = {city.id} | {row.id for row in self.descendants(city.id)}
+        leaders: list[Member] = []
+        seen: set[str] = set()
+        for position in self.ordered:
+            if (
+                position.place_id == city.id
+                and position.organisation_id is None
+                and position.is_head
+                and not position.is_group
+                and self.position_visible(position)
+                and not (position.npc_id and not self.npc_visible(self.npcs.get(position.npc_id)))
+            ):
+                identity = self.identity(position)
+                if identity not in seen:
+                    seen.add(identity)
+                    in_city = position.site_id in scope and position.site_id != city.id
+                    site = self.places.get(position.site_id) if in_city else None
+                    leaders.append(self._located_member(position, site))
+        organisations: dict[str, str] = {}
+        ranks: dict[str, int] = {}
+        for rank, position in enumerate(self.ordered):
+            if position.organisation_id and self.position_visible(position):
+                organisations.setdefault(self.identity(position), position.organisation_id)
+                ranks.setdefault(self.identity(position), rank)
+        for npc in sorted(self.npcs.values(), key=lambda row: (row.position, row.id)):
+            if npc.organisation_id and self.npc_visible(npc):
+                organisations.setdefault(self.identity(npc=npc), npc.organisation_id)
+        found: list[tuple[str, Member]] = []
+        for position in self.ordered:
+            if position.is_group or not self.position_visible(position):
+                continue
+            if position.npc_id and not self.npc_visible(self.npcs.get(position.npc_id)):
+                continue
+            located = position.site_id if position.site_id is not None else position.place_id
+            if located not in scope:
+                continue
+            identity = self.identity(position)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            place = self.places.get(located)
+            found.append(
+                (identity, self._located_member(position, None if located == city.id else place))
+            )
+        for npc in sorted(self.npcs.values(), key=lambda row: (row.position, row.id)):
+            if npc.place_id not in scope or not self.npc_visible(npc):
+                continue
+            identity = self.identity(npc=npc)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            place = self.places.get(npc.place_id)
+            found.append(
+                (identity, self._npc_member(npc, None if npc.place_id == city.id else place))
+            )
+        grouped: dict[str, list[Member]] = defaultdict(list)
+        links: dict[str, Link] = {}
+        order = {identity: index for index, (identity, _) in enumerate(found)}
+        found.sort(key=lambda item: (ranks.get(item[0], len(self.ordered)), order[item[0]]))
+        for identity, member in found:
+            organisation = organisations.get(identity)
+            link = self.link(organisation) if organisation else None
+            key = organisation if link is not None else ""
+            if link is not None:
+                links[key] = link
+            grouped[key].append(member)
+        keys = sorted((key for key in grouped if key), key=lambda key: links[key].label.casefold())
+        groups = [HouseholdGroup(key, links[key].label, grouped[key], links[key]) for key in keys]
+        if grouped.get(""):
+            groups.append(HouseholdGroup("", OTHER_INHABITANTS, grouped[""]))
+        return Inhabitants(leaders, groups)
+
     def card(
         self,
         place: Place,
@@ -544,7 +668,7 @@ class _World:
 
     def _members_at(self, place: Place, mode: str) -> list[Member]:
         members: list[Member] = []
-        if mode == ORGANISATION:
+        if mode in (ORGANISATION, CITY):
             return members
         seen: set[str] = set()
         for position in self.ordered:
@@ -716,12 +840,21 @@ def build_structure(
             (place for place in world.places.values() if place.wa_article_id == article.wa_id),
             None,
         )
-        territory = _monde_territory(world, root, page_url, focus_key)
-        hierarchy = world.local_hierarchy(root) if root is not None else Hierarchy([], [], 0)
+        city = article.world_category == CITY_CATEGORY
+        territory = _monde_territory(world, root, page_url, focus_key, CITY if city else MONDE)
+        if city:
+            hierarchy = Hierarchy([], [], 0)
+        else:
+            hierarchy = world.local_hierarchy(root) if root is not None else Hierarchy([], [], 0)
     building = None
+    inhabitants = None
     if mode == MONDE and article.world_category == BUILDING_CATEGORY:
         building = world.building(root, article)
-    if building is None:
+    if mode == MONDE and article.world_category == CITY_CATEGORY:
+        inhabitants = world.inhabitants(root)
+    if inhabitants is not None:
+        show = viewer.dm or bool(territory.total or inhabitants.count)
+    elif building is None:
         show = viewer.dm or bool(territory.total or hierarchy.total)
     else:
         people = building.household_count if building.is_dwelling else hierarchy.total
@@ -735,6 +868,7 @@ def build_structure(
         page_url=page_url,
         show_tabs=show,
         building=building,
+        inhabitants=inhabitants,
     )
 
 
@@ -771,9 +905,11 @@ def _has_ancestor_in(world: _World, place: Place, ids: set[int]) -> bool:
     return False
 
 
-def _monde_territory(world: _World, root: Place | None, page_url: str, focus_key: str) -> Territory:
+def _monde_territory(
+    world: _World, root: Place | None, page_url: str, focus_key: str, card_mode: str = MONDE
+) -> Territory:
     if root is None or not world.place_visible(root):
-        return Territory(MONDE, [], None, [], 0, False)
+        return Territory(MONDE, [], None, [], 0, False, card_mode=card_mode)
     explore = f"{page_url}?lieu="
     focus = root
     if focus_key:
@@ -794,7 +930,7 @@ def _monde_territory(world: _World, root: Place | None, page_url: str, focus_key
         for place in chain
     ]
     crumbs[0].href = None if focus.id == root.id else page_url
-    focus_card = world.card(focus, mode=MONDE, explore=explore, depth=1)
+    focus_card = world.card(focus, mode=card_mode, explore=explore, depth=1)
     return Territory(
         MONDE,
         focus_card.children,
@@ -802,4 +938,5 @@ def _monde_territory(world: _World, root: Place | None, page_url: str, focus_key
         crumbs,
         len(world.descendants(root.id)),
         True,
+        card_mode=card_mode,
     )

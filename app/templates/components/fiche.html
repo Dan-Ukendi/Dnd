@@ -124,6 +124,8 @@
       {% set tabs_label = "Sections de " ~ article.title %}
       {% if structure.building %}
       {% set _ = fiche_tabs.extend([("architecture", "Architecture"), ("habitants", "Habitants") if structure.building.is_dwelling else ("hierarchie", "Hiérarchie")]) %}
+      {% elif structure.inhabitants is not none %}
+      {% set _ = fiche_tabs.extend([("territoire", "Territoire"), ("habitants", "Habitants")]) %}
       {% else %}
       {% set _ = fiche_tabs.extend([("territoire", "Territoire"), ("hierarchie", "Hiérarchie")]) %}
       {% endif %}

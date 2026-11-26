@@ -377,6 +377,17 @@ assigned there. *Habitants* groups the people attached to the dwelling (or to it
 `staff` position counts as an employee); people without a role are listed under *Personnes
 présentes*. Empty groups are not shown.
 
+**Villes.** A Ville fiche shows **Fiche | Territoire | Habitants** (anchors `#territoire`,
+`#habitants`). *Territoire* lists only the known places (districts, buildings, places), without
+people or organisations. *Habitants* starts with the leaders of the city (`head` positions attached to
+the city place itself, not to an organisation), then the known characters who live or work there,
+grouped by organisation (alphabetical, each heading linked to the organisation fiche) and finally
+*Autres habitants*. A person counts when a visible position places them in the city or one of its
+sub-places (its `site`, or its `place` when it has no site; a position whose site is elsewhere does
+not count) or when an app NPC's `place` is there; their organisation comes from any of their
+organisation positions or the NPC's `organisation`. Collective positions (`group = true`) are left
+out, and each person appears once, linked to their World Anvil fiche or NPC page when one exists.
+
 ## Personnage tags
 
 Each fiche of the Personnage section carries one tag: **Lore** (people tied to the history of the

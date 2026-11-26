@@ -32,6 +32,7 @@
       {% if member.href %}<a class="member__name" href="{{ member.href }}"{{ member.href | boost }}>{{ member.name }}</a>{% else %}<span class="member__name">{{ member.name }}</span>{% endif %}
       {% if member.title %}<span class="member__role">{{ member.title }}</span>{% endif %}
       {% if member.organisation %}<span class="member__org">{{ link_to(member.organisation) }}</span>{% endif %}
+      {% if member.place %}<span class="member__org">{{ link_to(member.place) }}</span>{% endif %}
     </span>
     <span class="member__pills">{{ visibility_pill(member) }}</span>
   </li>
@@ -47,12 +48,12 @@
   <div><dt>Type</dt><dd>{{ card.kind_label }}</dd></div>
   {% if card.location %}<div><dt>Emplacement</dt><dd>{{ card.location }}</dd></div>{% endif %}
   {% if card.parent %}<div><dt>Dans</dt><dd>{{ card.parent.label }}</dd></div>{% endif %}
-  {% if mode == "monde" and card.owner %}<div><dt>Propriétaire</dt><dd>{{ link_to(card.owner) }}</dd></div>{% endif %}
+  {% if mode in ("monde", "ville") and card.owner %}<div><dt>Propriétaire</dt><dd>{{ link_to(card.owner) }}</dd></div>{% endif %}
 </dl>
 {% if card.excerpt %}<div class="prose place-excerpt">{{ card.excerpt }}</div>{% endif %}
 {% if card.description %}<div class="prose place-excerpt">{{ card.description }}</div>{% endif %}
 {% if card.source %}<p class="structure-source">{{ ui("scroll") }}<span>Source : {{ link_to(card.source) }}</span></p>{% endif %}
-{% if mode != "organisation" %}
+{% if mode == "monde" %}
 <section class="place-section">
   <h3 class="place-section__title">Organisations présentes</h3>
   {% if card.organisations %}
@@ -271,6 +272,21 @@
 <ul class="place-list" id="architecture-lieux" aria-label="Pièces et endroits de {{ owner }}">
   {% for card in rooms %}<li>{{ room_card(card) }}</li>{% endfor %}
 </ul>
+{%- endmacro %}
+
+{% macro inhabitants_view(inhabitants, owner) -%}
+{% if inhabitants.leaders %}
+<section class="tree-section household-group" aria-labelledby="habitants-chefs">
+  <h3 class="tree-section__title" id="habitants-chefs">{{ "Chef de la ville" if inhabitants.leaders | length == 1 else "Chefs de la ville" }}</h3>
+  {{ member_list(inhabitants.leaders, "Chefs de " ~ owner, "") }}
+</section>
+{% endif %}
+{% for group in inhabitants.groups %}
+<section class="tree-section household-group" aria-labelledby="habitants-groupe-{{ loop.index }}">
+  <h3 class="tree-section__title" id="habitants-groupe-{{ loop.index }}">{% if group.link %}{{ link_to(group.link) }}{% else %}{{ group.label }}{% endif %}</h3>
+  {{ member_list(group.members, group.label ~ " à " ~ owner, "") }}
+</section>
+{% endfor %}
 {%- endmacro %}
 
 {% macro household_view(groups, owner) -%}
