@@ -199,8 +199,11 @@ def test_frise_layout_clusters_same_year_events_and_keeps_bands_readable(db: Ses
     assert all(band.width >= 300 for band in frise.bands)
     clusters = [marker for marker in frise.points if marker.kind == "cluster"]
     assert any(marker.year == 829 and len(marker.events) >= 12 for marker in clusters)
-    sleep = next(marker for marker in frise.ranges if marker.first.event.code == "A4")
-    assert sleep.x < frise.bands[1].x + frise.bands[1].width < sleep.x + sleep.width
+    assert all(marker.first.event.code != "A4" for marker in frise.ranges)
+    assert any(view.event.code == "A4" for marker in frise.points for view in marker.events)
+    split = next(marker for marker in frise.ranges if marker.first.event.code == "B8")
+    tumultes = frise.bands[-1]
+    assert tumultes.x <= split.x < split.x + split.width <= tumultes.x + tumultes.width
     xs = [mark.x for mark in frise.milestones]
     assert xs == sorted(xs)
 

@@ -410,7 +410,7 @@ def test_malvaar_group_holds_the_joug_legend_with_seven_parts_and_navigation(
     assert "Récit du sorcier." in first.text
     assert f'href="{base}/parties/2" rel="next"' in first.text
     assert 'rel="prev"' not in first.text
-    assert "523 av. É. – An 829" in first.text
+    assert "523 av. É. – 485 av. É." in first.text
     middle = client.get(f"{base}/parties/4")
     assert "Récit de la chute." in middle.text
     assert f'href="{base}/parties/3" rel="prev"' in middle.text

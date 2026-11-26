@@ -112,7 +112,7 @@ def test_upgrade_moves_the_present_to_829(
     db: Session, legacy: dict[str, int], alembic_config: Config
 ) -> None:
     db.rollback()
-    command.upgrade(alembic_config, "head")
+    command.upgrade(alembic_config, "0016")
     shifted, events, relation, lore, backstory, summary = snapshot(db)
     assert shifted == {
         "A4": (-485, 829),
@@ -144,7 +144,7 @@ def test_downgrade_restores_the_old_years(
 ) -> None:
     before = snapshot(db)
     db.rollback()
-    command.upgrade(alembic_config, "head")
+    command.upgrade(alembic_config, "0016")
     db.rollback()
     command.downgrade(alembic_config, "0015")
     assert snapshot(db) == before
@@ -154,10 +154,10 @@ def test_migration_is_idempotent(
     db: Session, legacy: dict[str, int], alembic_config: Config
 ) -> None:
     db.rollback()
-    command.upgrade(alembic_config, "head")
+    command.upgrade(alembic_config, "0016")
     first = snapshot(db)
     db.rollback()
     command.downgrade(alembic_config, "0015")
     db.rollback()
-    command.upgrade(alembic_config, "head")
+    command.upgrade(alembic_config, "0016")
     assert snapshot(db) == first

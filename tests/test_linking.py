@@ -480,4 +480,4 @@ def test_migration_prefills_the_dm_aliases(db: Session, config: Config) -> None:
         ("Gronk", gronk.wa_id),
         ("Khüchniin Khöndii", city.wa_id),
     }
-    assert db.scalars(select(LinkExclusion.term)).all() == ["La Nuit"]
+    assert db.scalars(select(LinkExclusion.term)).all() == ["Süüdriin shönö"]
