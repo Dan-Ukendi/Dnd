@@ -245,7 +245,7 @@ def test_combat_actions_are_grouped_by_action_type(db: Session, table: Table) ->
         "Action",
         "Action bonus",
         "Réaction",
-        "Sans action",
+        "Caractéristique",
     ]
     assert [action.name for action in dossier.action_groups[0].actions] == [
         "Trait de feu",

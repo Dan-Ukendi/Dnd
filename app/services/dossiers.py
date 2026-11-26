@@ -65,8 +65,14 @@ ACTION_KINDS: tuple[tuple[str, str], ...] = (
     ("action", "Action"),
     ("bonus", "Action bonus"),
     ("reaction", "Réaction"),
-    ("free", "Sans action"),
+    ("free", "Caractéristique"),
 )
+ACTION_FAMILIES: dict[str, tuple[tuple[str, str], ...]] = {
+    "action": (("attack", "Attaques"), ("spell", "Sorts"), ("other", "Divers")),
+    "bonus": (("spell", "Sorts"), ("other", "Divers")),
+}
+SPELL_CATEGORY_RE = re.compile(r"^sorts?(?:-|$)")
+ATTACK_CATEGORY_RE = re.compile(r"(?:^|-)attaques?(?:-|$)")
 ACTION_ALIASES = {
     "action": "action",
     "bonus": "bonus",
@@ -79,6 +85,8 @@ ACTION_ALIASES = {
     "passif": "free",
     "passive": "free",
     "sans-action": "free",
+    "caracteristique": "free",
+    "caracteristiques": "free",
 }
 COMBAT_FIELDS: tuple[tuple[str, str], ...] = (
     ("armor_class", "Classe d'armure"),
@@ -288,6 +296,14 @@ class ActionView:
     uses: str | None
     concentration: bool
     html: Markup
+    family: str = "other"
+
+
+@dataclass(frozen=True)
+class ActionSubgroup:
+    key: str
+    label: str
+    actions: list[ActionView]
 
 
 @dataclass(frozen=True)
@@ -295,6 +311,7 @@ class ActionGroup:
     key: str
     label: str
     actions: list[ActionView]
+    subgroups: list[ActionSubgroup] = field(default_factory=list)
 
 
 def _slug(value: str) -> str:
@@ -459,6 +476,27 @@ def _apply_event(event: CharacterEvent, values: dict[str, Any]) -> CharacterEven
         CharacterEventOrganization(position=index, **row) for index, row in enumerate(organizations)
     ]
     return event
+
+
+def action_family(category: str | None, hit: str | None) -> str:
+    slug = _slug(category or "")
+    if SPELL_CATEGORY_RE.search(slug):
+        return "spell"
+    if hit or ATTACK_CATEGORY_RE.search(slug):
+        return "attack"
+    return "other"
+
+
+def _action_subgroups(kind: str, actions: list[ActionView]) -> list[ActionSubgroup]:
+    families = ACTION_FAMILIES.get(kind)
+    if families is None:
+        return []
+    keys = {key for key, _ in families}
+    grouped: dict[str, list[ActionView]] = {}
+    for action in actions:
+        family = action.family if action.family in keys else "other"
+        grouped.setdefault(family, []).append(action)
+    return [ActionSubgroup(key, label, grouped[key]) for key, label in families if key in grouped]
 
 
 def normalize_action_kind(value: str) -> str:
@@ -966,10 +1004,13 @@ def build_dossier(
                 action.uses,
                 action.concentration,
                 render_bbcode(action.text, context),
+                action_family(action.category, action.hit),
             )
         )
     action_groups = [
-        ActionGroup(key, label, by_kind[key]) for key, label in ACTION_KINDS if key in by_kind
+        ActionGroup(key, label, by_kind[key], _action_subgroups(key, by_kind[key]))
+        for key, label in ACTION_KINDS
+        if key in by_kind
     ]
     return Dossier(
         character=character,

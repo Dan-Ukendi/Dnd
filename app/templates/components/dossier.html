@@ -1,5 +1,6 @@
 {% from "components/icons.html" import ui %}
 {% from "components/tabs.html" import tabs, tab_panel %}
+{% from "components/structure_macros.html" import disclosure_toolbar %}
 {% set prefix = "dossier-" ~ dossier.character.id %}
 {% set dm_hint = "" if player_mode else " Complétez le dossier du personnage puis lancez la commande import-dossiers." %}
 {% set editable = dossier.dm and not player_mode %}
@@ -204,6 +205,30 @@
 </li>
 {% endmacro %}
 
+{% macro action_list(actions) %}
+<ul class="action-list">
+  {% for action in actions %}
+  <li class="action-card">
+    <div class="action-card__head">
+      <span class="action-card__name">{{ action.name }}</span>
+      {% if action.category %}<span class="pill pill--muted">{{ action.category }}</span>{% endif %}
+      {% if action.concentration %}<span class="pill pill--warn">Concentration</span>{% endif %}
+    </div>
+    {% if action.hit or action.damage or action.save or action.range or action.uses %}
+    <dl class="action-card__stats">
+      {% if action.hit %}<div><dt>Toucher</dt><dd>{{ action.hit }}</dd></div>{% endif %}
+      {% if action.damage %}<div><dt>Effet</dt><dd>{{ action.damage }}</dd></div>{% endif %}
+      {% if action.save %}<div><dt>Sauvegarde</dt><dd>{{ action.save }}</dd></div>{% endif %}
+      {% if action.range %}<div><dt>Portée</dt><dd>{{ action.range }}</dd></div>{% endif %}
+      {% if action.uses %}<div><dt>Utilisation</dt><dd>{{ action.uses }}</dd></div>{% endif %}
+    </dl>
+    {% endif %}
+    {% if action.html | trim %}<div class="prose">{{ action.html }}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}
+
 {% call tab_panel(prefix, "actions", "Actions") %}
   {% if dossier.combat_stats %}
   <dl class="combat-strip">
@@ -224,32 +249,33 @@
   </ul>
   {% endif %}
   {% if dossier.action_groups %}
-  {% for group in dossier.action_groups %}
-  <section class="action-group action-group--{{ group.key }}" aria-labelledby="{{ prefix }}-actions-{{ group.key }}">
-    <h3 class="relation-group__title" id="{{ prefix }}-actions-{{ group.key }}">{{ group.label }}</h3>
-    <ul class="action-list">
-      {% for action in group.actions %}
-      <li class="action-card">
-        <div class="action-card__head">
-          <span class="action-card__name">{{ action.name }}</span>
-          {% if action.category %}<span class="pill pill--muted">{{ action.category }}</span>{% endif %}
-          {% if action.concentration %}<span class="pill pill--warn">Concentration</span>{% endif %}
-        </div>
-        {% if action.hit or action.damage or action.save or action.range or action.uses %}
-        <dl class="action-card__stats">
-          {% if action.hit %}<div><dt>Toucher</dt><dd>{{ action.hit }}</dd></div>{% endif %}
-          {% if action.damage %}<div><dt>Effet</dt><dd>{{ action.damage }}</dd></div>{% endif %}
-          {% if action.save %}<div><dt>Sauvegarde</dt><dd>{{ action.save }}</dd></div>{% endif %}
-          {% if action.range %}<div><dt>Portée</dt><dd>{{ action.range }}</dd></div>{% endif %}
-          {% if action.uses %}<div><dt>Utilisation</dt><dd>{{ action.uses }}</dd></div>{% endif %}
-        </dl>
+  {% set actions_id = prefix ~ "-action-groups" %}
+  {{ disclosure_toolbar(actions_id, "Menus des actions") }}
+  <div class="action-groups" id="{{ actions_id }}">
+    {% for group in dossier.action_groups %}
+    <details class="action-group action-group--{{ group.key }}" data-action-group="{{ group.key }}">
+      <summary class="action-group__summary">
+        <span class="action-group__title">{{ group.label }}</span>
+        {{ ui("chevron", "icon action-group__chevron") }}
+      </summary>
+      <div class="action-group__body">
+        {% if group.subgroups %}
+        {% for subgroup in group.subgroups %}
+        <details class="action-subgroup" data-action-subgroup="{{ subgroup.key }}">
+          <summary class="action-subgroup__summary">
+            <span class="action-subgroup__title">{{ subgroup.label }}</span>
+            {{ ui("chevron", "icon action-group__chevron") }}
+          </summary>
+          {{ action_list(subgroup.actions) }}
+        </details>
+        {% endfor %}
+        {% else %}
+        {{ action_list(group.actions) }}
         {% endif %}
-        {% if action.html | trim %}<div class="prose">{{ action.html }}</div>{% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
   {% else %}
   <div class="empty-state">
     {{ ui("candle") }}
