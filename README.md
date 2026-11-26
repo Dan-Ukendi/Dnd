@@ -404,9 +404,9 @@ includes the positions of every place it contains, with *Relève de …* when th
 `source/structures/` and are imported with:
 
 ```
-python -m app.cli import-structures source/structures            # created / updated / unchanged / failed
-python -m app.cli import-structures source/structures --dry-run  # check only, nothing written
-python -m app.cli import-structures source/structures --prune    # also delete rows whose key left the files
+python -m app.cli import-structures source/structures source/npcs            # created / updated / unchanged / failed
+python -m app.cli import-structures source/structures source/npcs --dry-run  # check only, nothing written
+python -m app.cli import-structures source/structures source/npcs --prune    # also delete rows whose key left the files
 ```
 
 The import is idempotent by `key` and all-or-nothing: an unknown article title, a cycle, a superior
@@ -441,11 +441,80 @@ source = "La Nuit"
 gm_notes = "…"                       # DM only
 ```
 
+A row can be renamed without losing its id: give the new `key` and list the old one in
+`previous_keys = ["old-key"]` (the run reports it as updated, *renamed from*). `--prune` deletes NPCs,
+roles and stat blocks only when NPC files are part of the run.
+
 **Players.** The tabs appear only on a fiche already shared with the player and only when something
 is visible. Only rows marked `joueurs` are shown, and a hidden place or position hides its whole
 subtree. A person, place or organisation links to its fiche only when that fiche is accessible to
 the player; DM notes and *MJ seulement* badges are never rendered for a player. Excerpts
 are read live from the source article and shown only when that article is readable.
+
+## Place pages, NPCs and stat blocks
+
+**Place pages.** Every place has a page, `/mj/lieux/<key>` or `/joueur/lieux/<key>` (`/lieux/<key>`
+redirects to the right one): breadcrumb of the enclosing places, key facts, the short description,
+its titled **sections**, the places it contains and the positions assigned to it, each linking to its
+NPC or role. On a Territoire card, clicking the card opens the dropdown as before (description,
+Personnel); clicking the place name, or *Page du lieu*, opens the page. A place without sections
+shows no empty block. Sections come from the place in the TOML file:
+
+```toml
+[[places.sections]]
+title = "Le lieu"
+text = """Paragraph lines.
+• bullet lines start with •"""
+visibility = "joueurs"            # joueurs (default) or mj; titles Secret(s) and Accroches are always mj
+```
+
+**NPCs and roles** are app data (no World Anvil article), imported by the same command from
+`source/npcs/npcs.toml`, with the stat blocks of `source/npcs/statblocks.json`:
+
+```toml
+[[npcs]]
+key = "erdene"
+name = "Erdene"
+title = "l'Ezen du Grand Étal"
+gender = "homme"                   # also race, age, standing (Statut)
+organisation = "La Nuit"           # organisation article title (or organisation_id)
+place = "comptoir-des-creances"    # optional place key
+statblock = "crime-boss-a5e"       # stat block key
+tag = "lore"                       # lore (default), character or encounter
+visibility = "joueurs"             # mj (default) or joueurs
+description = "…"
+gm_notes = "…"                     # DM only
+article = "Kratéros"               # optional: attach the sheet to an existing World Anvil person
+[[npcs.sections]]                  # optional titled sections, e.g. Histoire, Apparence, Secret
+[[npcs.relations]]                 # npc = "<key>" or article = "<title>", label, reverse_label
+
+[[roles]]                          # generic role behind a group position (fiche de groupe)
+key = "veilleur"
+name = "Veilleur"
+statblock = "guard"
+headcount = "une dizaine"          # optional Effectif
+description = "…"
+```
+
+A position points to an NPC with `npc = "<key>"` or to a role with `npc_role = "<key>"`. The DM finds
+app NPCs under their tag in the Personnage section (`/mj/pnj/<key>`); roles open at `/mj/roles/<key>`.
+An NPC attached to a World Anvil person (`article`) is not listed separately: its sections, DM notes
+and stat block appear on that fiche for the DM.
+
+**Stat blocks** use short JSON keys: `n` name, `sz` size, `tp` type, `al` alignment, `ac` / `acd`
+armour class and its description, `hp` / `hd` hit points and dice, `spd` speed, `ab` the six scores
+(STR DEX CON INT WIS CHA), `sv` saves, `sk` skills, `dv` / `dr` / `di` / `ci` vulnerabilities,
+resistances, immunities, condition immunities, `se` senses, `la` languages, `cr` challenge, `tr`
+traits, `ac_` actions, `ba` bonus actions, `re` reactions (lists of `{"n": name, "t": text}`, with an
+optional `"sp": [["1st level (4 slots)", "spell, spell"]]` for spell lists) and `src` source. They are
+rendered like a rulebook stat block, for the DM only, with the source and its licence in the footer.
+`/credits` (linked in the footer of every page) lists the sources and licences: SRD 5.1 (CC BY 4.0),
+Level Up Advanced 5th Edition Monstrous Menagerie (EN Publishing) and Black Flag SRD (Kobold Press).
+
+**Players** open a place page only when the place and every enclosing place are marked `joueurs` and
+the place, an enclosing place or its owner is a fiche shared with them; an NPC or role page only when
+it is marked `joueurs` and a position they can see points to it. They never get *mj* sections, DM
+notes, *mj* relations or stat blocks, and app NPCs never appear in their Personnage tiles.
 
 ## Automatic links between fiches
 
@@ -476,7 +545,7 @@ with `hx-boost` (never forms); Back restores the previous fiche at the same scro
 | `python -m app.cli wait-db` | Wait until the database accepts connections (used at start-up while Neon wakes up). |
 | `python -m app.cli import-media FOLDER [--manifest PATH]` | Import the portraits, maps and PDFs listed in the manifest (see below). |
 | `python -m app.cli import-characters [--manifest PATH]` | Create the player accounts and characters listed in the manifest. |
-| `python -m app.cli import-structures PATH... [--dry-run] [--prune]` | Import the places and positions of the Territoire and Hiérarchie tabs (see above). |
+| `python -m app.cli import-structures PATH... [--dry-run] [--prune]` | Import the places, positions, NPCs, roles and stat blocks (TOML and JSON, see above). |
 | `alembic upgrade head` | Apply migrations. |
 | `ruff format . && ruff check .` | Format and lint. |
 | `pytest` | Run the test suite (see below). |
