@@ -86,6 +86,20 @@ def test_dm_places_and_moves_a_token(client: TestClient, db: Session, battle: Ba
     assert full.status_code == 200 and full.headers["content-type"] == "image/png"
 
 
+def test_dm_resets_the_map(client: TestClient, db: Session, battle: Battle) -> None:
+    login(client, "maitre")
+    troll = tokens(db)["Troll"]
+    move(client, battle, troll, 4, 5)
+    response = client.post(
+        f"/mj/combat/{battle.id}/reinitialiser",
+        data={"csrf_token": csrf_token(client, "/mj/combat")},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    db.expire_all()
+    assert all(token.col is None and token.row is None for token in tokens(db).values())
+
+
 def test_move_requires_csrf(client: TestClient, db: Session, battle: Battle) -> None:
     login(client, "maitre")
     troll = tokens(db)["Troll"]

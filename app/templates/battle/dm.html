@@ -7,6 +7,10 @@
 {{ empty_state("Aucun combat", "Aucune carte de combat n'est enregistrée.", "map") }}
 {% else %}
 {{ page_head(battle.name, eyebrow="Plan de bataille", lead="Glissez chaque pion sur une case de la carte : la position est enregistrée aussitôt.") }}
+<form method="post" action="/mj/combat/{{ battle.id }}/reinitialiser" class="inline-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit" class="btn btn--danger">Réinitialiser la carte</button>
+</form>
 <div class="battle-dm" data-battle-dm data-move-url="/mj/combat/{{ battle.id }}/pions/">
   <div class="battle-tray" data-battle-tray aria-label="Pions">
     {% for token in battle.tokens %}

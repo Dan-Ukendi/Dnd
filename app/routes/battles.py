@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import RedirectResponse, Response
 
 from app.deps import CurrentDm, CurrentPlayer, DbSession
 from app.models import Battle, BattleToken, User
@@ -60,6 +60,18 @@ def dm_move_token(
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     db.commit()
     return Response(status_code=204)
+
+
+@dm_router.post("/{battle_id}/reinitialiser")
+def dm_reset_battle(battle_id: int, db: DbSession, dm: CurrentDm) -> Response:
+    battle = db.get(Battle, battle_id)
+    if battle is None:
+        raise HTTPException(status_code=404)
+    for token in battle.tokens:
+        token.col = None
+        token.row = None
+    db.commit()
+    return RedirectResponse("/mj/combat", status_code=303)
 
 
 def _player_view(db: DbSession, player: User) -> dict[str, object]:
