@@ -212,7 +212,12 @@ def test_tabs_follow_the_building_type_and_leave_other_fiches_alone(
         "Architecture",
         "Hiérarchie",
     ]
-    for article in (world.clerge, world.city, world.nation):
+    assert tabs(dm_page(client, f"/mj/articles/{world.city.wa_id}")) == [
+        "Fiche",
+        "Territoire",
+        "Habitants",
+    ]
+    for article in (world.clerge, world.nation):
         assert tabs(dm_page(client, f"/mj/articles/{article.wa_id}")) == [
             "Fiche",
             "Territoire",
