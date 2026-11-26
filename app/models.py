@@ -137,6 +137,7 @@ class WaArticle(Base):
     world_category_row: Mapped["WorldCategory | None"] = relationship(
         lazy="selectin", viewonly=True
     )
+    building_type_row: Mapped["BuildingType | None"] = relationship(lazy="selectin", viewonly=True)
 
     @property
     def is_available(self) -> bool:
@@ -146,6 +147,11 @@ class WaArticle(Base):
     def world_category(self) -> str | None:
         row = self.world_category_row
         return row.category if row is not None else None
+
+    @property
+    def building_type(self) -> str | None:
+        row = self.building_type_row
+        return row.building_type if row is not None else None
 
 
 PERSON_CATEGORIES = ("lore", "character", "encounter")
@@ -184,6 +190,26 @@ class WorldCategory(Base):
         ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), primary_key=True
     )
     category: Mapped[str | None] = mapped_column(String(10))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+BUILDING_TYPES = ("branch", "dwelling")
+
+
+class BuildingType(Base):
+    __tablename__ = "building_types"
+    __table_args__ = (
+        CheckConstraint(
+            "building_type IN ('branch', 'dwelling')", name="ck_building_types_building_type"
+        ),
+    )
+
+    wa_id: Mapped[str] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), primary_key=True
+    )
+    building_type: Mapped[str] = mapped_column(String(10))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
     )
@@ -785,6 +811,7 @@ PLACE_KINDS = (
     "lieu",
 )
 STRUCTURE_VISIBILITIES = ("mj", "joueurs")
+HOUSEHOLD_ROLES = ("owner", "resident", "employee")
 
 
 class Place(Base):
@@ -837,6 +864,9 @@ class Position(Base):
         ),
         CheckConstraint("superior_id IS NULL OR superior_id <> id", name="ck_positions_superior"),
         CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_positions_visibility"),
+        CheckConstraint(
+            "household IN ('', 'owner', 'resident', 'employee')", name="ck_positions_household"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -863,6 +893,7 @@ class Position(Base):
     is_group: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     in_hierarchy: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    household: Mapped[str] = mapped_column(String(10), default="", server_default="")
     source_article_id: Mapped[str | None] = mapped_column(
         ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
     )

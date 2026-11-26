@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import (
+    HOUSEHOLD_ROLES,
     PERSON_CATEGORIES,
     PLACE_KINDS,
     STRUCTURE_VISIBILITIES,
@@ -77,6 +78,7 @@ POSITION_KEYS = frozenset(
         "group",
         "hierarchy",
         "staff",
+        "household",
         "source",
         "source_id",
         "anchor",
@@ -213,6 +215,7 @@ POSITION_COLUMNS = (
     "is_group",
     "in_hierarchy",
     "is_staff",
+    "household",
     "source_article_id",
     "source_anchor",
     "gm_notes",
@@ -501,6 +504,12 @@ def _prepare_position(entry: _Entry, articles: _Articles) -> None:
     )
     if entry.values["is_staff"] and entry.values["is_head"]:
         entry.errors.append("a staff position cannot be the head of a hierarchy")
+    household = _text(entry.data, "household") or ""
+    if household and household not in HOUSEHOLD_ROLES:
+        entry.errors.append(f"household must be one of {', '.join(HOUSEHOLD_ROLES)}")
+    if household and place is None:
+        entry.errors.append("'household' is only allowed on a position attached to a place")
+    entry.values["household"] = household
     for ref in ("place", "superior", "site", "npc", "npc_role"):
         value = _text(entry.data, ref)
         if value:
