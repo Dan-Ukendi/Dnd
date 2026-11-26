@@ -38,6 +38,7 @@
         <a href="/mj" {% if path == "/mj" %}aria-current="page"{% endif %}>{{ ui("hearth") }}Accueil</a>
         <a href="/mj/articles?section={{ ADVENTURE_KEY }}" {% if path == "/mj/articles" and request.query_params.get("section") == ADVENTURE_KEY %}aria-current="page"{% endif %}>{{ ui("compass") }}{{ SECTIONS_BY_KEY[ADVENTURE_KEY].label }}</a>
         <a href="/mj/chronologie" {% if path.startswith("/mj/chronologie") %}aria-current="page"{% endif %}>{{ ui("hourglass") }}Chronologie</a>
+        <a href="/mj/combat" {% if path.startswith("/mj/combat") %}aria-current="page"{% endif %}>{{ ui("map") }}Combat</a>
         <a href="/mj/joueurs" {% if path.startswith("/mj/joueurs") %}aria-current="page"{% endif %}>{{ ui("users") }}Joueurs</a>
         <a href="/mj/personnages" {% if path.startswith("/mj/personnages") %}aria-current="page"{% endif %}>{{ ui("mask") }}Personnages joués</a>
         {% else %}
