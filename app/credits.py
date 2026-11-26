@@ -51,7 +51,7 @@ CREDITS: tuple[Credit, ...] = (
         licence="",
         licence_url="",
         statement="",
-        markers=("monsters of the multiverse", "volo's guide"),
+        markers=("monsters of the multiverse", "motm", "volo's guide"),
     ),
     Credit(
         key="creature-codex",
