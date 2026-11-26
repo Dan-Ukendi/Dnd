@@ -867,6 +867,12 @@ class Position(Base):
     )
     source_anchor: Mapped[str] = mapped_column(String(300), default="", server_default="")
     gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    npc_id: Mapped[int | None] = mapped_column(
+        ForeignKey("npcs.id", ondelete="SET NULL"), index=True
+    )
+    npc_role_id: Mapped[int | None] = mapped_column(
+        ForeignKey("npc_roles.id", ondelete="SET NULL"), index=True
+    )
     visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
@@ -875,6 +881,167 @@ class Position(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
     )
+
+
+class StatBlock(Base):
+    __tablename__ = "stat_blocks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    size: Mapped[str] = mapped_column(String(40), default="", server_default="")
+    creature_type: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    alignment: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    armor_class: Mapped[int | None] = mapped_column(Integer)
+    armor_desc: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    hit_points: Mapped[int | None] = mapped_column(Integer)
+    hit_dice: Mapped[str] = mapped_column(String(60), default="", server_default="")
+    speed: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    abilities: Mapped[list[int]] = mapped_column(JSONB, default=list, server_default="[]")
+    saves: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    skills: Mapped[str] = mapped_column(String(500), default="", server_default="")
+    vulnerabilities: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    resistances: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    immunities: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    condition_immunities: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    senses: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    languages: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    challenge: Mapped[str] = mapped_column(String(20), default="", server_default="")
+    traits: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
+    actions: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, server_default="[]")
+    bonus_actions: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, default=list, server_default="[]"
+    )
+    reactions: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, default=list, server_default="[]"
+    )
+    source: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+class Npc(Base):
+    __tablename__ = "npcs"
+    __table_args__ = (
+        CheckConstraint("category IN ('lore', 'character', 'encounter')", name="ck_npcs_category"),
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_npcs_visibility"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    title: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    gender: Mapped[str] = mapped_column(String(60), default="", server_default="")
+    race: Mapped[str] = mapped_column(String(100), default="", server_default="")
+    age: Mapped[str] = mapped_column(String(60), default="", server_default="")
+    standing: Mapped[str] = mapped_column(String(300), default="", server_default="")
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    category: Mapped[str] = mapped_column(String(10), default="lore", server_default="lore")
+    stat_block_id: Mapped[int | None] = mapped_column(
+        ForeignKey("stat_blocks.id", ondelete="SET NULL"), index=True
+    )
+    organisation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    place_id: Mapped[int | None] = mapped_column(
+        ForeignKey("places.id", ondelete="SET NULL"), index=True
+    )
+    wa_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), unique=True
+    )
+    visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+class NpcRole(Base):
+    __tablename__ = "npc_roles"
+    __table_args__ = (
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_npc_roles_visibility"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(80), unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    headcount: Mapped[str] = mapped_column(String(100), default="", server_default="")
+    gm_notes: Mapped[str] = mapped_column(Text, default="", server_default="")
+    stat_block_id: Mapped[int | None] = mapped_column(
+        ForeignKey("stat_blocks.id", ondelete="SET NULL"), index=True
+    )
+    organisation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
+    )
+    place_id: Mapped[int | None] = mapped_column(
+        ForeignKey("places.id", ondelete="SET NULL"), index=True
+    )
+    visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+class FicheSection(Base):
+    __tablename__ = "fiche_sections"
+    __table_args__ = (
+        CheckConstraint(
+            "num_nonnulls(place_id, npc_id, npc_role_id) = 1", name="ck_fiche_sections_owner"
+        ),
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_fiche_sections_visibility"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    place_id: Mapped[int | None] = mapped_column(
+        ForeignKey("places.id", ondelete="CASCADE"), index=True
+    )
+    npc_id: Mapped[int | None] = mapped_column(
+        ForeignKey("npcs.id", ondelete="CASCADE"), index=True
+    )
+    npc_role_id: Mapped[int | None] = mapped_column(
+        ForeignKey("npc_roles.id", ondelete="CASCADE"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(200))
+    text: Mapped[str] = mapped_column(Text, default="", server_default="")
+    visibility: Mapped[str] = mapped_column(String(10), default="joueurs", server_default="joueurs")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
+class NpcRelation(Base):
+    __tablename__ = "npc_relations"
+    __table_args__ = (
+        CheckConstraint(
+            "num_nonnulls(target_npc_id, target_article_id) = 1", name="ck_npc_relations_target"
+        ),
+        CheckConstraint("visibility IN ('mj', 'joueurs')", name="ck_npc_relations_visibility"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    npc_id: Mapped[int] = mapped_column(ForeignKey("npcs.id", ondelete="CASCADE"), index=True)
+    target_npc_id: Mapped[int | None] = mapped_column(
+        ForeignKey("npcs.id", ondelete="CASCADE"), index=True
+    )
+    target_article_id: Mapped[str | None] = mapped_column(
+        ForeignKey("wa_articles.wa_id", ondelete="CASCADE"), index=True
+    )
+    label: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    reverse_label: Mapped[str] = mapped_column(String(200), default="", server_default="")
+    visibility: Mapped[str] = mapped_column(String(10), default="mj", server_default="mj")
+    position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class LinkAlias(Base):

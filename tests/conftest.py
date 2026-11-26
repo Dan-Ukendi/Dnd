@@ -30,9 +30,14 @@ from app.services import linking  # noqa: E402
 
 TABLES = (
     "world_categories",
+    "npc_relations",
+    "fiche_sections",
     "link_exclusions",
     "link_aliases",
     "positions",
+    "npc_roles",
+    "npcs",
+    "stat_blocks",
     "places",
     "article_categories",
     "lore_entries",

@@ -264,7 +264,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     structures = commands.add_parser(
         "import-structures",
-        help="Import the places and positions of the Organisation and Monde sections",
+        help="Import places, positions, NPCs, roles and stat blocks (TOML and JSON files)",
     )
     structures.add_argument("paths", nargs="+", help="Folders or .toml files to import")
     structures.add_argument(
@@ -273,7 +273,7 @@ def build_parser() -> argparse.ArgumentParser:
     structures.add_argument(
         "--prune",
         action="store_true",
-        help="Also delete the places and positions whose key is no longer in the files",
+        help="Also delete the rows whose key is no longer in the files",
     )
     structures.set_defaults(handler=cmd_import_structures)
 
