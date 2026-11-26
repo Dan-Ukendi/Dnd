@@ -455,8 +455,10 @@ are read live from the source article and shown only when that article is readab
 
 **Place pages.** Every place has a page, `/mj/lieux/<key>` or `/joueur/lieux/<key>` (`/lieux/<key>`
 redirects to the right one): breadcrumb of the enclosing places, key facts, the short description,
-its titled **sections**, the places it contains and the positions assigned to it, each linking to its
-NPC or role. On a Territoire card, clicking the card opens the dropdown as before (description,
+its titled **sections**, the places it contains and the positions attached to it or exercised there
+(a Khan on his Cour, with the site where he resides), each linking to its NPC or role. When a place is
+linked to a World Anvil article (`article`), its sections also appear on that fiche for the DM only
+(e.g. the *Secret* of Le Khaanat des Cinq Lances). On a Territoire card, clicking the card opens the dropdown as before (description,
 Personnel); clicking the place name, or *Page du lieu*, opens the page. A place without sections
 shows no empty block. Sections come from the place in the TOML file:
 
