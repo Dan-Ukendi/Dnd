@@ -425,7 +425,10 @@ def test_source_notable_events_hold_no_session_events(name: str) -> None:
 @needs_sources
 def test_source_zilvra_dates_follow_her_age() -> None:
     events = _source("zilvra")["history"]["events"]
-    assert [event["title"] for event in events] == list(ZILVRA_BACKSTORY)
+    assert [event["title"] for event in events] == [
+        "Le départ du couvent et de la Maison Veldrynn" if title.startswith("Le départ") else title
+        for title in ZILVRA_BACKSTORY
+    ]
     years = [event["year"] for event in events]
     assert years == sorted(years)
     assert years[0] == ZILVRA_BIRTH and PRESENT - years[0] == 21
@@ -436,6 +439,18 @@ def test_source_zilvra_dates_follow_her_age() -> None:
     departure = next(event for event in events if event["title"].startswith("Le départ"))
     assert departure["age"] == 18 and departure["year"] == 826
     assert all(event["year"] < PRESENT for event in events)
+
+
+@needs_sources
+def test_source_zilvra_family_is_a_drow_matriarchy() -> None:
+    raw = (SOURCES / "zilvra.toml").read_text(encoding="utf-8")
+    assert "baron" not in raw.lower()
+    family = {r["name"]: r for r in _source("zilvra")["relations"] if r["category"] == "famille"}
+    assert next(iter(family)) == "Vhalyra Veldrynn"
+    assert "Mère Matrone" in family["Vhalyra Veldrynn"]["role"]
+    assert "Patron de la Maison" in family["Orzhan Veldrynn"]["role"]
+    assert "grande prêtresse de Lolth" in family["Shaelith Veldrynn"]["role"]
+    assert "Première Fille" in family["Nyssara Veldrynn"]["role"]
 
 
 @needs_sources
