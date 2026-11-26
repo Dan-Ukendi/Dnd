@@ -272,6 +272,9 @@ class Character(Base):
         passive_deletes=True,
         order_by="CharacterJournalEntry.episode",
     )
+    play_state: Mapped["CharacterPlayState | None"] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class CharacterProfile(Base):
@@ -286,6 +289,29 @@ class CharacterProfile(Base):
     relations_edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     events_edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     source_file: Mapped[str | None] = mapped_column(String(255))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
+    )
+
+
+class CharacterPlayState(Base):
+    __tablename__ = "character_play_states"
+    __table_args__ = (
+        CheckConstraint(
+            "current_hp IS NULL OR current_hp >= 0", name="ck_character_play_states_hp"
+        ),
+        CheckConstraint("temp_hp >= 0", name="ck_character_play_states_temp_hp"),
+        CheckConstraint("hit_dice_used >= 0", name="ck_character_play_states_hit_dice"),
+    )
+
+    character_id: Mapped[int] = mapped_column(
+        ForeignKey("characters.id", ondelete="CASCADE"), primary_key=True
+    )
+    current_hp: Mapped[int | None] = mapped_column(Integer)
+    temp_hp: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    hit_dice_used: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    slots_used: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
+    resources_used: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), onupdate=utcnow
     )

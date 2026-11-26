@@ -205,7 +205,12 @@
 </li>
 {% endmacro %}
 
+{% macro roll_button(text, expression, kind, label, damage=[]) -%}
+<button type="button" class="dice-roll" data-roll="{{ expression }}" data-roll-kind="{{ kind }}" data-roll-label="{{ label }}"{% if damage %} data-roll-damage="{{ damage | join(';') }}"{% endif %} title="Lancer {{ expression }}">{{ text }}</button>
+{%- endmacro %}
+
 {% macro action_list(actions) %}
+{% set cid = dossier.character.id %}
 <ul class="action-list">
   {% for action in actions %}
   <li class="action-card">
@@ -216,38 +221,56 @@
     </div>
     {% if action.hit or action.damage or action.save or action.range or action.uses %}
     <dl class="action-card__stats">
-      {% if action.hit %}<div><dt>Toucher</dt><dd>{{ action.hit }}</dd></div>{% endif %}
-      {% if action.damage %}<div><dt>Effet</dt><dd>{{ action.damage }}</dd></div>{% endif %}
+      {% if action.hit %}<div><dt>Toucher</dt><dd>{% if action.hit_roll %}{{ roll_button(action.hit, action.hit_roll, "attack", action.name, action.damage_rolls) }}{% else %}{{ action.hit }}{% endif %}</dd></div>{% endif %}
+      {% if action.damage %}<div><dt>Effet</dt><dd>{% for text, expression in action.damage_segments %}{% if expression %}{{ roll_button(text, expression, "damage", action.name) }}{% else %}{{ text }}{% endif %}{% endfor %}</dd></div>{% endif %}
       {% if action.save %}<div><dt>Sauvegarde</dt><dd>{{ action.save }}</dd></div>{% endif %}
       {% if action.range %}<div><dt>Portée</dt><dd>{{ action.range }}</dd></div>{% endif %}
       {% if action.uses %}<div><dt>Utilisation</dt><dd>{{ action.uses }}</dd></div>{% endif %}
     </dl>
     {% endif %}
     {% if action.html | trim %}<div class="prose">{{ action.html }}</div>{% endif %}
+    {% if action.id and action.spell and action.spell.options %}
+    {% set options = action.spell.options %}
+    {% set url = "/jeu/" ~ cid ~ "/sorts/" ~ action.id %}
+    <form class="action-card__use" method="post" action="{{ url }}" hx-post="{{ url }}" hx-target="#play-{{ cid }}" hx-swap="outerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if options | length > 1 %}
+      <label class="action-card__use-label" for="{{ prefix }}-cast-{{ action.id }}">Lancer avec</label>
+      <select id="{{ prefix }}-cast-{{ action.id }}" name="option">
+        {% for option in options %}<option value="{{ option.value }}">{{ option.label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn--small">Lancer le sort</button>
+      {% else %}
+      <input type="hidden" name="option" value="{{ options[0].value }}">
+      <button type="submit" class="btn btn--small">Lancer le sort <span class="action-card__use-hint">{{ options[0].label }}</span></button>
+      {% endif %}
+    </form>
+    {% elif action.resource %}
+    {% set url = "/jeu/" ~ cid ~ "/ressources/" ~ action.resource.key ~ "/utiliser" %}
+    <form class="action-card__use" method="post" action="{{ url }}" hx-post="{{ url }}" hx-target="#play-{{ cid }}" hx-swap="outerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if action.resource.is_large %}
+      <label class="action-card__use-label" for="{{ prefix }}-use-{{ action.id }}">Quantité</label>
+      <input class="pool__amount" id="{{ prefix }}-use-{{ action.id }}" type="number" name="amount" min="1" max="{{ action.resource.total }}" value="1" inputmode="numeric">
+      {% endif %}
+      <button type="submit" class="btn btn--small">Utiliser <span class="action-card__use-hint">{{ action.resource.name }}</span></button>
+    </form>
+    {% endif %}
   </li>
   {% endfor %}
 </ul>
 {% endmacro %}
 
 {% call tab_panel(prefix, "actions", "Actions") %}
+  {% set play = dossier.play %}
   {% if dossier.combat_stats %}
   <dl class="combat-strip">
-    {% for stat in dossier.combat_stats %}
-    <div class="combat-strip__stat"><dt>{{ stat.label }}</dt><dd>{{ stat.value }}</dd></div>
+    {% for stat in dossier.combat_stats if not (play and play.max_hp and stat.key == "hit_points") %}
+    <div class="combat-strip__stat"><dt>{{ stat.label }}</dt><dd>{% if stat.roll %}{{ roll_button(stat.value, stat.roll, stat.roll_kind, stat.label) }}{% else %}{{ stat.value }}{% endif %}</dd></div>
     {% endfor %}
   </dl>
   {% endif %}
-  {% if dossier.resources %}
-  <ul class="resources" aria-label="Ressources">
-    {% for resource in dossier.resources %}
-    <li class="resource">
-      {% if resource.uses %}<span class="resource__uses">{{ resource.uses }}</span>{% endif %}
-      <span class="resource__name">{{ resource.name }}</span>
-      {% if resource.recharge %}<span class="resource__recharge">{{ resource.recharge }}</span>{% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+  {% if play %}{% include "components/play_panel.html" %}{% endif %}
   {% if dossier.action_groups %}
   {% set actions_id = prefix ~ "-action-groups" %}
   {{ disclosure_toolbar(actions_id, "Menus des actions") }}

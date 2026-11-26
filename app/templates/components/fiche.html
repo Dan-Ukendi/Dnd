@@ -133,7 +133,7 @@
       {% if fiche_tabs %}
       {% call tabs(tabs_prefix, tabs_label, [("fiche", "Fiche")] + fiche_tabs) %}
       {% call tab_panel(tabs_prefix, "fiche", "Fiche", "fiche") %}
-{{ fiche_content }}
+{% if has_dossier %}<div class="dice-scope" data-dice-scope>{{ fiche_content }}</div>{% else %}{{ fiche_content }}{% endif %}
       {% endcall %}
       {% if has_dossier %}{% include "components/dossier.html" %}{% endif %}
       {% if has_structure %}{% include "components/structure.html" %}{% endif %}

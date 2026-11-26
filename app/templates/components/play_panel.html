@@ -1,0 +1,89 @@
+{% set pid = "play-" ~ play.character_id %}
+{% set base = "/jeu/" ~ play.character_id %}
+{% macro htmx_form(action) -%}
+method="post" action="{{ action }}" hx-post="{{ action }}" hx-target="#{{ pid }}" hx-swap="outerHTML"
+{%- endmacro %}
+{% macro pool_row(pool, kind) %}
+<li class="pool pool--{{ kind }}">
+  <div class="pool__head">
+    <span class="pool__name">{{ pool.name }}</span>
+    <span class="pool__count">{{ pool.left }} sur {{ pool.total }}</span>
+  </div>
+  {% if not pool.large %}
+  <span class="pool__pips" aria-hidden="true">{% for full in pool.pips %}<span class="pip{% if not full %} pip--used{% endif %}"></span>{% endfor %}</span>
+  {% endif %}
+  {% if pool.recharge %}<span class="pool__recharge">{{ pool.recharge }}</span>{% endif %}
+  <form class="pool__form" {{ htmx_form(base ~ "/ressources/" ~ pool.key ~ "/utiliser") }}>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if pool.large %}
+    <label class="visually-hidden" for="{{ pid }}-{{ pool.key }}-amount">Quantité pour {{ pool.name }}</label>
+    <input class="pool__amount" id="{{ pid }}-{{ pool.key }}-amount" type="number" name="amount" min="1" max="{{ pool.total }}" value="1" inputmode="numeric">
+    {% endif %}
+    <button type="submit" class="btn btn--small" formaction="{{ base }}/ressources/{{ pool.key }}/utiliser" hx-post="{{ base }}/ressources/{{ pool.key }}/utiliser"{% if not pool.left %} disabled{% endif %}>Utiliser</button>
+    <button type="submit" class="btn btn--small btn--quiet" formaction="{{ base }}/ressources/{{ pool.key }}/rendre" hx-post="{{ base }}/ressources/{{ pool.key }}/rendre"{% if pool.left == pool.total %} disabled{% endif %}>Rendre</button>
+  </form>
+</li>
+{% endmacro %}
+{% if not (play.tracks_anything or play.static_resources) %}
+<section class="play" id="{{ pid }}" hidden></section>
+{% else %}
+<section class="play" id="{{ pid }}" aria-label="Suivi de la partie">
+  {% if play.max_hp %}
+  <div class="play__block play__hp{% if play.hp == 0 %} play__hp--down{% endif %}">
+    <div class="play__hp-head">
+      <h3 class="play__title">Points de vie</h3>
+      <p class="play__hp-value"><strong>{{ play.hp }}</strong> / {{ play.max_hp }}{% if play.temp_hp %}<span class="pill pill--ok">+{{ play.temp_hp }} temporaires</span>{% endif %}</p>
+    </div>
+    <meter class="play__meter" min="0" max="{{ play.max_hp }}" low="{{ (play.max_hp / 2) | round(0, 'ceil') | int }}" high="{{ play.max_hp }}" optimum="{{ play.max_hp }}" value="{{ play.hp }}">{{ play.hp }} sur {{ play.max_hp }}</meter>
+    <form class="play__hp-form" {{ htmx_form(base ~ "/pv") }}>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="visually-hidden" for="{{ pid }}-amount">Nombre de points de vie</label>
+      <input class="play__amount" id="{{ pid }}-amount" type="number" name="amount" min="0" max="999" inputmode="numeric" placeholder="PV" required>
+      <button type="submit" class="btn btn--small btn--danger" name="operation" value="degats">Dégâts</button>
+      <button type="submit" class="btn btn--small" name="operation" value="soins">Soins</button>
+      <button type="submit" class="btn btn--small btn--quiet" name="operation" value="temporaires">PV temporaires</button>
+    </form>
+  </div>
+  {% endif %}
+  {% if play.slots %}
+  <div class="play__block">
+    <h3 class="play__title">Emplacements de sorts</h3>
+    <ul class="pool-list">{% for pool in play.slots %}{{ pool_row(pool, "slot") }}{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if play.resources or play.static_resources %}
+  <div class="play__block">
+    <h3 class="play__title">Ressources</h3>
+    {% if play.resources %}<ul class="pool-list">{% for pool in play.resources %}{{ pool_row(pool, "resource") }}{% endfor %}</ul>{% endif %}
+    {% if play.static_resources %}
+    <ul class="resources" aria-label="Autres ressources">
+      {% for resource in play.static_resources %}
+      <li class="resource">
+        {% if resource.uses %}<span class="resource__uses">{{ resource.uses }}</span>{% endif %}
+        <span class="resource__name">{{ resource.name }}</span>
+        {% if resource.recharge %}<span class="resource__recharge">{{ resource.recharge }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if play.tracks_anything %}
+  <div class="play__block play__rests">
+    <h3 class="play__title">Repos</h3>
+    <form class="play__rest" {{ htmx_form(base ~ "/repos-court") }}>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if play.can_spend_hit_dice %}
+      <label class="play__rest-label" for="{{ pid }}-hit-dice">Dés de vie à dépenser <span class="field__hint">d{{ play.hit_die }}, {{ play.hit_dice_left }} sur {{ play.hit_dice }} disponibles</span></label>
+      <input class="play__amount" id="{{ pid }}-hit-dice" type="number" name="hit_dice" min="0" max="{{ play.hit_dice_left }}" value="0" inputmode="numeric">
+      {% endif %}
+      <button type="submit" class="btn btn--small">Repos court</button>
+    </form>
+    <form class="play__rest" {{ htmx_form(base ~ "/repos-long") }} hx-confirm="Terminer un repos long ? Points de vie, dés de vie, emplacements et ressources sont restaurés.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn btn--small">Repos long</button>
+    </form>
+  </div>
+  {% endif %}
+</section>
+{% endif %}

@@ -25,6 +25,8 @@ from app.models import (
     WaArticle,
     utcnow,
 )
+from app.services import dice
+from app.services import play as play_rules
 from app.services.media import find_article
 from app.worldanvil.bbcode import RenderContext, render_bbcode, to_plain_text
 
@@ -96,6 +98,8 @@ COMBAT_FIELDS: tuple[tuple[str, str], ...] = (
     ("spell_save_dc", "DD des sorts"),
     ("spell_attack", "Attaque des sorts"),
 )
+PLAY_FIELDS: tuple[str, ...] = ("hit_dice", "constitution_modifier")
+ROLLABLE_STATS = frozenset({"initiative", "spell_attack"})
 JOURNAL_LISTS: tuple[tuple[str, str], ...] = (
     ("encounters", "Rencontres"),
     ("items", "Objets et argent"),
@@ -248,6 +252,7 @@ class Dossier:
     combat_stats: list["CombatStat"] = field(default_factory=list)
     resources: list["ResourceView"] = field(default_factory=list)
     action_groups: list["ActionGroup"] = field(default_factory=list)
+    play: play_rules.PlayView | None = None
     aliases: list[str] = field(default_factory=list)
     journal: list[JournalEntryView] = field(default_factory=list)
     source_file: str | None = None
@@ -276,6 +281,9 @@ class Dossier:
 class CombatStat:
     label: str
     value: str
+    key: str = ""
+    roll: str | None = None
+    roll_kind: str = "check"
 
 
 @dataclass(frozen=True)
@@ -297,6 +305,15 @@ class ActionView:
     concentration: bool
     html: Markup
     family: str = "other"
+    id: int | None = None
+    hit_roll: str | None = None
+    damage_segments: list[tuple[str, str | None]] = field(default_factory=list)
+    spell: play_rules.SpellInfo | None = None
+    resource: play_rules.Pool | None = None
+
+    @property
+    def damage_rolls(self) -> list[str]:
+        return [expression for _, expression in self.damage_segments if expression]
 
 
 @dataclass(frozen=True)
@@ -522,7 +539,8 @@ def _combat(data: dict[str, Any]) -> dict[str, Any]:
     combat = data.get("combat", {})
     if not isinstance(combat, dict):
         raise DossierError("'combat' must be a table")
-    stats = {key: _short(combat, key, 40) for key, _ in COMBAT_FIELDS}
+    keys = [key for key, _ in COMBAT_FIELDS] + list(PLAY_FIELDS)
+    stats = {key: _short(combat, key, 40) for key in keys}
     resources = [
         {
             "name": _text(entry, "name", required=True),
@@ -924,6 +942,18 @@ def event_view(
     )
 
 
+def _hit_roll(hit: str | None) -> str | None:
+    modifier = dice.parse_modifier(hit)
+    return dice.format_modifier(modifier) if modifier is not None else None
+
+
+def _combat_stat(key: str, label: str, value: str) -> CombatStat:
+    if key in ROLLABLE_STATS and (modifier := dice.parse_modifier(value)) is not None:
+        kind = "attack" if key == "spell_attack" else "initiative"
+        return CombatStat(label, value, key, dice.format_modifier(modifier), kind)
+    return CombatStat(label, value, key)
+
+
 def build_dossier(
     character: Character,
     context: RenderContext,
@@ -984,8 +1014,9 @@ def build_dossier(
     combat = (profile.combat if profile else None) or {}
     stats = combat.get("stats", {})
     combat_stats = [
-        CombatStat(label, str(stats[key])) for key, label in COMBAT_FIELDS if stats.get(key)
+        _combat_stat(key, label, str(stats[key])) for key, label in COMBAT_FIELDS if stats.get(key)
     ]
+    sheet = play_rules.sheet_of(character)
     resources = [
         ResourceView(entry["name"], entry.get("uses"), entry.get("recharge"))
         for entry in combat.get("resources", [])
@@ -1005,6 +1036,11 @@ def build_dossier(
                 action.concentration,
                 render_bbcode(action.text, context),
                 action_family(action.category, action.hit),
+                action.id,
+                _hit_roll(action.hit),
+                dice.split_dice(action.damage),
+                play_rules.spell_info(sheet, action),
+                play_rules.linked_resource(sheet, action),
             )
         )
     action_groups = [
@@ -1017,6 +1053,7 @@ def build_dossier(
         combat_stats=combat_stats,
         resources=resources,
         action_groups=action_groups,
+        play=play_rules.play_view(character),
         backstory=render_bbcode(profile.backstory if profile else "", context),
         events=events,
         relation_groups=groups,

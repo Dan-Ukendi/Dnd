@@ -367,6 +367,7 @@ def test_migration_drops_session_events_and_dates_zilvra(
     profile = db.get(CharacterProfile, table.zilvra.id)
     assert profile is not None and profile.events_edited_at == edited
 
+    db.rollback()
     command.upgrade(alembic_config, "head")
     command.downgrade(alembic_config, "0022")
     assert _events(db, table.zilvra.id) == {

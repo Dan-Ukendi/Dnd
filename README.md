@@ -156,7 +156,9 @@ gm_notes = "Ce que le joueur ignore"  # optional, shown to the DM only
 
 [combat]                              # summary strip of the Actions tab (all optional)
 armor_class = 11
-hit_points = 24
+hit_points = 24                       # maximum HP, tracked in play (see below)
+hit_dice = "3d8"                      # optional: hit dice spent on a short rest
+constitution_modifier = "+2"          # optional: added to each hit die rolled
 speed = "9 m"
 initiative = "+1"
 spell_save_dc = 13
@@ -208,6 +210,26 @@ The **Actions** tab shows one collapsible menu per action type, in this order: *
 "Sort" ("Sort mineur", "Sort niv. 1…"), an attack when it has a `hit` bonus or its category names an
 attack ("Attaque, arme de guerre", "remplace une attaque…"), and goes under Divers otherwise.
 Empty sub-menus are not shown; *Tout déplier* and *Tout replier* open or close every menu.
+
+### Dice, hit points and rests
+
+Every roll shown in the dossier is a button: the attack bonus (`hit`), the dice in `damage`
+("1d12 + 3", "2d10"), the initiative and spell attack of the summary strip, and, on the Fiche tab,
+the ability, saving throw, skill and attack bonuses of the sheet tables. The server rolls the dice
+(d20 tests with advantage or disadvantage, chosen in the dice tray) and the tray shows each die, the
+modifier and the total; a natural 20 on an attack is a critical hit and offers the damage with
+doubled dice.
+
+The Actions tab also tracks the character's play state, stored apart from the dossier so that a
+re-import never resets it: current and temporary hit points (from `hit_points`), spell slots and
+limited resources (every `[[combat.resources]]` with a whole-number `uses`). A resource named
+"Emplacements de sort (niveau N)" or "Emplacements de magie de pacte (niveau N)" is a slot pool.
+A short rest spends hit dice (when `hit_dice` is set) and restores what recharges on a short rest
+("Repos court…", pact magic, "1 récupérée au repos court"); a long rest restores hit points, hit
+dice, slots and every resource that recharges on a rest. Casting a levelled spell ("Sort niv. N")
+uses a slot of the chosen level, or its "… sans emplacement" resource, or nothing as a ritual; it is
+refused when nothing is left. Cantrips and at-will spells use nothing. Only the character's player
+and the DM can change this state.
 
 `gm_notes` and the aliases follow the dossier rules: the aliases are shown to the DM and the
 character's player, `gm_notes` only to the DM (they are never part of a player's page).

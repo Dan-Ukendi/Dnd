@@ -693,3 +693,280 @@ document.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("scroll", hidePreview, { passive: true, capture: true });
+
+const DICE_ICON =
+  '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+  '<path d="M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4z"/><path d="M12 2.8 7.6 14.6h8.8z"/>' +
+  '<path d="M4 7.4l3.6 7.2M20 7.4l-3.6 7.2M7.6 14.6 12 21.2l4.4-6.6"/></svg>';
+const DICE_MODES = [
+  ["normal", "Normal"],
+  ["advantage", "Avantage"],
+  ["disadvantage", "Désavantage"],
+];
+const DICE_LOG_SIZE = 8;
+const D20_COLUMNS = [
+  [/sauvegarde/i, "save"],
+  [/toucher|attaque/i, "attack"],
+  [/modificateur|bonus/i, "check"],
+];
+const MODIFIER_CELL = /^\s*([+\-−–]\s?\d{1,2})\s*(\(.*\))?\s*$/;
+const DICE_TEXT = /(^|[^\w])(\d{1,3}\s*d\s*\d{1,4}(?:\s*[+\-−–]\s*\d{1,4}(?:\s*d\s*\d{1,4})?(?![\w]))*)/gi;
+
+function csrfToken() {
+  try {
+    return JSON.parse(document.body.getAttribute("hx-headers") || "{}")["X-CSRF-Token"] || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function storedDiceMode() {
+  try {
+    return window.sessionStorage.getItem("dice-mode") || "normal";
+  } catch (error) {
+    return "normal";
+  }
+}
+
+function diceTray() {
+  let tray = document.getElementById("dice-tray");
+  if (tray) {
+    return tray;
+  }
+  tray = document.createElement("aside");
+  tray.id = "dice-tray";
+  tray.className = "dice-tray";
+  tray.setAttribute("aria-label", "Jets de dés");
+  const current = storedDiceMode();
+  const modes = DICE_MODES.map(
+    ([value, label]) =>
+      `<label class="dice-tray__mode"><input type="radio" name="dice-mode" value="${value}"${
+        value === current ? " checked" : ""
+      }><span>${label}</span></label>`,
+  ).join("");
+  tray.innerHTML =
+    `<button type="button" class="dice-tray__toggle" aria-expanded="false" aria-controls="dice-tray-panel">${DICE_ICON}<span>Dés</span></button>` +
+    '<div class="dice-tray__panel" id="dice-tray-panel" hidden>' +
+    '<div class="dice-tray__head"><p class="dice-tray__title">Jets de dés</p>' +
+    '<button type="button" class="dice-tray__close" aria-label="Fermer les jets de dés">×</button></div>' +
+    `<fieldset class="dice-tray__modes"><legend class="visually-hidden">Jets de d20</legend>${modes}</fieldset>` +
+    '<form class="dice-tray__free"><label class="visually-hidden" for="dice-tray-expression">Formule de dés</label>' +
+    '<input id="dice-tray-expression" name="expression" type="text" maxlength="60" placeholder="2d6+3" autocomplete="off" required>' +
+    '<button type="submit" class="btn btn--small">Lancer</button></form>' +
+    '<ol class="dice-tray__log" aria-live="polite"></ol></div>';
+  document.body.appendChild(tray);
+  return tray;
+}
+
+function setDiceTrayOpen(open) {
+  const tray = diceTray();
+  const panel = tray.querySelector(".dice-tray__panel");
+  const toggle = tray.querySelector(".dice-tray__toggle");
+  panel.hidden = !open;
+  toggle.setAttribute("aria-expanded", String(open));
+  tray.classList.toggle("dice-tray--open", open);
+}
+
+function diceMode() {
+  const checked = diceTray().querySelector('input[name="dice-mode"]:checked');
+  return checked ? checked.value : "normal";
+}
+
+function pushDiceLog(item) {
+  const log = diceTray().querySelector(".dice-tray__log");
+  log.prepend(item);
+  while (log.children.length > DICE_LOG_SIZE) {
+    log.lastElementChild.remove();
+  }
+  setDiceTrayOpen(true);
+}
+
+function pushDiceMessage(detail) {
+  const item = document.createElement("li");
+  item.className = `dice-result dice-result--message${detail.kind === "error" ? " dice-result--error" : ""}`;
+  const text = document.createElement("p");
+  text.className = "dice-result__note";
+  text.textContent = detail.text || "";
+  item.append(text);
+  (detail.details || []).forEach((line) => {
+    const row = document.createElement("p");
+    row.className = "dice-result__detail";
+    row.textContent = line;
+    item.append(row);
+  });
+  pushDiceLog(item);
+}
+
+async function sendRoll(values) {
+  const body = new URLSearchParams(values);
+  body.set("mode", diceMode());
+  try {
+    const response = await fetch("/des", {
+      method: "POST",
+      headers: { "X-CSRF-Token": csrfToken(), "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      credentials: "same-origin",
+    });
+    const text = await response.text();
+    const type = response.headers.get("content-type") || "";
+    const template = document.createElement("template");
+    template.innerHTML = type.startsWith("text/html") ? text.trim() : "";
+    const item = template.content.firstElementChild;
+    if (item && item.matches("li.dice-result")) {
+      pushDiceLog(item);
+      return;
+    }
+    pushDiceMessage({ text: "Le jet n'a pas pu être lancé.", kind: "error" });
+  } catch (error) {
+    pushDiceMessage({ text: "Le jet n'a pas pu être lancé (connexion).", kind: "error" });
+  }
+}
+
+function rollButton(text, expression, kind, label, damage) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "dice-roll";
+  button.dataset.roll = expression;
+  button.dataset.rollKind = kind;
+  button.dataset.rollLabel = label;
+  if (damage && damage.length) {
+    button.dataset.rollDamage = damage.join(";");
+  }
+  button.title = `Lancer ${expression}`;
+  button.textContent = text;
+  return button;
+}
+
+function diceInText(text) {
+  return Array.from(text.matchAll(DICE_TEXT), (match) => match[2]);
+}
+
+function wrapDiceText(cell, label) {
+  const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node.parentElement.closest("a, button")) {
+      nodes.push(node);
+    }
+  }
+  nodes.forEach((node) => {
+    const text = node.nodeValue;
+    const parts = [];
+    let position = 0;
+    for (const match of text.matchAll(DICE_TEXT)) {
+      const start = match.index + match[1].length;
+      parts.push(document.createTextNode(text.slice(position, start)));
+      parts.push(rollButton(match[2], match[2], "damage", label));
+      position = start + match[2].length;
+    }
+    if (parts.length) {
+      parts.push(document.createTextNode(text.slice(position)));
+      node.replaceWith(...parts);
+    }
+  });
+}
+
+function d20Kind(header) {
+  const found = D20_COLUMNS.find(([pattern]) => pattern.test(header));
+  return found ? found[1] : null;
+}
+
+function enhanceDiceTables(root = document) {
+  root.querySelectorAll("[data-dice-scope] table").forEach((table) => {
+    if (table.dataset.diceReady) {
+      return;
+    }
+    table.dataset.diceReady = "1";
+    const headers = Array.from(table.querySelectorAll("thead th"), (cell) => cell.textContent.trim());
+    table.querySelectorAll("tbody tr").forEach((row) => {
+      const cells = Array.from(row.children);
+      const name = cells.length ? cells[0].textContent.trim() : "";
+      const damage = cells.flatMap((cell) => diceInText(cell.textContent));
+      cells.forEach((cell, index) => {
+        if (index === 0) {
+          return;
+        }
+        const kind = d20Kind(headers[index] || "");
+        const match = kind ? MODIFIER_CELL.exec(cell.textContent) : null;
+        if (match) {
+          const modifier = match[1].replace(/[−–]/, "-").replace(/\s/g, "");
+          const label = kind === "save" ? `${name}, sauvegarde` : name;
+          const button = rollButton(cell.textContent.trim(), modifier, kind, label, kind === "attack" ? damage : []);
+          cell.replaceChildren(button);
+        } else {
+          wrapDiceText(cell, name);
+        }
+      });
+    });
+  });
+}
+
+function initDice(root = document) {
+  enhanceDiceTables(root);
+  if (document.querySelector("[data-roll], [data-dice-scope]")) {
+    diceTray();
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target) {
+    return;
+  }
+  const button = target.closest("button[data-roll]");
+  if (button) {
+    event.preventDefault();
+    sendRoll({
+      expression: button.dataset.roll,
+      kind: button.dataset.rollKind || "damage",
+      label: button.dataset.rollLabel || "",
+      damage: button.dataset.rollDamage || "",
+      crit: button.dataset.rollCrit || "",
+    });
+    return;
+  }
+  if (target.closest(".dice-tray__toggle")) {
+    setDiceTrayOpen(diceTray().querySelector(".dice-tray__panel").hidden);
+  } else if (target.closest(".dice-tray__close")) {
+    setDiceTrayOpen(false);
+  }
+});
+
+document.addEventListener("change", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLInputElement && target.name === "dice-mode") {
+    try {
+      window.sessionStorage.setItem("dice-mode", target.value);
+    } catch (error) {
+      // Storage can be unavailable: the choice still applies to this page.
+    }
+  }
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (form instanceof HTMLFormElement && form.classList.contains("dice-tray__free")) {
+    event.preventDefault();
+    const input = form.elements.namedItem("expression");
+    sendRoll({ expression: input.value, kind: "free", label: "" });
+  }
+});
+
+document.addEventListener("play-message", (event) => {
+  pushDiceMessage(event.detail || {});
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && document.querySelector(".dice-tray--open")) {
+    setDiceTrayOpen(false);
+  }
+});
+
+initDice();
+document.addEventListener("htmx:afterSettle", (event) => {
+  if (event.detail && event.detail.boosted) {
+    initDice();
+  }
+});
+document.addEventListener("htmx:historyRestore", () => initDice());

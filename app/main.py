@@ -24,6 +24,7 @@ from app.routes import (
     media,
     monde,
     personnage,
+    play,
     player,
 )
 from app.security import LoginRateLimiter, csrf_protect
@@ -233,6 +234,7 @@ def create_app() -> FastAPI:
     app.include_router(lore.player_router)
     app.include_router(links.player_router)
     app.include_router(player.router)
+    app.include_router(play.router)
     app.include_router(media.router)
 
     @app.get("/health", include_in_schema=False)

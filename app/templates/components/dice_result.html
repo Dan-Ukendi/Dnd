@@ -1,0 +1,33 @@
+{% set kinds = {"attack": "Attaque", "check": "Test", "save": "Sauvegarde", "initiative": "Initiative", "damage": "Dés", "free": "Dés"} %}
+{% set modes = {"advantage": "avec avantage", "disadvantage": "avec désavantage"} %}
+{% if error is defined and error %}
+<li class="dice-result dice-result--error">
+  <p class="dice-result__head"><span class="dice-result__label">{{ label or expression or "Jet" }}</span></p>
+  <p class="dice-result__note">{{ error }}</p>
+</li>
+{% else %}
+<li class="dice-result{% if roll.critical %} dice-result--crit{% elif roll.fumble %} dice-result--fumble{% endif %}">
+  <p class="dice-result__head">
+    <span class="dice-result__label">{{ label or roll.expression }}</span>
+    <span class="dice-result__kind">{{ kinds.get(roll.kind, "Dés") }}{% if roll.mode in modes %} {{ modes[roll.mode] }}{% endif %}{% if roll.doubled %}, critique{% endif %}</span>
+  </p>
+  <p class="dice-result__line">
+    <span class="dice-result__expr">{{ roll.expression }}</span>
+    <span class="dice-result__dice">
+      {% for die in roll.dice %}<span class="die{% if not die.kept %} die--dropped{% endif %}{% if die.sides == 20 and die.value == 20 and die.kept %} die--max{% endif %}" title="d{{ die.sides }}">{% if die.sign < 0 %}−{% endif %}{{ die.value }}</span>{% endfor %}
+      {% if roll.modifier %}<span class="dice-result__modifier">{{ "+" if roll.modifier > 0 else "−" }} {{ roll.modifier | abs }}</span>{% endif %}
+    </span>
+    <strong class="dice-result__total" aria-label="Total {{ roll.total }}">{{ roll.total }}</strong>
+  </p>
+  {% if roll.critical %}
+  <p class="dice-result__note">Coup critique : 20 naturel, les dés de dégâts sont doublés.</p>
+  {% if follow_ups %}
+  <p class="dice-result__follow">
+    {% for expression in follow_ups %}<button type="button" class="dice-roll" data-roll="{{ expression }}" data-roll-kind="damage" data-roll-crit="1" data-roll-label="{{ label }}">Dégâts critiques {{ expression }}</button>{% endfor %}
+  </p>
+  {% endif %}
+  {% elif roll.fumble %}
+  <p class="dice-result__note">1 naturel : l'attaque échoue.</p>
+  {% endif %}
+</li>
+{% endif %}

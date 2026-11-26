@@ -47,6 +47,7 @@ TABLES = (
     "timeline_event_links",
     "timeline_events",
     "timeline_eras",
+    "character_play_states",
     "character_journal_entries",
     "character_actions",
     "character_items",
