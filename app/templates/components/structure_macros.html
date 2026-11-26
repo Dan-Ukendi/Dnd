@@ -223,3 +223,62 @@
 </section>
 {% endif %}
 {%- endmacro %}
+
+{% macro room_card(card) -%}
+{% set count = card.children | length %}
+<details class="place-card room-card" data-place="{{ card.key }}"{% if card.kind == "niveau" %} open{% endif %}>
+  <summary>
+    <span class="place-card__glyph" aria-hidden="true">{{ ui("map") }}</span>
+    <span class="place-card__identity">
+      {% if card.page_href %}<a class="place-card__name place-card__name--link" href="{{ card.page_href }}"{{ card.page_href | boost }}>{{ card.name }}</a>{% else %}<span class="place-card__name">{{ card.name }}</span>{% endif %}
+      <span class="place-card__meta">{{ card.kind_label }}{% if card.location %} · {{ card.location }}{% endif %}</span>
+    </span>
+    <span class="place-card__pills">
+      {{ visibility_pill(card) }}
+      {% if count %}<span class="place-card__count">{{ count }} {{ "lieu" if count == 1 else "lieux" }}</span>{% endif %}
+    </span>
+    {{ ui("chevron", "icon place-card__chevron") }}
+  </summary>
+  <div class="place-card__body">
+    {% if card.excerpt %}<div class="prose place-excerpt">{{ card.excerpt }}</div>{% endif %}
+    {% if card.description %}<div class="prose place-excerpt">{{ card.description }}</div>{% endif %}
+    {% for section in card.sections %}
+    <section class="place-section">
+      <h3 class="place-section__title">{{ section.title }}{% if section.visibility == "mj" %} <span class="pill pill--muted">MJ seulement</span>{% endif %}</h3>
+      <div class="prose place-excerpt">{{ section.html }}</div>
+    </section>
+    {% endfor %}
+    {% if card.members %}
+    <section class="place-section">
+      <h3 class="place-section__title">Personnes</h3>
+      {{ member_list(card.members, "Personnes de " ~ card.name, "") }}
+    </section>
+    {% endif %}
+    {{ gm_notes(card) }}
+    {% if not (card.excerpt or card.description or card.sections or card.members or card.children) %}<p class="structure-empty">Aucune description consignée.</p>{% endif %}
+    {% if card.children %}
+    <ul class="place-list place-list--nested" aria-label="Lieux de {{ card.name }}">
+      {% for child in card.children %}<li>{{ room_card(child) }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if card.page_href %}<div class="place-card__actions"><a class="btn btn--compact" href="{{ card.page_href }}"{{ card.page_href | boost }}>Page du lieu</a></div>{% endif %}
+  </div>
+</details>
+{%- endmacro %}
+
+{% macro architecture_view(rooms, owner) -%}
+{{ disclosure_toolbar("architecture-lieux", "Pièces et endroits de " ~ owner) }}
+<ul class="place-list" id="architecture-lieux" aria-label="Pièces et endroits de {{ owner }}">
+  {% for card in rooms %}<li>{{ room_card(card) }}</li>{% endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro household_view(groups, owner) -%}
+{% set ids = {"owner": "proprietaire", "resident": "residents", "employee": "employes", "": "presents"} %}
+{% for group in groups %}
+<section class="tree-section household-group" aria-labelledby="habitants-{{ ids[group.key] }}">
+  <h3 class="tree-section__title" id="habitants-{{ ids[group.key] }}">{{ group.label }}</h3>
+  {{ member_list(group.members, group.label ~ " de " ~ owner, "") }}
+</section>
+{% endfor %}
+{%- endmacro %}

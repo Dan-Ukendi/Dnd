@@ -1,0 +1,17 @@
+{% set building = structure.building %}
+{% set default_label = building_options.get(building.default_type) if building.default_type else "" %}
+<form method="post" action="/mj/articles/{{ article.wa_id }}/type-batiment" class="form world-category" aria-labelledby="batiment-type-titre">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2 class="world-category__title" id="batiment-type-titre">Type de bâtiment</h2>
+  <div class="field">
+    <label for="batiment-type">Type</label>
+    <select id="batiment-type" name="building_type">
+      <option value="" {% if not article.building_type %}selected{% endif %}>Automatique{% if default_label %} ({{ default_label }}){% endif %}</option>
+      {% for value, label in building_options.items() %}
+      <option value="{{ value }}" {% if value == article.building_type %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <p class="field__hint">Une branche d'organisation affiche Architecture et Hiérarchie ; une habitation affiche Architecture et Habitants. La synchronisation World Anvil ne change jamais ce choix.</p>
+  <button type="submit" class="btn btn--primary">Enregistrer le type</button>
+</form>

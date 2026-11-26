@@ -5,10 +5,24 @@ from markupsafe import Markup
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Npc, NpcRole, Place, Position, WaArticle
+from app.models import (
+    BUILDING_TYPES,
+    WORLD_CATEGORIES,
+    FicheSection,
+    Npc,
+    NpcRole,
+    Place,
+    Position,
+    WaArticle,
+)
 from app.sections import section_of
 from app.services.structure_excerpts import AnchorStatus, find_excerpt
-from app.worldanvil.bbcode import RenderContext, render_bbcode, render_plain_text
+from app.worldanvil.bbcode import (
+    RenderContext,
+    render_bbcode,
+    render_plain_text,
+    render_text_blocks,
+)
 
 ORGANISATION = "organisation"
 MONDE = "monde"
@@ -26,6 +40,17 @@ KIND_LABELS = {
 }
 UNNAMED = "Titulaire non nommé"
 ORGANISATION_DEPTH = 2
+ARCHITECTURE = "architecture"
+BUILDING_CATEGORY = WORLD_CATEGORIES[2]
+BRANCH, DWELLING = BUILDING_TYPES
+BUILDING_TYPE_LABELS = {BRANCH: "Branche d'une organisation", DWELLING: "Habitation"}
+PERSON_TEMPLATE = "person"
+HOUSEHOLD_GROUPS = (
+    ("owner", "Propriétaire", "Propriétaires"),
+    ("resident", "Habitants", "Habitants"),
+    ("employee", "Employés", "Employés"),
+    ("", "Personnes présentes", "Personnes présentes"),
+)
 
 
 @dataclass(frozen=True)
@@ -76,6 +101,13 @@ class Member:
         return (self.name.strip()[:1] or "?").upper()
 
 
+@dataclass(frozen=True)
+class PlaceSection:
+    title: str
+    html: Markup
+    visibility: str
+
+
 @dataclass
 class PlaceCard:
     key: str
@@ -97,6 +129,7 @@ class PlaceCard:
     page_href: str | None = None
     gm_notes: str = ""
     visibility: str = ""
+    sections: list[PlaceSection] = field(default_factory=list)
 
     @property
     def descendant_count(self) -> int:
@@ -151,6 +184,37 @@ class Hierarchy:
 
 
 @dataclass
+class HouseholdGroup:
+    key: str
+    label: str
+    members: list[Member]
+
+
+@dataclass
+class Building:
+    building_type: str | None
+    default_type: str | None
+    rooms: list[PlaceCard]
+    household: list[HouseholdGroup]
+
+    @property
+    def is_dwelling(self) -> bool:
+        return self.building_type == DWELLING
+
+    @property
+    def type_label(self) -> str:
+        return BUILDING_TYPE_LABELS.get(self.building_type or "", "")
+
+    @property
+    def room_count(self) -> int:
+        return sum(1 + card.descendant_count for card in self.rooms)
+
+    @property
+    def household_count(self) -> int:
+        return sum(len(group.members) for group in self.household)
+
+
+@dataclass
 class Structure:
     mode: str
     article: WaArticle
@@ -159,6 +223,7 @@ class Structure:
     fragment_url: str
     page_url: str
     show_tabs: bool
+    building: Building | None = None
 
 
 class _World:
@@ -192,6 +257,7 @@ class _World:
             self.subordinates[position.superior_id].append(position)
         self._place_visible: dict[int, bool] = {}
         self._position_visible: dict[int, bool] = {}
+        self._sections: dict[int, list[FicheSection]] | None = None
 
     def article(self, wa_id: str | None) -> WaArticle | None:
         return self.articles.get(wa_id) if wa_id else None
@@ -342,6 +408,82 @@ class _World:
             "visibility": row.visibility,
         }
 
+    def place_sections(self, place: Place) -> list[PlaceSection]:
+        if self._sections is None:
+            self._sections = defaultdict(list)
+            rows = self.db.scalars(
+                select(FicheSection)
+                .where(FicheSection.place_id.is_not(None))
+                .order_by(FicheSection.position, FicheSection.id)
+            )
+            for row in rows:
+                self._sections[row.place_id].append(row)
+        return [
+            PlaceSection(
+                row.title,
+                render_text_blocks(row.text, self.context),
+                row.visibility if self.viewer.dm else "",
+            )
+            for row in self._sections.get(place.id, [])
+            if self.viewer.dm or row.visibility == "joueurs"
+        ]
+
+    def default_building_type(self, place: Place) -> str | None:
+        owner = self.article(place.owner_id)
+        if owner is not None and section_of(owner).key == ORGANISATION:
+            return BRANCH
+        if owner is not None and (owner.template_type or "").lower() == PERSON_TEMPLATE:
+            return DWELLING
+        if any(
+            position.household == "owner"
+            for position in self.ordered
+            if place.id in (position.place_id, position.site_id)
+        ):
+            return DWELLING
+        return None
+
+    def household(self, place: Place) -> list[HouseholdGroup]:
+        scope = {place.id} | {row.id for row in self.descendants(place.id)}
+        members: dict[str, list[Member]] = defaultdict(list)
+        seen: set[str] = set()
+        for position in self.ordered:
+            if position.place_id not in scope and position.site_id not in scope:
+                continue
+            if not self.position_visible(position):
+                continue
+            identity = (
+                position.person_article_id
+                or (f"npc:{position.npc_id}" if position.npc_id else "")
+                or position.name
+                or position.key
+            )
+            if identity in seen:
+                continue
+            seen.add(identity)
+            role = position.household or ("employee" if position.is_staff else "")
+            members[role].append(self.member(position))
+        return [
+            HouseholdGroup(key, singular if len(members[key]) == 1 else plural, members[key])
+            for key, singular, plural in HOUSEHOLD_GROUPS
+            if members.get(key)
+        ]
+
+    def building(self, place: Place | None, article: WaArticle | None = None) -> Building:
+        if article is None and place is not None:
+            article = self.article(place.wa_article_id)
+        chosen = article.building_type if article is not None else None
+        if place is None or not self.place_visible(place):
+            return Building(chosen, None, [], [])
+        default = self.default_building_type(place)
+        building_type = chosen or default
+        rooms = [
+            self.card(child, mode=ARCHITECTURE, depth=-1)
+            for child in self.children.get(place.id, [])
+            if self.place_visible(child)
+        ]
+        household = self.household(place) if building_type == DWELLING else []
+        return Building(building_type, default, rooms, household)
+
     def card(
         self,
         place: Place,
@@ -384,6 +526,7 @@ class _World:
             ],
             explore_href=f"{explore}{place.key}" if explore and visible_children else None,
             page_href=self.place_href(place),
+            sections=self.place_sections(place) if mode == ARCHITECTURE else [],
             **self._dm_fields(place),
         )
         if depth != 0:
@@ -575,7 +718,14 @@ def build_structure(
         )
         territory = _monde_territory(world, root, page_url, focus_key)
         hierarchy = world.local_hierarchy(root) if root is not None else Hierarchy([], [], 0)
-    show = viewer.dm or bool(territory.total or hierarchy.total)
+    building = None
+    if mode == MONDE and article.world_category == BUILDING_CATEGORY:
+        building = world.building(root, article)
+    if building is None:
+        show = viewer.dm or bool(territory.total or hierarchy.total)
+    else:
+        people = building.household_count if building.is_dwelling else hierarchy.total
+        show = viewer.dm or bool(building.room_count or people)
     return Structure(
         mode=mode,
         article=article,
@@ -584,6 +734,7 @@ def build_structure(
         fragment_url=f"{page_url}/territoire",
         page_url=page_url,
         show_tabs=show,
+        building=building,
     )
 
 

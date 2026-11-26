@@ -311,6 +311,7 @@ def article_detail(
             "world_options": world_service.CATEGORY_LABELS
             if world_service.is_eligible(article)
             else None,
+            "building_options": world_service.BUILDING_TYPE_LABELS,
         },
     )
 

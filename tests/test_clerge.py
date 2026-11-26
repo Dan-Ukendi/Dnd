@@ -340,6 +340,11 @@ def territory_panel(page: str) -> str:
     return page[start : page.index('id="structure-hierarchie"', start)]
 
 
+def architecture_panel(page: str) -> str:
+    start = page.index('id="structure-architecture"')
+    return page[start : page.index('id="structure-hierarchie"', start)]
+
+
 def test_clerge_import_is_idempotent(db: Session, world: World) -> None:
     first = run_import(db)
     assert not any(line.failed or line.status == "warning" for line in first), first
@@ -402,12 +407,13 @@ def test_the_seven_rooms_and_the_personnel_live_under_the_temple_blanc(
     tree = place[place.index('id="hierarchie"') :]
     assert ">Le conseil des prélats<" not in tree and ">La Garde Blanche<" not in tree
     fiche = client.get(f"/mj/articles/{world.temples['temple-ares'].wa_id}").text
-    panel = territory_panel(fiche)
+    panel = architecture_panel(fiche)
     for name in ROOMS.values():
         assert name.replace("'", "&#39;") in panel, name
-    assert "Personnes notables" in panel and "capitaine de la Garde Blanche" in panel
     assert ">La Garde Blanche<" not in panel
-    assert f'href="/mj/articles/{world.krateros.wa_id}"' in panel
+    hierarchy = fiche[fiche.index('id="structure-hierarchie"') :]
+    assert "capitaine de la Garde Blanche" in hierarchy
+    assert f'href="/mj/articles/{world.krateros.wa_id}"' in hierarchy
     buildings = client.get("/mj/articles?section=monde&categorie=batiments").text
     for title, _ in TEMPLES.values():
         assert title.replace("'", "&#39;") in buildings, title

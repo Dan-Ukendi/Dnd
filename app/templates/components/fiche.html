@@ -60,6 +60,7 @@
         </dl>
         {% if person_tags is defined and person_tags %}{% include "dm/_person_tags.html" %}{% endif %}
         {% if world_options is defined and world_options %}{% include "dm/_world_category.html" %}{% endif %}
+        {% if building_options is defined and building_options and structure is defined and structure and structure.building %}{% include "dm/_building_type.html" %}{% endif %}
       </div>
     </details>
 
@@ -121,7 +122,11 @@
       {% if has_structure %}
       {% set tabs_prefix = "structure" %}
       {% set tabs_label = "Sections de " ~ article.title %}
+      {% if structure.building %}
+      {% set _ = fiche_tabs.extend([("architecture", "Architecture"), ("habitants", "Habitants") if structure.building.is_dwelling else ("hierarchie", "Hiérarchie")]) %}
+      {% else %}
       {% set _ = fiche_tabs.extend([("territoire", "Territoire"), ("hierarchie", "Hiérarchie")]) %}
+      {% endif %}
       {% endif %}
       {% if fiche_tabs %}
       {% call tabs(tabs_prefix, tabs_label, [("fiche", "Fiche")] + fiche_tabs) %}

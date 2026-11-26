@@ -1,9 +1,42 @@
 {% from "components/tabs.html" import tab_panel %}
 {% from "components/ui.html" import empty_state %}
-{% from "components/structure_macros.html" import hierarchy_view %}
+{% from "components/structure_macros.html" import hierarchy_view, architecture_view, household_view %}
 {% set hierarchy = structure.hierarchy %}
+{% set building = structure.building %}
 {% set dm_hint = "" if player_mode else " Ajoutez-les dans source/structures puis lancez import-structures." %}
 
+{% if building %}
+{% call tab_panel("structure", "architecture", "Architecture") %}
+<div class="structure">
+{% if building.rooms %}
+{{ architecture_view(building.rooms, structure.article.title) }}
+{% else %}
+{{ empty_state("Aucune pièce consignée", "Aucune pièce ni aucun endroit de ce bâtiment n'est encore consigné." ~ dm_hint, "map") }}
+{% endif %}
+</div>
+{% endcall %}
+{% if building.is_dwelling %}
+{% call tab_panel("structure", "habitants", "Habitants") %}
+<div class="structure">
+{% if building.household %}
+{{ household_view(building.household, structure.article.title) }}
+{% else %}
+{{ empty_state("Aucun habitant consigné", "Personne n'est encore rattaché à cette habitation." ~ dm_hint, "users") }}
+{% endif %}
+</div>
+{% endcall %}
+{% else %}
+{% call tab_panel("structure", "hierarchie", "Hiérarchie") %}
+<div class="structure">
+{% if not hierarchy.empty %}
+{{ hierarchy_view(hierarchy, structure.article.title, False, 3) }}
+{% else %}
+{{ empty_state("Aucune hiérarchie consignée", "Personne n'est encore rattaché à ce bâtiment." ~ dm_hint, "users") }}
+{% endif %}
+</div>
+{% endcall %}
+{% endif %}
+{% else %}
 {% call tab_panel("structure", "territoire", "Territoire") %}
 <div class="structure" id="structure-territoire-body" data-territory>
 {% include "components/territory.html" %}
@@ -19,3 +52,4 @@
 {% endif %}
 </div>
 {% endcall %}
+{% endif %}

@@ -15,6 +15,8 @@ RESULTS_TARGET = "monde-results"
 CATEGORY_ERRORS = {
     "article": "Seules les fiches des sections Monde et Organisation ont une catégorie Monde.",
     "category": "Choisissez Pays, Ville, Bâtiment ou aucune catégorie.",
+    "building": "Seules les fiches de la catégorie Bâtiments ont un type de bâtiment.",
+    "building_type": "Choisissez Branche d'une organisation, Habitation ou le type automatique.",
 }
 
 
@@ -68,4 +70,26 @@ def update_category(
     else:
         label = service.category_label(category) or "aucune catégorie"
         flash(request, f"Catégorie Monde enregistrée : {label}.")
+    return RedirectResponse(f"/mj/articles/{wa_id}", status_code=303)
+
+
+@dm_router.post("/articles/{wa_id}/type-batiment")
+def update_building_type(
+    request: Request,
+    wa_id: str,
+    db: DbSession,
+    dm: CurrentDm,
+    building_type: Annotated[str, Form(max_length=20)] = "",
+) -> Response:
+    article = db.get(WaArticle, wa_id)
+    if article is None:
+        raise HTTPException(status_code=404)
+    try:
+        service.set_building_type(db, article, building_type)
+    except service.WorldCategoryError as exc:
+        db.rollback()
+        flash(request, CATEGORY_ERRORS.get(str(exc), "Type de bâtiment non enregistré."), "error")
+    else:
+        label = service.building_type_label(building_type) or "automatique"
+        flash(request, f"Type de bâtiment enregistré : {label}.")
     return RedirectResponse(f"/mj/articles/{wa_id}", status_code=303)

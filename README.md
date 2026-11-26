@@ -350,6 +350,22 @@ field, or the Territoire places of `import-structures` (the nearest enclosing pl
 A player sees a link only when both fiches are shared with them and every place on the way is marked
 `joueurs`.
 
+**Building types.** A Bâtiment fiche is either a **Branche d'une organisation** (temples of the
+Clergé, the Guild building) or an **Habitation** (the home of a person, such as La demeure de
+Sophie). The type is app data (`building_types`, one row per article, `branch` or `dwelling`) that the
+sync never touches; without a row the type is automatic: a building owned by an organisation is a
+branch, a building whose owner is a person (an owner article of the *person* template, or a position
+with `household = "owner"`) is a dwelling, otherwise it has no type and behaves like a branch. The DM
+changes it from *Type de bâtiment* in the fiche's *Informations clés*; *Automatique* removes the row.
+A branch shows **Fiche | Architecture | Hiérarchie**, a dwelling **Fiche | Architecture | Habitants**
+(anchors `#architecture`, `#hierarchie`, `#habitants`); the place page `/lieux/<key>` of a building
+shows the same sections. *Architecture* lists the rooms and spots of the building as nested
+collapsible cards (levels open), each with its live excerpt, description, sections and the people
+assigned there. *Habitants* groups the people attached to the dwelling (or to its rooms) by their
+`household` role: *Propriétaire*, *Habitants* (family, residents), *Employés* (household staff; a
+`staff` position counts as an employee); people without a role are listed under *Personnes
+présentes*. Empty groups are not shown.
+
 ## Personnage tags
 
 Each fiche of the Personnage section carries one tag: **Lore** (people tied to the history of the
@@ -382,7 +398,8 @@ dossier. Players never see the other tags, nor the links of other characters.
 ## Territoire and Hiérarchie
 
 The fiches of the Organisation and Monde sections get two tabs next to *Fiche*: **Territoire** and
-**Hiérarchie** (anchors `#territoire` and `#hierarchie`). One shared model serves both sections:
+**Hiérarchie** (anchors `#territoire` and `#hierarchie`); Bâtiment fiches get *Architecture* instead
+of *Territoire* (see *Building types*). One shared model serves both sections:
 
 - `places`: places with their geographical nesting (`parent`), a kind (territoire, région, ville,
   quartier, bâtiment, terre, niveau, pièce, lieu), an optional article of the place, an optional
@@ -455,6 +472,7 @@ head = false                        # sommet
 group = false                       # collectif
 hierarchy = true                    # false: présence only
 staff = false                       # true: personnel (employee), shown apart from the tree
+household = "owner"                 # place positions only: owner, resident or employee (Habitants)
 source = "Shönö"
 gm_notes = "…"                       # DM only
 ```

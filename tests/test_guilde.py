@@ -316,6 +316,11 @@ def territory_panel(page: str) -> str:
     return page[start : page.index('id="structure-hierarchie"', start)]
 
 
+def architecture_panel(page: str) -> str:
+    start = page.index('id="structure-architecture"')
+    return page[start : page.index('id="structure-hierarchie"', start)]
+
+
 def shows(page: str, text: str) -> bool:
     return text in page or text.replace("'", "&#39;") in page
 
@@ -385,8 +390,8 @@ def test_the_building_fiche_shows_its_rooms_with_their_text(
 ) -> None:
     run_import(db)
     fiche = dm_get(client, f"/mj/articles/{world.building.wa_id}")
-    panel = territory_panel(fiche)
-    assert re.findall(r'data-place="([^"]+)"', panel) == ["guilde-grande-salle"]
+    panel = architecture_panel(fiche)
+    assert re.findall(r'data-place="([^"]+)"', panel) == list(ROOMS)
     for name, _, _ in ROOMS.values():
         assert shows(panel, name), name
     assert shows(panel, LAYOUT) and HONOUR in panel

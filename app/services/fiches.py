@@ -9,7 +9,15 @@ from sqlalchemy.orm import Session
 
 from app.credits import Credit, credit_for
 from app.models import FicheSection, Npc, NpcRelation, Place, Position, StatBlock
-from app.services.structures import KIND_LABELS, Hierarchy, Link, Member, Viewer, _World
+from app.services.structures import (
+    KIND_LABELS,
+    Building,
+    Hierarchy,
+    Link,
+    Member,
+    Viewer,
+    _World,
+)
 from app.worldanvil.bbcode import RenderContext, render_plain_text, render_text_blocks
 
 ABILITY_LABELS = ("FOR", "DEX", "CON", "INT", "SAG", "CHA")
@@ -18,6 +26,7 @@ ATTACK_RE = re.compile(
     r"^((?:Melee or Ranged|Melee|Ranged) (?:Weapon|Spell) Attack)(\s*[:,])", re.IGNORECASE
 )
 HIT_RE = re.compile(r"\bHit:")
+BUILDING_KIND = "batiment"
 
 
 @dataclass(frozen=True)
@@ -85,6 +94,7 @@ class PlacePage:
     crumbs: list[Link]
     gm_notes: Markup
     visibility: str
+    building: Building | None = None
 
 
 @dataclass(frozen=True)
@@ -314,6 +324,7 @@ class FicheBuilder:
             crumbs=crumbs,
             gm_notes=self._gm(place.gm_notes),
             visibility=self._visibility(place.visibility),
+            building=world.building(place) if place.kind == BUILDING_KIND else None,
         )
 
     def npc(self, key: str) -> NpcPage | None:

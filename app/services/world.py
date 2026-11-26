@@ -6,11 +6,18 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from app.models import WORLD_CATEGORIES, Place, WaArticle, WorldCategory
+from app.models import (
+    BUILDING_TYPES,
+    WORLD_CATEGORIES,
+    BuildingType,
+    Place,
+    WaArticle,
+    WorldCategory,
+)
 from app.presentation import article_image, natural_order
 from app.sections import WORLD_KEY, section_key
 from app.services.artefact_split import fold
-from app.services.structures import Viewer
+from app.services.structures import BUILDING_TYPE_LABELS, Viewer
 
 COUNTRY, CITY, BUILDING = WORLD_CATEGORIES
 CATEGORY_LABELS = {COUNTRY: "Pays", CITY: "Ville", BUILDING: "Bâtiment"}
@@ -96,6 +103,27 @@ def set_category(db: Session, article: WaArticle, category: str) -> None:
         row.category = category or None
     db.commit()
     db.expire(article, ["world_category_row"])
+
+
+def building_type_label(building_type: str | None) -> str | None:
+    return BUILDING_TYPE_LABELS.get(building_type or "")
+
+
+def set_building_type(db: Session, article: WaArticle, building_type: str) -> None:
+    if article.world_category != BUILDING:
+        raise WorldCategoryError("building")
+    if building_type and building_type not in BUILDING_TYPES:
+        raise WorldCategoryError("building_type")
+    row = db.get(BuildingType, article.wa_id)
+    if not building_type:
+        if row is not None:
+            db.delete(row)
+    elif row is None:
+        db.add(BuildingType(wa_id=article.wa_id, building_type=building_type))
+    else:
+        row.building_type = building_type
+    db.commit()
+    db.expire(article, ["building_type_row"])
 
 
 @dataclass(frozen=True)

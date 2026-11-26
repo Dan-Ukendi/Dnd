@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "fiches/_macros.html" import crumbs, hero, facts_panel, sections, gm_notes, gm_pill, position_list, link_to %}
 {% from "components/icons.html" import ui %}
-{% from "components/structure_macros.html" import hierarchy_view %}
+{% from "components/structure_macros.html" import hierarchy_view, architecture_view, household_view %}
 {% block title %}{{ page.name }}{% endblock %}
 {% block main_attrs %}data-section="monde"{% endblock %}
 {% block content %}
@@ -10,6 +10,7 @@
   {% set pills %}<span class="pill">{{ page.kind_label }}</span>{{ gm_pill(page.visibility) }}{% endset %}
   {{ hero("Lieu", page.name, page.location, pills, "map") }}
   {% set facts = [("Type", {"label": page.kind_label})] %}
+  {% if page.building and page.building.type_label %}{% set _ = facts.append(("Type de bâtiment", {"label": page.building.type_label})) %}{% endif %}
   {% if page.location %}{% set _ = facts.append(("Emplacement", {"label": page.location})) %}{% endif %}
   {% if page.parent %}{% set _ = facts.append(("Dans", page.parent)) %}{% endif %}
   {% if page.owner %}{% set _ = facts.append(("Propriétaire", page.owner)) %}{% endif %}
@@ -19,7 +20,13 @@
     <div class="fiche-main reveal reveal-delay-2">
       {% if page.description %}<div class="prose fiche-summary">{{ page.description }}</div>{% endif %}
       {{ sections(page.sections) }}
-      {% if page.children %}
+      {% set building = page.building %}
+      {% if building and building.rooms %}
+      <section class="fiche-section" id="architecture" aria-labelledby="architecture-titre">
+        <h2 class="fiche-section__title" id="architecture-titre">Architecture</h2>
+        <div class="structure">{{ architecture_view(building.rooms, page.name) }}</div>
+      </section>
+      {% elif page.children and not building %}
       <section class="fiche-section" aria-labelledby="lieux-contenus">
         <h2 class="fiche-section__title" id="lieux-contenus">Lieux contenus</h2>
         <ul class="fiche-places">
@@ -35,6 +42,14 @@
         </ul>
       </section>
       {% endif %}
+      {% if building and building.is_dwelling %}
+      {% if building.household %}
+      <section class="fiche-section" id="habitants" aria-labelledby="habitants-titre">
+        <h2 class="fiche-section__title" id="habitants-titre">Habitants</h2>
+        <div class="structure">{{ household_view(building.household, page.name) }}</div>
+      </section>
+      {% endif %}
+      {% else %}
       {% if not page.hierarchy.empty %}
       <section class="fiche-section" id="hierarchie" aria-labelledby="hierarchie-titre">
         <h2 class="fiche-section__title" id="hierarchie-titre">Hiérarchie</h2>
@@ -46,6 +61,7 @@
         <h2 class="fiche-section__title" id="personnes-presentes">Personnes présentes</h2>
         {{ position_list(page.presences, "Personnes présentes à " ~ page.name) }}
       </section>
+      {% endif %}
       {% endif %}
       {{ gm_notes(page.gm_notes) }}
     </div>
