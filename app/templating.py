@@ -18,6 +18,7 @@ from app.chronology import (
     format_span,
     format_year,
 )
+from app.config import get_settings
 from app.deps import is_master_key_session
 from app.models import WaArticle
 from app.presentation import (
@@ -159,6 +160,7 @@ templates.env.globals.update(
         "ORIGIN_LABELS": ORIGIN_LABELS,
         "VISIBILITY_LABELS": VISIBILITY_LABELS,
         "is_master_key_session": is_master_key_session,
+        "passwordless_login": lambda: get_settings().passwordless_login,
     }
 )
 

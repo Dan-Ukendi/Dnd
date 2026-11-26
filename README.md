@@ -56,6 +56,7 @@ tests/                 pytest suite
 | `WA_TIMELINE_ID` | no | Id of the World Anvil timeline holding the chronology. By default the timeline titled "Chronologie de Valhar Molaris" is used. |
 | `APP_ENV` | no | `production` (default: secure cookies, HSTS) or `development` (plain HTTP on localhost). |
 | `PLAYER_INITIAL_PASSWORD` | no | Temporary code given to new or reset player accounts (default `0000`). Players replace it with their own 4-digit PIN at their first login. |
+| `PASSWORDLESS_LOGIN` | no | `true`: anyone opening the site picks the DM or a player and enters without a password or PIN (temporary open access). Default `false`. |
 
 `postgres://` and `postgresql://` URLs are accepted and converted to the psycopg driver automatically.
 Copy `.env.example` to `.env` for local work; `.env` is ignored by git.

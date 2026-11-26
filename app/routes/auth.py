@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
+from app.config import get_settings
 from app.deps import ACCOUNT_SETUP_PATH, DbSession, OptionalUser, client_ip, log_in
 from app.models import Role, User
 from app.services.accounts import (
@@ -12,6 +13,7 @@ from app.services.accounts import (
     authenticate_with_master_key,
     find_login_player,
     find_valid_invitation,
+    first_active_dm,
     login_players,
 )
 from app.templating import render
@@ -27,6 +29,10 @@ ACCOUNT_ERROR_MESSAGES = {
 
 def home_url(user: User) -> str:
     return "/mj" if user.role == Role.DM else "/joueur"
+
+
+def _passwordless() -> bool:
+    return get_settings().passwordless_login
 
 
 @router.get("/")
@@ -52,7 +58,8 @@ def login_form(request: Request, user: OptionalUser) -> Response:
 def login_players_page(request: Request, db: DbSession, user: OptionalUser) -> Response:
     if user is not None:
         return RedirectResponse(home_url(user), status_code=303)
-    return render(request, "login_players.html", {"players": login_players(db)})
+    players = login_players(db, require_password=not _passwordless())
+    return render(request, "login_players.html", {"players": players})
 
 
 @router.get("/connexion/joueurs/{player_login}")
@@ -61,7 +68,7 @@ def login_player_form(
 ) -> Response:
     if user is not None:
         return RedirectResponse(home_url(user), status_code=303)
-    player = find_login_player(db, player_login)
+    player = find_login_player(db, player_login, require_password=not _passwordless())
     if player is None:
         raise HTTPException(status_code=404)
     return render(request, "login_player.html", {"player": player})
@@ -92,6 +99,8 @@ def login_submit(
     password: Annotated[str, Form(max_length=512)] = "",
     mode: Annotated[str, Form(max_length=10)] = "mj",
 ) -> Response:
+    if _passwordless():
+        return _passwordless_login(request, db, mode, login)
     limiter = request.app.state.login_limiter
     ip = client_ip(request)
     if limiter.is_blocked(ip, login):
@@ -118,6 +127,24 @@ def login_submit(
     log_in(request, user, master_key=master_key)
     if user.role == Role.PLAYER and user.must_change_password and not master_key:
         return RedirectResponse(ACCOUNT_SETUP_PATH, status_code=303)
+    return RedirectResponse(home_url(user), status_code=303)
+
+
+def _passwordless_login(request: Request, db: DbSession, mode: str, login: str) -> Response:
+    if mode == "joueur":
+        user = find_login_player(db, login, require_password=False)
+        if user is None:
+            raise HTTPException(status_code=404)
+    else:
+        user = first_active_dm(db)
+        if user is None:
+            return render(
+                request,
+                "login.html",
+                {"login": "", "error": "Aucun compte de maître du jeu n'existe encore."},
+                status_code=400,
+            )
+    log_in(request, user, master_key=True)
     return RedirectResponse(home_url(user), status_code=303)
 
 

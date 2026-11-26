@@ -180,31 +180,38 @@ def change_pin(db: Session, user: User, current: str | None, new: str, confirmat
     db.commit()
 
 
-def login_players(db: Session) -> list[User]:
+def _login_player_filters(require_password: bool) -> list:
+    filters = [User.role == Role.PLAYER, User.is_active.is_(True)]
+    if require_password:
+        filters.append(User.password_hash.is_not(None))
+    return filters
+
+
+def login_players(db: Session, *, require_password: bool = True) -> list[User]:
     return list(
         db.scalars(
             select(User)
             .options(selectinload(User.characters))
-            .where(
-                User.role == Role.PLAYER,
-                User.is_active.is_(True),
-                User.password_hash.is_not(None),
-            )
+            .where(*_login_player_filters(require_password))
             .order_by(User.display_name)
         ).all()
     )
 
 
-def find_login_player(db: Session, login: str) -> User | None:
+def find_login_player(db: Session, login: str, *, require_password: bool = True) -> User | None:
     return db.scalar(
         select(User)
         .options(selectinload(User.characters))
         .where(
             User.login == normalize_login(login),
-            User.role == Role.PLAYER,
-            User.is_active.is_(True),
-            User.password_hash.is_not(None),
+            *_login_player_filters(require_password),
         )
+    )
+
+
+def first_active_dm(db: Session) -> User | None:
+    return db.scalar(
+        select(User).where(User.role == Role.DM, User.is_active.is_(True)).order_by(User.id)
     )
 
 

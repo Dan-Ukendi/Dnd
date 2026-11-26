@@ -15,6 +15,10 @@
     <form method="post" action="/connexion" class="form reveal reveal-delay-2">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="mode" value="mj">
+      {% if passwordless_login() %}
+      <button type="submit" class="btn btn--primary btn--block" autofocus>Entrer dans les archives</button>
+    </form>
+      {% else %}
       <div class="field">
         <label for="login">Identifiant</label>
         <input id="login" type="text" name="login" value="{{ login }}" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="100">
@@ -25,6 +29,7 @@
       </div>
       <button type="submit" class="btn btn--primary btn--block">Entrer dans les archives</button>
     </form>
+      {% endif %}
     <p class="screen__footer reveal reveal-delay-3">Accès réservé à la tablée</p>
   </div>
 </main>

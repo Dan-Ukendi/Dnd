@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import get_db
 from app.models import Role, User
 
@@ -37,7 +38,7 @@ def get_current_user(request: Request, db: DbSession) -> User | None:
     if (
         user is None
         or not user.is_active
-        or not user.has_password
+        or (not user.has_password and not get_settings().passwordless_login)
         or user.session_version != request.session.get(SESSION_VERSION_KEY)
     ):
         request.session.clear()

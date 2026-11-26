@@ -17,6 +17,10 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="mode" value="joueur">
       <input type="hidden" name="login" value="{{ player.login }}">
+      {% if passwordless_login() %}
+      <button type="submit" class="btn btn--primary btn--block" autofocus>Entrer</button>
+    </form>
+      {% else %}
       <input type="text" name="username" value="{{ player.login }}" autocomplete="username" hidden readonly>
       <div class="field">
         <label for="password">Code PIN</label>
@@ -25,6 +29,7 @@
       <button type="submit" class="btn btn--primary btn--block">Entrer</button>
     </form>
     <p class="screen__hint reveal reveal-delay-3">Première connexion ? Entrez le code initial transmis par votre maître du jeu, puis choisissez votre code PIN à 4 chiffres.</p>
+      {% endif %}
   </div>
 </main>
 {% endblock %}
