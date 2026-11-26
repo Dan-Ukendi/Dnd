@@ -1,14 +1,32 @@
+{% from "components/icons.html" import ui %}
 {% from "components/structure_macros.html" import place_card, place_details, disclosure_toolbar, explore_link, member_list, visibility_pill %}
 {% from "components/ui.html" import empty_state %}
 {% set territory = structure.territory %}
 {% set dm_hint = "" if player_mode else " Ajoutez-les dans source/structures puis lancez import-structures." %}
 {% if territory.mode == "organisation" %}
+{% if territory.entries %}
+<section class="place-section" aria-labelledby="structure-lieux-contenus">
+  <h3 class="place-level-head__title" id="structure-lieux-contenus">Lieux contenus</h3>
+  <ul class="fiche-places" aria-label="Lieux contenus">
+    {% for entry in territory.entries %}
+    {% set target = entry.href or entry.page_href %}
+    <li class="fiche-place" data-place="{{ entry.key }}">
+      <span class="fiche-place__glyph" aria-hidden="true">{{ ui("map") }}</span>
+      <span class="fiche-place__body">
+        <span class="fiche-place__head">{% if target %}<a href="{{ target }}"{{ target | boost }}>{{ entry.name }}</a>{% else %}{{ entry.name }}{% endif %}<span class="fiche-place__kind">{{ entry.kind_label }}</span>{{ visibility_pill(entry) }}</span>
+        {% if entry.parent %}<span class="fiche-place__text">{{ entry.parent.label }}</span>{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 {% if territory.cards %}
 {{ disclosure_toolbar("structure-places", "Cartes du territoire") }}
 <ul class="place-list" id="structure-places">
   {% for card in territory.cards %}<li>{{ place_card(card, "organisation", structure) }}</li>{% endfor %}
 </ul>
-{% else %}
+{% elif not territory.entries %}
 {{ empty_state("Aucun territoire consigné", "Aucun bâtiment ni aucune terre de cette organisation n'est encore consigné." ~ dm_hint, "map") }}
 {% endif %}
 {% elif not territory.has_root %}

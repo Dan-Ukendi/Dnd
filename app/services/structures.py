@@ -121,6 +121,7 @@ class Territory:
     crumbs: list[Link]
     total: int
     has_root: bool
+    entries: list[PlaceCard] = field(default_factory=list)
 
 
 @dataclass
@@ -519,12 +520,18 @@ def _organisation_territory(world: _World, article: WaArticle) -> Territory:
     ]
     owned_ids = {place.id for place in owned}
     tops = [place for place in owned if not _has_ancestor_in(world, place, owned_ids)]
+    entries = [
+        world.card(place, mode=ORGANISATION, organisation_id=article.wa_id)
+        for place in tops
+        if place.wa_article_id
+    ]
     cards = [
         world.card(place, mode=ORGANISATION, organisation_id=article.wa_id, depth=-1)
         for place in tops
+        if not place.wa_article_id
     ]
-    total = sum(1 + card.descendant_count for card in cards)
-    return Territory(ORGANISATION, cards, None, [], total, True)
+    total = len(entries) + sum(1 + card.descendant_count for card in cards)
+    return Territory(ORGANISATION, cards, None, [], total, True, entries)
 
 
 def _has_ancestor_in(world: _World, place: Place, ids: set[int]) -> bool:
