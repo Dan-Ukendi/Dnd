@@ -389,19 +389,33 @@ The fiches of the Organisation and Monde sections get two tabs next to *Fiche*: 
   owning organisation, a free location and a passage of a source article.
 - `positions`: people, posts and collectives, attached either to an organisation or to a place
   (the extent of their power), with a direct superior, an assignment site, a *sommet* flag, a
-  *collectif* flag and a *présence* flag (`hierarchy = false`: a notable person on a place, outside
-  the hierarchy).
+  *collectif* flag, a *présence* flag (`hierarchy = false`: a notable person on a place, outside
+  the hierarchy) and a *personnel* flag (`staff = true`: an employee with a precise task, such as
+  the infirmary, the guard of a crypt or the reception desk, kept outside the member hierarchy).
 
-An organisation's Territoire lists the places it owns as collapsible cards (nested places inside),
-each with its *Personnel* (the organisation's positions assigned to that site). An owned place that
+An organisation's Territoire lists the places it owns as collapsible cards (nested places inside).
+An owned place that
 has its own World Anvil fiche (`article`) appears instead under *Lieux contenus* as a single entry
 whose name links to that fiche (the five temples of the Clergé d'Arès): its rooms and personnel are
 read on the fiche itself. A Monde fiche's
 Territoire starts from the place linked to the article and goes down level by level (`?lieu=<key>`,
 loaded without reload), with a breadcrumb; each card lists the organisations and notable people
 present. Hiérarchie is a keyboard-navigable tree (arrows, Home/End, Enter opens the fiche, Space
-toggles, `*` opens the siblings) split into *Sommet* and *Sans supérieur défini*; a Monde hierarchy
-includes the positions of every place it contains, with *Relève de …* when the superior is outside.
+toggles, `*` opens the siblings) where every person with subordinates is a collapsible branch: the
+first level is open, deeper branches start closed, and *Tout déplier* / *Tout replier* act on all.
+Only people and groups of people are nodes (no institution): a council is read through its
+president and its members, a guard through its captain, sergeants and guards, each branch ordered
+as a promotion ladder that ends at the head.
+
+- On an organisation's page the tree stops after the top rank (several heads allowed) and their
+  direct subordinates; a node whose branch continues says how many subordinates are on the place
+  fiche, and *Hiérarchie complète par lieu* links to those fiches. Staff never appear there.
+- On a place fiche (`/lieux/<key>`, and the Hiérarchie tab of a building's article) the tree is
+  complete: the place-attached positions of the place and of every place it contains, plus the
+  positions of an organisation assigned there (on its sub-places too when the organisation owns the
+  place). A branch whose superior works elsewhere is listed under *Sous un supérieur extérieur au
+  lieu* with *Relève de …*; staff are listed apart under *Personnel*, and presences under
+  *Personnes présentes*.
 
 **Where the data lives.** Read-only in the app: the rows come from the git-ignored TOML files of
 `source/structures/` and are imported with:
@@ -430,16 +444,17 @@ anchor = "Le lieu"                  # heading or bold label of that article, sho
 visibility = "mj"                   # mj (default) or joueurs
 
 [[positions]]
-key = "nuit-erdene"
+key = "nuit-maren"
 organisation = "Shönö"              # or place = "<place key>"
-name = "Erdene"                     # or person = "<person article title>"
-title = "l'Ezen du Grand Étal"
-scope = "Le commerce illicite et le marché noir"
-superior = "nuit-conseil"           # key of another position
+name = "Maren"                      # or person = "<person article title>"
+title = "Intendante du Grand Étal"
+scope = "Comptes, contrats et dîme du marché"
+superior = "nuit-erdene"            # key of another position
 site = "marche-noir"                # place key
 head = false                        # sommet
 group = false                       # collectif
 hierarchy = true                    # false: présence only
+staff = false                       # true: personnel (employee), shown apart from the tree
 source = "Shönö"
 gm_notes = "…"                       # DM only
 ```

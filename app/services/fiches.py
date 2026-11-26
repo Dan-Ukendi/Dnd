@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.credits import Credit, credit_for
 from app.models import FicheSection, Npc, NpcRelation, Place, Position, StatBlock
-from app.services.structures import KIND_LABELS, Link, Member, Viewer, _World
+from app.services.structures import KIND_LABELS, Hierarchy, Link, Member, Viewer, _World
 from app.worldanvil.bbcode import RenderContext, render_plain_text, render_text_blocks
 
 ABILITY_LABELS = ("FOR", "DEX", "CON", "INT", "SAG", "CHA")
@@ -80,7 +80,8 @@ class PlacePage:
     description: Markup
     sections: list[SectionView]
     children: list[ChildPlace]
-    positions: list[PositionView]
+    hierarchy: Hierarchy
+    presences: list[PositionView]
     crumbs: list[Link]
     gm_notes: Markup
     visibility: str
@@ -291,8 +292,10 @@ class FicheBuilder:
             for child in world.children.get(place.id, [])
             if world.place_visible(child)
         ]
-        positions = [
-            row for row in world.positions.values() if place.id in (row.site_id, row.place_id)
+        presences = [
+            row
+            for row in world.positions.values()
+            if not row.in_hierarchy and place.id in (row.site_id, row.place_id)
         ]
         parent = world.places.get(place.parent_id) if place.parent_id else None
         return PlacePage(
@@ -306,7 +309,8 @@ class FicheBuilder:
             description=render_text_blocks(place.description, self.context),
             sections=self._sections("place_id", place.id),
             children=children,
-            positions=self._position_views(positions, here=place),
+            hierarchy=world.local_hierarchy(place),
+            presences=self._position_views(presences, here=place),
             crumbs=crumbs,
             gm_notes=self._gm(place.gm_notes),
             visibility=self._visibility(place.visibility),

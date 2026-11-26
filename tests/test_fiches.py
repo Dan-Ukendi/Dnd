@@ -437,7 +437,7 @@ def test_dm_place_page_shows_every_section_children_and_positions(
         "Lieux contenus",
         'href="/mj/lieux/chemin"',
         'href="/mj/lieux/rangee"',
-        "Postes liés",
+        'id="hierarchie"',
         'href="/mj/pnj/erdene"',
         'href="/mj/roles/veilleur"',
         'href="/mj/lieux/cite"',
@@ -483,7 +483,7 @@ def test_place_without_sections_has_no_empty_block(
         text = viewer(client).get(path).text
         assert "Des vitrines de verre." in text
         assert "fiche-section" not in text
-        assert "Lieux contenus" not in text and "Postes liés" not in text
+        assert "Lieux contenus" not in text and 'id="hierarchie"' not in text
 
 
 def test_dm_npc_page_shows_stat_block_notes_and_secrets(

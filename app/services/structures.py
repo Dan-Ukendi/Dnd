@@ -25,6 +25,7 @@ KIND_LABELS = {
     "lieu": "Lieu",
 }
 UNNAMED = "Titulaire non nommé"
+ORGANISATION_DEPTH = 2
 
 
 @dataclass(frozen=True)
@@ -111,6 +112,8 @@ class TreeNode:
     reports_to: str
     source: Link | None
     children: list["TreeNode"] = field(default_factory=list)
+    site_href: str | None = None
+    hidden: int = 0
 
 
 @dataclass
@@ -129,6 +132,22 @@ class Hierarchy:
     heads: list[TreeNode]
     orphans: list[TreeNode]
     total: int
+    branches: list[TreeNode] = field(default_factory=list)
+    staff: list[TreeNode] = field(default_factory=list)
+    sites: list[Link] = field(default_factory=list)
+
+    @property
+    def tree_ids(self) -> list[str]:
+        groups = (
+            (self.heads, "structure-sommet"),
+            (self.branches, "structure-rattaches"),
+            (self.orphans, "structure-sans-superieur"),
+        )
+        return [name for nodes, name in groups if nodes]
+
+    @property
+    def empty(self) -> bool:
+        return not (self.heads or self.branches or self.orphans or self.staff)
 
 
 @dataclass
@@ -167,8 +186,9 @@ class _World:
         self.children: dict[int | None, list[Place]] = defaultdict(list)
         for place in sorted(self.places.values(), key=lambda row: (row.position, row.id)):
             self.children[place.parent_id].append(place)
+        self.ordered = sorted(self.positions.values(), key=lambda row: (row.position, row.id))
         self.subordinates: dict[int | None, list[Position]] = defaultdict(list)
-        for position in sorted(self.positions.values(), key=lambda row: (row.position, row.id)):
+        for position in self.ordered:
             self.subordinates[position.superior_id].append(position)
         self._place_visible: dict[int, bool] = {}
         self._position_visible: dict[int, bool] = {}
@@ -333,7 +353,7 @@ class _World:
     ) -> PlaceCard:
         parent = self.places.get(place.parent_id) if place.parent_id else None
         owner = self.link(place.owner_id)
-        members = self._members_at(place, mode, organisation_id)
+        members = self._members_at(place, mode)
         organisations: list[Link] = []
         if mode == MONDE:
             seen: set[str] = set()
@@ -379,19 +399,15 @@ class _World:
             ]
         return card
 
-    def _members_at(self, place: Place, mode: str, organisation_id: str | None) -> list[Member]:
+    def _members_at(self, place: Place, mode: str) -> list[Member]:
         members: list[Member] = []
+        if mode == ORGANISATION:
+            return members
         seen: set[str] = set()
-        for position in sorted(self.positions.values(), key=lambda row: (row.position, row.id)):
+        for position in self.ordered:
             if not self.position_visible(position):
                 continue
-            if mode == ORGANISATION:
-                matches = (
-                    position.organisation_id == organisation_id and position.site_id == place.id
-                )
-            else:
-                matches = place.id in (position.site_id, position.place_id)
-            if not matches:
+            if place.id not in (position.site_id, position.place_id):
                 continue
             identity = (
                 position.person_article_id
@@ -405,23 +421,47 @@ class _World:
             members.append(self.member(position, with_organisation=mode == MONDE))
         return members
 
-    def tree(self, positions: list[Position], root_place: Place | None) -> Hierarchy:
-        in_scope = {position.id for position in positions}
+    def tree(
+        self,
+        positions: list[Position],
+        root_place: Place | None,
+        depth: int | None = None,
+    ) -> Hierarchy:
+        members = [position for position in positions if in_tree(position)]
+        in_scope = {position.id for position in members}
         heads: list[TreeNode] = []
+        branches: list[TreeNode] = []
         orphans: list[TreeNode] = []
-        for position in positions:
+        for position in members:
             superior = self.positions.get(position.superior_id) if position.superior_id else None
             if superior is not None and superior.id in in_scope:
                 continue
-            node = self._node(position, in_scope, root_place)
-            if superior is not None and self.position_visible(superior):
+            node = self._node(position, in_scope, root_place, depth)
+            if position.is_head:
+                heads.append(node)
+            elif superior is not None and self.position_visible(superior):
                 node.reports_to = self.member(superior).name
                 if superior.title:
                     node.reports_to = f"{node.reports_to} ({superior.title})"
-            (heads if position.is_head else orphans).append(node)
-        return Hierarchy(heads, orphans, len(positions))
+                branches.append(node)
+            else:
+                orphans.append(node)
+        staff = [
+            self._node(position, set(), root_place)
+            for position in positions
+            if position.is_staff and position.in_hierarchy
+        ]
+        hierarchy = Hierarchy(heads, orphans, len(members) + len(staff), branches, staff)
+        hierarchy.sites = _hidden_sites([*heads, *branches, *orphans])
+        return hierarchy
 
-    def _node(self, position: Position, in_scope: set[int], root_place: Place | None) -> TreeNode:
+    def _node(
+        self,
+        position: Position,
+        in_scope: set[int],
+        root_place: Place | None,
+        depth: int | None = None,
+    ) -> TreeNode:
         place = self.places.get(position.place_id) if position.place_id else None
         site = self.places.get(position.site_id) if position.site_id else None
         scope = position.scope
@@ -432,20 +472,65 @@ class _World:
             and self.place_visible(place)
         ):
             scope = place.name
+        visible_site = site is not None and site is not root_place and self.place_visible(site)
         node = TreeNode(
             key=position.key,
             member=self.member(position),
             scope=scope,
-            site=site.name if site is not None and self.place_visible(site) else "",
+            site=site.name if visible_site else "",
             reports_to="",
             source=self.source(position),
+            site_href=self.place_href(site) if visible_site else None,
         )
+        children = [
+            child for child in self.subordinates.get(position.id, []) if child.id in in_scope
+        ]
+        if depth is not None and depth <= 1:
+            node.hidden = len(children)
+            return node
         node.children = [
-            self._node(child, in_scope, root_place)
-            for child in self.subordinates.get(position.id, [])
-            if child.id in in_scope
+            self._node(child, in_scope, root_place, None if depth is None else depth - 1)
+            for child in children
         ]
         return node
+
+    def local_positions(self, place: Place) -> list[Position]:
+        if not self.place_visible(place):
+            return []
+        scope = {place.id} | {row.id for row in self.descendants(place.id)}
+        found = []
+        for position in self.ordered:
+            if not self.position_visible(position):
+                continue
+            if position.organisation_id is None:
+                matches = position.place_id in scope or position.site_id == place.id
+            else:
+                matches = position.site_id == place.id or (
+                    position.site_id in scope and position.organisation_id == place.owner_id
+                )
+            if matches:
+                found.append(position)
+        return found
+
+    def local_hierarchy(self, place: Place) -> Hierarchy:
+        return self.tree(self.local_positions(place), place)
+
+
+def in_tree(position: Position) -> bool:
+    return position.in_hierarchy and not position.is_staff
+
+
+def _hidden_sites(nodes: list[TreeNode]) -> list[Link]:
+    sites: list[Link] = []
+    seen: set[str] = set()
+    stack = list(nodes)
+    while stack:
+        node = stack.pop(0)
+        stack[:0] = node.children
+        if node.hidden and node.site_href and node.site_href not in seen:
+            seen.add(node.site_href)
+            sites.append(Link(node.site, node.site_href))
+    return sites
 
 
 def _article_ids(row: Place | Position) -> list[str]:
@@ -477,29 +562,19 @@ def build_structure(
         territory = _organisation_territory(world, article)
         positions = [
             position
-            for position in sorted(world.positions.values(), key=lambda row: (row.position, row.id))
+            for position in world.ordered
             if position.organisation_id == article.wa_id
-            and position.in_hierarchy
+            and in_tree(position)
             and world.position_visible(position)
         ]
-        hierarchy = world.tree(positions, None)
+        hierarchy = world.tree(positions, None, ORGANISATION_DEPTH)
     else:
         root = next(
             (place for place in world.places.values() if place.wa_article_id == article.wa_id),
             None,
         )
         territory = _monde_territory(world, root, page_url, focus_key)
-        scope_ids = set()
-        if root is not None and world.place_visible(root):
-            scope_ids = {root.id} | {place.id for place in world.descendants(root.id)}
-        positions = [
-            position
-            for position in sorted(world.positions.values(), key=lambda row: (row.position, row.id))
-            if position.place_id in scope_ids
-            and position.in_hierarchy
-            and world.position_visible(position)
-        ]
-        hierarchy = world.tree(positions, root)
+        hierarchy = world.local_hierarchy(root) if root is not None else Hierarchy([], [], 0)
     show = viewer.dm or bool(territory.total or hierarchy.total)
     return Structure(
         mode=mode,

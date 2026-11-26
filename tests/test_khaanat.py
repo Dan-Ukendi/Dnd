@@ -321,7 +321,7 @@ def test_each_khan_and_his_cour_link_both_ways(
     assert 'href="/mj/lieux/khara-suld"' in jargal
     assert 'href="/mj/lieux/khar-khunii-ger"' in jargal
     cour = client.get("/mj/lieux/khara-suld").text
-    assert "Postes liés" in cour and 'href="/mj/pnj/jargal"' in cour
+    assert 'id="hierarchie"' in cour and 'href="/mj/pnj/jargal"' in cour
     assert "Khan Baatar, Khan de la Voie du Guerrier" in cour
     assert 'href="/mj/lieux/khar-khunii-ger"' in cour
     assert 'href="/mj/pnj/jargal"' in client.get("/mj/lieux/khar-khunii-ger").text

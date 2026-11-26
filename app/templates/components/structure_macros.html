@@ -52,12 +52,7 @@
 {% if card.excerpt %}<div class="prose place-excerpt">{{ card.excerpt }}</div>{% endif %}
 {% if card.description %}<div class="prose place-excerpt">{{ card.description }}</div>{% endif %}
 {% if card.source %}<p class="structure-source">{{ ui("scroll") }}<span>Source : {{ link_to(card.source) }}</span></p>{% endif %}
-{% if mode == "organisation" %}
-<section class="place-section">
-  <h3 class="place-section__title">Personnel</h3>
-  {{ member_list(card.members, "Personnel de " ~ card.name, "Aucune personne de l'organisation n'est affectée à ce site.") }}
-</section>
-{% else %}
+{% if mode != "organisation" %}
 <section class="place-section">
   <h3 class="place-section__title">Organisations présentes</h3>
   {% if card.organisations %}
@@ -130,7 +125,8 @@
 
 {% macro tree_item(node, level, posinset, setsize) -%}
 {% set count = node.children | length %}
-<li class="tree__item" role="treeitem" aria-level="{{ level }}" aria-posinset="{{ posinset }}" aria-setsize="{{ setsize }}" aria-labelledby="noeud-{{ node.key }}"{% if count %} aria-expanded="true"{% endif %}{% if node.member.href %} data-href="{{ node.member.href }}"{% endif %}>
+{% set open = level == 1 %}
+<li class="tree__item" role="treeitem" aria-level="{{ level }}" aria-posinset="{{ posinset }}" aria-setsize="{{ setsize }}" aria-labelledby="noeud-{{ node.key }}"{% if count %} aria-expanded="{{ 'true' if open else 'false' }}"{% endif %}{% if node.member.href %} data-href="{{ node.member.href }}"{% endif %}>
   <div class="tree__row">
     {% if count %}<span class="tree__toggle" data-tree-toggle aria-hidden="true">{{ ui("chevron") }}</span>{% else %}<span class="tree__toggle tree__toggle--leaf" aria-hidden="true"></span>{% endif %}
     {{ avatar(node.member, "tree__avatar") }}
@@ -140,6 +136,7 @@
       {% if count %}<span class="visually-hidden">, {{ count }} {{ "subordonné direct" if count == 1 else "subordonnés directs" }}</span>{% endif %}
     </span>
     <span class="tree__pills">
+      {% if node.hidden %}<span class="pill pill--muted tree__more">{{ node.hidden }} {{ "subordonné" if node.hidden == 1 else "subordonnés" }} sur la fiche du lieu</span>{% endif %}
       {% if node.scope %}<span class="pill tree__scope" title="Étendue du pouvoir">{{ node.scope }}</span>{% endif %}
       {% if node.site %}<span class="pill pill--muted" title="Lieu d'affectation">{{ node.site }}</span>{% endif %}
       {% if node.reports_to %}<span class="pill pill--muted">Relève de {{ node.reports_to }}</span>{% endif %}
@@ -153,7 +150,7 @@
   </div>
   {% endif %}
   {% if count %}
-  <div class="tree__panel">
+  <div class="tree__panel"{% if not open %} inert{% endif %}>
     <ul class="tree__group" role="group">
       {% for child in node.children %}{{ tree_item(child, level + 1, loop.index, loop.length) }}{% endfor %}
     </ul>
@@ -166,4 +163,63 @@
 <ul class="tree" role="tree" id="{{ id }}" aria-label="{{ label }}" data-tree>
   {% for node in nodes %}{{ tree_item(node, 1, loop.index, loop.length) }}{% endfor %}
 </ul>
+{%- endmacro %}
+
+{% macro staff_list(nodes, label) -%}
+<ul class="member-list" aria-label="{{ label }}">
+  {% for node in nodes %}
+  <li class="member">
+    {{ avatar(node.member, "member__avatar") }}
+    <span class="member__identity">
+      {% if node.member.href %}<a class="member__name" href="{{ node.member.href }}"{{ node.member.href | boost }}>{{ node.member.name }}</a>{% else %}<span class="member__name">{{ node.member.name }}</span>{% endif %}
+      {% if node.member.title %}<span class="member__role">{{ node.member.title }}</span>{% endif %}
+      {% if node.scope %}<span class="member__org">{{ node.scope }}</span>{% endif %}
+      {% if node.site %}<span class="member__org">{{ link_to({"label": node.site, "href": node.site_href}) }}</span>{% endif %}
+    </span>
+    <span class="member__pills">{{ visibility_pill(node.member) }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{%- endmacro %}
+
+{% macro hierarchy_view(hierarchy, owner, organisation=False, heading=2) -%}
+{% set tree_ids = hierarchy.tree_ids %}
+{% if tree_ids %}
+<div class="structure-toolbar" role="group" aria-label="Arbre de la hiérarchie">
+  <button type="button" class="btn btn--compact" data-tree-all="expand" aria-controls="{{ tree_ids | join(' ') }}">Tout déplier</button>
+  <button type="button" class="btn btn--compact" data-tree-all="collapse" aria-controls="{{ tree_ids | join(' ') }}">Tout replier</button>
+</div>
+{% endif %}
+{% if hierarchy.heads %}
+<section class="tree-section" aria-labelledby="hierarchie-sommet">
+  <h{{ heading }} class="tree-section__title" id="hierarchie-sommet">Sommet</h{{ heading }}>
+  {{ tree(hierarchy.heads, "structure-sommet", "Sommet de la hiérarchie") }}
+</section>
+{% endif %}
+{% if hierarchy.branches %}
+<section class="tree-section" aria-labelledby="hierarchie-rattaches">
+  <h{{ heading }} class="tree-section__title" id="hierarchie-rattaches">Sous un supérieur extérieur au lieu</h{{ heading }}>
+  {{ tree(hierarchy.branches, "structure-rattaches", "Branches dont le supérieur est ailleurs") }}
+</section>
+{% endif %}
+{% if hierarchy.orphans %}
+<section class="tree-section" aria-labelledby="hierarchie-sans-superieur">
+  <h{{ heading }} class="tree-section__title" id="hierarchie-sans-superieur">Sans supérieur défini</h{{ heading }}>
+  {{ tree(hierarchy.orphans, "structure-sans-superieur", "Personnes sans supérieur défini") }}
+</section>
+{% endif %}
+{% if organisation and hierarchy.sites %}
+<section class="tree-section" aria-labelledby="hierarchie-lieux">
+  <h{{ heading }} class="tree-section__title" id="hierarchie-lieux">Hiérarchie complète par lieu</h{{ heading }}>
+  <ul class="chip-list">
+    {% for site in hierarchy.sites %}<li class="chip"><a href="{{ site.href }}#hierarchie"{{ site.href | boost }}>{{ site.label }}</a></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% if hierarchy.staff %}
+<section class="tree-section" aria-labelledby="hierarchie-personnel">
+  <h{{ heading }} class="tree-section__title" id="hierarchie-personnel">Personnel</h{{ heading }}>
+  {{ staff_list(hierarchy.staff, "Personnel de " ~ owner) }}
+</section>
+{% endif %}
 {%- endmacro %}

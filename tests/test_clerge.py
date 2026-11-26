@@ -225,19 +225,10 @@ def positions() -> list[dict[str, Any]]:
             anchor="Berenike",
         ),
         position(
-            "clerge-conseil-des-prelats",
-            name="Le conseil des prélats",
-            title="dirigent le temple au nom de l'évêque",
-            superior="clerge-berenike",
-            group=True,
-            source=CLERGE,
-            anchor="Le conseil des prélats",
-        ),
-        position(
             "clerge-autres-prelats",
             npc_role="temple-blanc-prelats",
             title="siègent au conseil",
-            superior="clerge-conseil-des-prelats",
+            superior="clerge-berenike",
             group=True,
             source=TEMPLE_BLANC,
         ),
@@ -245,18 +236,9 @@ def positions() -> list[dict[str, Any]]:
             "clerge-agathokles",
             npc="agathokles",
             title="capitaine de la Garde Blanche",
-            superior="clerge-conseil-des-prelats",
+            superior="clerge-krateros",
             source=TEMPLE_BLANC,
             anchor="Agathokles",
-        ),
-        position(
-            "clerge-garde-blanche",
-            name="La Garde Blanche",
-            title="la milice sacrée du temple",
-            superior="clerge-agathokles",
-            group=True,
-            source=CLERGE,
-            anchor="La Garde Blanche",
         ),
         position(
             "clerge-gardes-blancs",
@@ -369,7 +351,8 @@ def test_clerge_import_is_idempotent(db: Session, world: World) -> None:
     assert krateros.organisation_id == world.clerge.wa_id
     by_key = {row.key: row for row in db.scalars(select(Position))}
     assert by_key["clerge-berenike"].superior_id == by_key["clerge-krateros"].id
-    assert by_key["clerge-conseil-des-prelats"].superior_id == by_key["clerge-berenike"].id
+    assert by_key["clerge-autres-prelats"].superior_id == by_key["clerge-berenike"].id
+    assert by_key["clerge-agathokles"].superior_id == by_key["clerge-krateros"].id
     assert by_key["clerge-kara"].is_head and by_key["clerge-krateros"].is_head
     temples = {row.key: row for row in db.scalars(select(Place).where(Place.kind == "batiment"))}
     assert set(temples) == set(TEMPLES)
@@ -409,20 +392,21 @@ def test_the_seven_rooms_and_the_personnel_live_under_the_temple_blanc(
     for key in ROOMS:
         assert f'href="/mj/lieux/{key}"' in place, key
     for expected in (
-        "Postes liés",
+        'id="hierarchie"',
         f'href="/mj/articles/{world.krateros.wa_id}"',
         'href="/mj/pnj/berenike"',
         'href="/mj/pnj/agathokles"',
         'href="/mj/roles/temple-blanc-gardes"',
-        "Le conseil des prélats",
-        "La Garde Blanche",
     ):
         assert expected in place, expected
+    tree = place[place.index('id="hierarchie"') :]
+    assert ">Le conseil des prélats<" not in tree and ">La Garde Blanche<" not in tree
     fiche = client.get(f"/mj/articles/{world.temples['temple-ares'].wa_id}").text
     panel = territory_panel(fiche)
     for name in ROOMS.values():
         assert name.replace("'", "&#39;") in panel, name
-    assert "Personnes notables" in panel and "La Garde Blanche" in panel
+    assert "Personnes notables" in panel and "capitaine de la Garde Blanche" in panel
+    assert ">La Garde Blanche<" not in panel
     assert f'href="/mj/articles/{world.krateros.wa_id}"' in panel
     buildings = client.get("/mj/articles?section=monde&categorie=batiments").text
     for title, _ in TEMPLES.values():

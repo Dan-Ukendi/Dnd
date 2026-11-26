@@ -227,19 +227,27 @@ def positions() -> list[dict[str, Any]]:
         ),
         position(
             "guilde-gronk",
+            "",
             person=GRONK,
+            staff=True,
             title="Réceptionniste de la branche",
             site="guilde-reception",
             anchor="Les réceptionnistes",
         ),
         position("guilde-althaea", npc="althaea", title="Chef des quêtes"),
         position("guilde-makaria", npc="makaria", title="Maîtresse des épreuves"),
-        group("guilde-receptionnistes", name="Les réceptionnistes", site="guilde-reception"),
+        group(
+            "guilde-receptionnistes",
+            "",
+            name="Les réceptionnistes",
+            site="guilde-reception",
+            staff=True,
+        ),
         group("guilde-coordinateurs", "guilde-althaea", name="Les coordinateurs de quêtes"),
         group("guilde-examinateurs", "guilde-makaria", name="Les examinateurs"),
-        group("guilde-comptables", name="Les comptables"),
-        group("guilde-gardes", name="Les gardes de la Guilde"),
-        group("guilde-soigneurs", name="Les soigneurs de l'infirmerie"),
+        group("guilde-comptables", "", name="Les comptables", staff=True),
+        group("guilde-gardes", "", name="Les gardes de la Guilde", staff=True),
+        group("guilde-soigneurs", "", name="Les soigneurs de l'infirmerie", staff=True),
     ]
 
 
@@ -328,8 +336,17 @@ def test_guild_import_is_idempotent_and_shares_the_general_stat_blocks(
     assert head.is_head and head.npc_id == miri.id
     assert by_key["guilde-coordinateurs"].superior_id == by_key["guilde-althaea"].id
     assert by_key["guilde-examinateurs"].superior_id == by_key["guilde-makaria"].id
-    for key in ("guilde-gronk", "guilde-althaea", "guilde-makaria", "guilde-soigneurs"):
+    for key in ("guilde-althaea", "guilde-makaria"):
         assert by_key[key].superior_id == head.id, key
+    staff = {key for key, row in by_key.items() if row.is_staff}
+    assert staff == {
+        "guilde-gronk",
+        "guilde-receptionnistes",
+        "guilde-comptables",
+        "guilde-gardes",
+        "guilde-soigneurs",
+    }
+    assert all(by_key[key].superior_id is None for key in staff)
     building = db.scalar(select(Place).where(Place.key == "guilde-khuchniin-khondii"))
     assert building.wa_article_id == world.building.wa_id
     assert building.owner_id == world.guilde.wa_id
@@ -351,8 +368,16 @@ def test_the_organisation_lists_the_building_once_and_never_its_rooms(
         assert not shows(panel, name), name
     assert bare_numbers(panel) == []
     hierarchy = page[page.index('id="structure-hierarchie"') :]
-    for expected in ('href="/mj/pnj/miri"', 'href="/mj/roles/guilde-coordinateurs"', GRONK):
+    for expected in ('href="/mj/pnj/miri"', 'href="/mj/pnj/althaea"', 'href="/mj/pnj/makaria"'):
         assert expected in hierarchy, expected
+    for hidden in ("guilde-coordinateurs", "guilde-comptables", GRONK, "Personnel"):
+        assert hidden not in hierarchy, hidden
+    building = dm_get(client, "/mj/lieux/guilde-khuchniin-khondii")
+    tree = building[building.index('id="hierarchie"') :]
+    assert 'href="/mj/roles/guilde-coordinateurs"' in tree
+    staff = tree[tree.index('id="hierarchie-personnel"') :]
+    for expected in (GRONK, "Les réceptionnistes", "Les comptables", "Les soigneurs"):
+        assert expected in staff, expected
 
 
 def test_the_building_fiche_shows_its_rooms_with_their_text(

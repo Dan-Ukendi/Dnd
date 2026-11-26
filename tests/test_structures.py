@@ -478,7 +478,7 @@ def test_dm_organisation_page_has_territory_and_hierarchy_tabs(
     assert 'data-tab="territoire"' in page and 'data-tab="hierarchie"' in page
     assert 'id="structure-territoire"' in page and 'id="structure-hierarchie"' in page
     assert "La branche de la Guilde" in page and "Le comptoir" in page
-    assert "Personnel" in page and "Réceptionniste" in page
+    assert "Réceptionniste" in page
     assert "Branche présentée" in page
     assert 'role="tree"' in page and 'role="treeitem"' in page and 'role="group"' in page
     assert 'aria-expanded="true"' in page and 'aria-level="2"' in page

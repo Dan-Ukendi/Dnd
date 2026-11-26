@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "fiches/_macros.html" import crumbs, hero, facts_panel, sections, gm_notes, gm_pill, position_list, link_to %}
 {% from "components/icons.html" import ui %}
+{% from "components/structure_macros.html" import hierarchy_view %}
 {% block title %}{{ page.name }}{% endblock %}
 {% block main_attrs %}data-section="monde"{% endblock %}
 {% block content %}
@@ -34,10 +35,16 @@
         </ul>
       </section>
       {% endif %}
-      {% if page.positions %}
-      <section class="fiche-section" aria-labelledby="postes-lies">
-        <h2 class="fiche-section__title" id="postes-lies">Postes liés</h2>
-        {{ position_list(page.positions, "Postes liés à " ~ page.name) }}
+      {% if not page.hierarchy.empty %}
+      <section class="fiche-section" id="hierarchie" aria-labelledby="hierarchie-titre">
+        <h2 class="fiche-section__title" id="hierarchie-titre">Hiérarchie</h2>
+        <div class="structure">{{ hierarchy_view(page.hierarchy, page.name, heading=3) }}</div>
+      </section>
+      {% endif %}
+      {% if page.presences %}
+      <section class="fiche-section" aria-labelledby="personnes-presentes">
+        <h2 class="fiche-section__title" id="personnes-presentes">Personnes présentes</h2>
+        {{ position_list(page.presences, "Personnes présentes à " ~ page.name) }}
       </section>
       {% endif %}
       {{ gm_notes(page.gm_notes) }}
