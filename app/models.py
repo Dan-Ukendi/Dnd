@@ -862,6 +862,7 @@ class Position(Base):
     is_head: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_group: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     in_hierarchy: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    is_staff: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     source_article_id: Mapped[str | None] = mapped_column(
         ForeignKey("wa_articles.wa_id", ondelete="SET NULL"), index=True
     )

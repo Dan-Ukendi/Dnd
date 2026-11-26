@@ -32,7 +32,7 @@ SECTION_KEYS = frozenset({"title", "text", "visibility"})
 RELATION_KEYS = frozenset({"npc", "article", "article_id", "label", "reverse_label", "visibility"})
 SECRET_TITLES = frozenset({"secret", "secrets", "secret (mj)", "accroches"})
 KEY_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-BOOLEAN_FIELDS = frozenset({"head", "group", "hierarchy"})
+BOOLEAN_FIELDS = frozenset({"head", "group", "hierarchy", "staff"})
 STRUCTURED_FIELDS = frozenset({"sections", "relations", "previous_keys"})
 
 PLACE_KEYS = frozenset(
@@ -76,6 +76,7 @@ POSITION_KEYS = frozenset(
         "head",
         "group",
         "hierarchy",
+        "staff",
         "source",
         "source_id",
         "anchor",
@@ -211,6 +212,7 @@ POSITION_COLUMNS = (
     "is_head",
     "is_group",
     "in_hierarchy",
+    "is_staff",
     "source_article_id",
     "source_anchor",
     "gm_notes",
@@ -494,8 +496,11 @@ def _prepare_position(entry: _Entry, articles: _Articles) -> None:
             "is_head": entry.data.get("head") is True,
             "is_group": entry.data.get("group") is True,
             "in_hierarchy": entry.data.get("hierarchy", True) is not False,
+            "is_staff": entry.data.get("staff") is True,
         }
     )
+    if entry.values["is_staff"] and entry.values["is_head"]:
+        entry.errors.append("a staff position cannot be the head of a hierarchy")
     for ref in ("place", "superior", "site", "npc", "npc_role"):
         value = _text(entry.data, ref)
         if value:
