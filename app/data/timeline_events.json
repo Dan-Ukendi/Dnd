@@ -56,13 +56,13 @@
  },
  {
   "code": "A4",
-  "title": "Long sommeil du Joug",
+  "title": "Perte du Joug",
   "start_year": -485,
-  "end_year": 829,
+  "end_year": null,
   "importance": "majeur",
   "origin": "canon",
   "place": null,
-  "summary": "Le Joug passe de main en main, caché, volé, perdu, pendant des siècles, et sa magie faiblit sans la forge. Les chroniques impériales le tiennent pour une légende.",
+  "summary": "Après la mort de Malvaar, le Joug est perdu.",
   "linked": [
    "A3"
   ],
@@ -162,13 +162,13 @@
  },
  {
   "code": "B5",
-  "title": "Construction du Temple Blanc d'Arès",
+  "title": "Construction de la Lux Victrix d'Arès",
   "start_year": 396,
   "end_year": 409,
   "importance": "majeur",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Le Temple Blanc d'Arès est bâti dans les galeries, en pierre blanche importée de la surface.",
+  "summary": "La Lux Victrix d'Arès est bâtie dans les galeries, en pierre blanche importée de la surface.",
   "linked": [
    "B2",
    "B3"
@@ -200,7 +200,7 @@
  {
   "code": "B8",
   "title": "Éclatement de l'ancien empire en trois nations",
-  "start_year": 757,
+  "start_year": 754,
   "end_year": 760,
   "importance": "majeur",
   "origin": "canon",
@@ -332,13 +332,13 @@
  },
  {
   "code": "C7",
-  "title": "Naissance de la Nuit et du marché noir Khar Zakh",
+  "title": "Naissance de Shönö et du marché noir Khar Zakh",
   "start_year": 781,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "La Nuit et son marché noir Khar Zakh naissent, \"le commerce le plus ancien\" de la ville.",
+  "summary": "Shönö et son marché noir Khar Zakh naissent, \"le commerce le plus ancien\" de la ville.",
   "linked": [],
   "visibility": "mj",
   "chronicle": false,
@@ -440,13 +440,13 @@
  },
  {
   "code": "C11",
-  "title": "Jean-Charles ouvre la taverne Le Troll qui Rit",
+  "title": "Jean-Charles hérite de la taverne Le Troll qui Rit",
   "start_year": 806,
   "end_year": null,
   "importance": "mineur",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Jean-Charles ouvre la taverne.",
+  "summary": "Jean-Charles hérite du Troll qui Rit de ses ancêtres : un de ses aïeuls, un aventurier chasseur de trolls, avait acheté la taverne avec la fortune de ses chasses.",
   "linked": [],
   "visibility": "mj",
   "chronicle": false,
@@ -495,13 +495,13 @@
  },
  {
   "code": "C9",
-  "title": "Erdene, Tsetseg et Ganbold forment le conseil des trois Ezen de la Nuit",
+  "title": "Erdene, Tsetseg et Ganbold forment le conseil des trois Ezen de Shönö",
   "start_year": 814,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Le conseil des trois Ezen de la Nuit est formé.",
+  "summary": "Le conseil des trois Ezen de Shönö est formé.",
   "linked": [
    "C7"
   ],
@@ -514,13 +514,13 @@
  },
  {
   "code": "C10",
-  "title": "Kratéros devient évêque d'Arès de Khüchniin Khöndii",
+  "title": "Kratos devient évêque d'Arès de Khüchniin Khöndii",
   "start_year": 821,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Kratéros prend la tête du clergé d'Arès local, au Temple Blanc.",
+  "summary": "Kratos prend la tête du clergé d'Arès local, à la Lux Victrix.",
   "linked": [
    "B5"
   ],
@@ -801,13 +801,13 @@
  },
  {
   "code": "S5",
-  "title": "La Nuit lance la traque des voleurs de l'amulette",
+  "title": "Shönö lance la traque des voleurs de l'amulette",
   "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Le mage et l'archer en fuite rapportent ce qu'ils ont vu. Pour la Nuit, le vol de l'amulette est une insulte directe au conseil des trois Ezen, et le guerrier tué doit être payé. Les descriptions d'une drow et d'un tiefling circulent parmi les écoutes, qui surveillent les portes de la montagne, les tavernes et la Guilde des Aventuriers.",
+  "summary": "Le mage et l'archer en fuite rapportent ce qu'ils ont vu. Pour Shönö, le vol de l'amulette est une insulte directe au conseil des trois Ezen, et le guerrier tué doit être payé. Les descriptions d'une drow et d'un tiefling circulent parmi les écoutes, qui surveillent les portes de la montagne, les tavernes et la Guilde des Aventuriers.",
   "linked": [
    "S2",
    "C9"
@@ -887,7 +887,7 @@
   "importance": "notable",
   "origin": "canon",
   "place": "La demeure de Sophie",
-  "summary": "Pendant qu'ils attendent au salon, où Gérard, le majordome de Sophie, leur sert à boire, Zilvra lui demande les toilettes. Elle en profite pour explorer la maison, découvre une pièce discrète où se trouve un coffre et le vide : 50 pièces d'or, 4 potions de soin et 2 potions de sort. Elle rejoint Khaetar au salon sans que personne ne remarque rien.",
+  "summary": "Pendant qu'ils attendent au salon, où Gérard, le barman de Sophie, leur sert à boire, Zilvra lui demande les toilettes. Elle en profite pour explorer la maison, découvre une pièce discrète où se trouve un coffre et le vide : 50 pièces d'or, 4 potions de soin et 2 potions de sort. Elle rejoint Khaetar au salon sans que personne ne remarque rien.",
   "linked": [
    "S17"
   ],
@@ -961,13 +961,13 @@
  },
  {
   "code": "S10",
-  "title": "Khaetar au Temple Blanc : Kratéros le coupe de l'influence de son patron",
+  "title": "Khaetar à la Lux Victrix : Kratos le coupe de l'influence de son patron",
   "start_year": 829,
   "end_year": null,
   "importance": "majeur",
   "origin": "canon",
-  "place": "Temple Blanc d'Arès",
-  "summary": "Pendant ce temps, Khaetar se rend au temple d'Arès. Un vieux prêtre agenouillé devant la statue du dieu, Kratéros, le prend à part et le coupe, le temps de leur échange, de l'influence de son patron démoniaque, puis lui demande s'il veut de l'aide pour s'en libérer. Il doit d'abord faire ses propres recherches et reviendra vers lui quand il en saura davantage. En attendant, il lui remet une amulette bénie par Arès, le Gage d'Arès : à chaque victoire, elle se charge et rapproche Khaetar du dieu.",
+  "place": "Lux Victrix d'Arès",
+  "summary": "Pendant ce temps, Khaetar se rend au temple d'Arès. Un vieux prêtre agenouillé devant la statue du dieu, Kratos, le prend à part et le coupe, le temps de leur échange, de l'influence de son patron démoniaque, puis lui demande s'il veut de l'aide pour s'en libérer. Il doit d'abord faire ses propres recherches et reviendra vers lui quand il en saura davantage. En attendant, il lui remet une amulette bénie par Arès, le Gage d'Arès : à chaque victoire, elle se charge et rapproche Khaetar du dieu.",
   "linked": [
    "S8",
    "C10",
@@ -982,13 +982,13 @@
  },
  {
   "code": "S20",
-  "title": "Kratéros voit en Khaetar la quête qu'il attendait d'Arès",
+  "title": "Kratos voit en Khaetar la quête qu'il attendait d'Arès",
   "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
-  "place": "Temple Blanc d'Arès",
-  "summary": "Évêque d'Arès que presque tous prennent pour un simple prêtre, Kratéros attendait depuis des années une quête que son dieu lui confierait. Il voit dans le jeune tiefling le signe attendu et fait de son aide sa quête. Il lui a confié le Gage seul, sans l'accord du conseil des prélats, qui ignore que l'amulette a quitté le temple.",
+  "place": "Lux Victrix d'Arès",
+  "summary": "Évêque d'Arès que presque tous prennent pour un simple prêtre, Kratos attendait depuis des années une quête que son dieu lui confierait. Il voit dans le jeune tiefling le signe attendu et fait de son aide sa quête. Il lui a confié le Gage seul, sans l'accord du conseil des prélats, qui ignore que l'amulette a quitté le temple.",
   "linked": [
    "S10",
    "C10"
@@ -1022,13 +1022,13 @@
  },
  {
   "code": "S19",
-  "title": "Humilié, Bob compte vendre les deux voleurs à la Nuit",
+  "title": "Humilié, Bob compte vendre les deux voleurs à Shönö",
   "start_year": 829,
   "end_year": null,
   "importance": "notable",
   "origin": "canon",
   "place": "Khüchniin Khöndii",
-  "summary": "Chassé de la taverne et délesté de l'or qu'il venait de voler, Bob veut se venger et récupérer de l'argent. Écoute de la Nuit, il a vu les deux aventuriers de près et sait où les trouver : il compte les dénoncer à ses contacts du marché noir, qui les poursuivent déjà pour le vol de l'amulette.",
+  "summary": "Chassé de la taverne et délesté de l'or qu'il venait de voler, Bob veut se venger et récupérer de l'argent. Écoute de Shönö, il a vu les deux aventuriers de près et sait où les trouver : il compte les dénoncer à ses contacts du marché noir, qui les poursuivent déjà pour le vol de l'amulette.",
   "linked": [
    "S11",
    "S5"
