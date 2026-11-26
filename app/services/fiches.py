@@ -242,7 +242,9 @@ class FicheBuilder:
             return None
         return Link(place.name, self.world.place_href(place), place.key)
 
-    def _position_views(self, positions: Iterable[Position]) -> list[PositionView]:
+    def _position_views(
+        self, positions: Iterable[Position], here: Place | None = None
+    ) -> list[PositionView]:
         views = []
         world = self.world
         for position in sorted(positions, key=lambda row: (row.position, row.id)):
@@ -253,13 +255,12 @@ class FicheBuilder:
             if superior is not None and world.position_visible(superior):
                 boss = world.member(superior)
                 reports_to = Link(boss.name, boss.href, boss.key)
+            site_id = position.site_id if here is None or position.site_id != here.id else None
             views.append(
                 PositionView(
                     member=world.member(position),
                     scope=position.scope,
-                    site=self._place_link(
-                        world.places.get(position.site_id) if position.site_id else None
-                    ),
+                    site=self._place_link(world.places.get(site_id) if site_id else None),
                     organisation=world.link(position.organisation_id),
                     reports_to=reports_to,
                 )
@@ -291,9 +292,7 @@ class FicheBuilder:
             if world.place_visible(child)
         ]
         positions = [
-            row
-            for row in world.positions.values()
-            if row.site_id == place.id or (row.site_id is None and row.place_id == place.id)
+            row for row in world.positions.values() if place.id in (row.site_id, row.place_id)
         ]
         parent = world.places.get(place.parent_id) if place.parent_id else None
         return PlacePage(
@@ -307,7 +306,7 @@ class FicheBuilder:
             description=render_text_blocks(place.description, self.context),
             sections=self._sections("place_id", place.id),
             children=children,
-            positions=self._position_views(positions),
+            positions=self._position_views(positions, here=place),
             crumbs=crumbs,
             gm_notes=self._gm(place.gm_notes),
             visibility=self._visibility(place.visibility),
@@ -416,6 +415,13 @@ class FicheBuilder:
             stat_block=stat_block_view(block) if self.viewer.dm else None,
             visibility=self._visibility(role.visibility),
         )
+
+
+def article_place_sections(db: Session, wa_id: str, context: RenderContext) -> list[SectionView]:
+    place = db.scalar(select(Place).where(Place.wa_article_id == wa_id))
+    if place is None:
+        return []
+    return FicheBuilder(db, Viewer(dm=True), context)._sections("place_id", place.id)
 
 
 def article_npc_sheet(db: Session, wa_id: str, context: RenderContext) -> NpcPage | None:

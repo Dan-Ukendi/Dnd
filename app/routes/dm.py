@@ -47,7 +47,7 @@ from app.services.accounts import (
     set_temporary_password,
 )
 from app.services.dossiers import build_dossier
-from app.services.fiches import article_npc_sheet
+from app.services.fiches import article_npc_sheet, article_place_sections
 from app.services.media_processing import MAX_UPLOAD_BYTES, MediaError
 from app.services.structures import Viewer, build_structure
 from app.services.sync import SyncAlreadyRunningError, latest_run, run_sync_job, start_run
@@ -306,6 +306,7 @@ def article_detail(
             "person_tags": person_service.fiche_tags(db, article),
             "structure": build_structure(db, article, Viewer(dm=True), render_context, lieu),
             "npc_sheet": article_npc_sheet(db, wa_id, render_context),
+            "place_sections": article_place_sections(db, wa_id, render_context),
             "world_fiche": world_service.world_fiche(db, article, Viewer(dm=True)),
             "world_options": world_service.CATEGORY_LABELS
             if world_service.is_eligible(article)

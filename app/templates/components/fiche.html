@@ -97,6 +97,10 @@
         <div class="prose">{{ html }}</div>
       </section>
       {% endfor %}
+      {% if place_sections is defined and place_sections and not player_mode %}
+      {% from "fiches/_macros.html" import sections as place_fiche_sections %}
+      {{ place_fiche_sections(place_sections) }}
+      {% endif %}
       {% if npc_sheet is defined and npc_sheet and not player_mode %}
       {% from "fiches/_macros.html" import sections as fiche_sections, gm_notes as fiche_gm_notes, statblock %}
       {{ fiche_sections(npc_sheet.sections) }}

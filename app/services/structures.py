@@ -389,9 +389,7 @@ class _World:
                     position.organisation_id == organisation_id and position.site_id == place.id
                 )
             else:
-                matches = position.site_id == place.id or (
-                    position.site_id is None and position.place_id == place.id
-                )
+                matches = place.id in (position.site_id, position.place_id)
             if not matches:
                 continue
             identity = (

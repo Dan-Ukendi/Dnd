@@ -37,7 +37,7 @@
       {% if page.positions %}
       <section class="fiche-section" aria-labelledby="postes-lies">
         <h2 class="fiche-section__title" id="postes-lies">Postes liés</h2>
-        {{ position_list(page.positions, "Postes liés à " ~ page.name, False) }}
+        {{ position_list(page.positions, "Postes liés à " ~ page.name) }}
       </section>
       {% endif %}
       {{ gm_notes(page.gm_notes) }}
