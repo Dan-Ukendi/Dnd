@@ -393,7 +393,10 @@ The fiches of the Organisation and Monde sections get two tabs next to *Fiche*: 
   the hierarchy).
 
 An organisation's Territoire lists the places it owns as collapsible cards (nested places inside),
-each with its *Personnel* (the organisation's positions assigned to that site). A Monde fiche's
+each with its *Personnel* (the organisation's positions assigned to that site). An owned place that
+has its own World Anvil fiche (`article`) appears instead under *Lieux contenus* as a single entry
+whose name links to that fiche (the five temples of the Clergé d'Arès): its rooms and personnel are
+read on the fiche itself. A Monde fiche's
 Territoire starts from the place linked to the article and goes down level by level (`?lieu=<key>`,
 loaded without reload), with a breadcrumb; each card lists the organisations and notable people
 present. Hiérarchie is a keyboard-navigable tree (arrows, Home/End, Enter opens the fiche, Space
@@ -511,7 +514,8 @@ traits, `ac_` actions, `ba` bonus actions, `re` reactions (lists of `{"n": name,
 optional `"sp": [["1st level (4 slots)", "spell, spell"]]` for spell lists) and `src` source. They are
 rendered like a rulebook stat block, for the DM only, with the source and its licence in the footer.
 `/credits` (linked in the footer of every page) lists the sources and licences: SRD 5.1 (CC BY 4.0),
-Level Up Advanced 5th Edition Monstrous Menagerie (EN Publishing) and Black Flag SRD (Kobold Press).
+Level Up Advanced 5th Edition Monstrous Menagerie (EN Publishing), Monsters of the Multiverse and
+Volo's Guide to Monsters (Wizards of the Coast), Creature Codex and Black Flag SRD (Kobold Press).
 
 **Players** open a place page only when the place and every enclosing place are marked `joueurs` and
 the place, an enclosing place or its owner is a fiche shared with them; an NPC or role page only when
