@@ -36,7 +36,8 @@ from tests.factories import login, make_article, make_character, make_user
 
 SOURCES = Path(__file__).resolve().parent.parent / "source" / "dossiers"
 PRESENT = 829
-ZILVRA_BIRTH = 808
+ZILVRA_BIRTH = 729
+ZILVRA_BIRTH_0023 = 808
 
 ACTIONS: dict[str, Any] = {
     "character": "Khaetar Voss",
@@ -362,8 +363,8 @@ def test_migration_drops_session_events_and_dates_zilvra(
     }
     for year, age, _ in zilvra.values():
         if age is not None:
-            assert year - age == ZILVRA_BIRTH
-    assert PRESENT - ZILVRA_BIRTH == 21
+            assert year - age == ZILVRA_BIRTH_0023
+    assert PRESENT - ZILVRA_BIRTH_0023 == 21
     profile = db.get(CharacterProfile, table.zilvra.id)
     assert profile is not None and profile.events_edited_at == edited
 
@@ -431,14 +432,24 @@ def test_source_zilvra_dates_follow_her_age() -> None:
     ]
     years = [event["year"] for event in events]
     assert years == sorted(years)
-    assert years[0] == ZILVRA_BIRTH and PRESENT - years[0] == 21
+    assert years[0] == ZILVRA_BIRTH and PRESENT - years[0] == 100
     assert all(event.get("approximate") is True for event in events)
     for event in events:
         if "age" in event:
             assert event["year"] - event["age"] == ZILVRA_BIRTH
     departure = next(event for event in events if event["title"].startswith("Le départ"))
-    assert departure["age"] == 18 and departure["year"] == 826
+    assert departure["age"] == 99 and departure["year"] == PRESENT - 1
     assert all(event["year"] < PRESENT for event in events)
+
+
+@needs_sources
+def test_source_zilvra_rival_is_number_two_and_glad_she_left() -> None:
+    data = _source("zilvra")
+    tazhira = next(r for r in data["relations"] if r["name"] == "Tazhira")
+    assert "numéro 2" in tazhira["role"]
+    assert "ne veut pas la voir revenir" in tazhira["text"]
+    raw = (SOURCES / "zilvra.toml").read_text(encoding="utf-8")
+    assert "trahie" not in raw and "21 ans" not in raw
 
 
 @needs_sources
