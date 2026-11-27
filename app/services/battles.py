@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models import Battle, BattleMap, BattleToken, Character, User, utcnow
 
-PLAYER_WINDOW = 7
+PLAYER_WINDOW_SHARE = 0.5
+PLAYER_WINDOW_MIN = 5
 MAX_SOURCE_BYTES = 40 * 1024 * 1024
 MAP_LONG_SIDE = 2400
 MAP_QUALITY = 80
@@ -465,11 +466,15 @@ def player_token(db: Session, player: User) -> BattleToken | None:
     )
 
 
-def player_window(battle: Battle, token: BattleToken, size: int = PLAYER_WINDOW) -> Window | None:
+def _window_side(cells: int) -> int:
+    return min(cells, max(PLAYER_WINDOW_MIN, round(cells * PLAYER_WINDOW_SHARE)))
+
+
+def player_window(battle: Battle, token: BattleToken) -> Window | None:
     if token.col is None or token.row is None or battle.map is None:
         return None
-    cols = min(size, battle.cols)
-    rows = min(size, battle.rows)
+    cols = _window_side(battle.cols)
+    rows = _window_side(battle.rows)
     col = min(max(token.col - cols // 2, 0), battle.cols - cols)
     row = min(max(token.row - rows // 2, 0), battle.rows - rows)
     return Window(col, row, cols, rows)

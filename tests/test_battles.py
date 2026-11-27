@@ -240,13 +240,13 @@ def test_players_see_the_newest_active_battle(
     place(db, newer, {"Zilvra": (20, 20), "Dragon": (21, 21)})
     login(client, "alice")
     page = client.get("/joueur/combat").text
-    assert "Combat 2" in page and "fenetre=17-17-7-7" in page and "Adversaire" in page
+    assert "Combat 2" in page and "fenetre=12-12-16-12" in page and "Adversaire" in page
     dm = other_client
     login(dm, "maitre")
     assert post_form(dm, f"/mj/combat/{newer.id}/terminer", {}).status_code == 303
     assert "Visible des joueurs" in dm.get(f"/mj/combat/{battle.id}").text
     page = client.get("/joueur/combat").text
-    assert "Combat 1" in page and "fenetre=0-0-7-7" in page
+    assert "Combat 1" in page and "fenetre=0-0-16-12" in page
     assert post_form(dm, f"/mj/combat/{newer.id}/reprendre", {}).status_code == 303
     assert "Combat 2" in client.get("/joueur/combat").text
     post_form(dm, f"/mj/combat/{newer.id}/terminer", {})
@@ -350,17 +350,17 @@ def test_player_sees_only_the_cells_around_their_token(
     assert page.status_code == 200
     assert 'hx-trigger="every 3s"' in page.text
     shown = set(map(int, re.findall(r'data-battle-token="(\d+)"', page.text)))
-    assert shown == {found["Zilvra"].id, found["Troll"].id}
-    assert "fenetre=7-7-7-7" in page.text
-    assert 'data-col="5" data-row="6"' in page.text
+    assert shown == {found["Zilvra"].id, found["Troll"].id, found["Gobelin 1"].id}
+    assert "fenetre=2-4-16-12" in page.text
+    assert 'data-col="10" data-row="9"' in page.text
     assert "Troll" not in page.text and "Khaetar" not in page.text and "Forêt" not in page.text
     view = client.get("/joueur/combat/vue")
     assert view.status_code == 200 and "<html" not in view.text
-    image = client.get("/joueur/combat/carte", params={"fenetre": "7-7-7-7"})
+    image = client.get("/joueur/combat/carte", params={"fenetre": "2-4-16-12"})
     assert image.status_code == 200 and image.headers["content-type"] == "image/webp"
     with Image.open(io.BytesIO(image.content)) as cropped:
-        assert cropped.size == (7 * CELL, 7 * CELL)
-    assert client.get("/joueur/combat/carte", params={"fenetre": "0-0-7-7"}).status_code == 404
+        assert cropped.size == (16 * CELL, 12 * CELL)
+    assert client.get("/joueur/combat/carte", params={"fenetre": "0-0-16-12"}).status_code == 404
 
 
 def test_player_window_stays_inside_the_map(
@@ -369,7 +369,7 @@ def test_player_window_stays_inside_the_map(
     place(db, battle, {"Khaetar": (0, 0), "Zilvra": (31, 23)})
     login(client, "bob")
     page = client.get("/joueur/combat").text
-    assert "fenetre=0-0-7-7" in page
+    assert "fenetre=0-0-16-12" in page
     assert 'data-col="0" data-row="0"' in page
     assert "Zilvra" not in page
 
@@ -380,7 +380,7 @@ def test_unplaced_player_and_player_without_battle(
     login(client, "alice")
     page = client.get("/joueur/combat").text
     assert "pas encore placé" in page and "data-battle-token" not in page
-    assert client.get("/joueur/combat/carte", params={"fenetre": "0-0-7-7"}).status_code == 404
+    assert client.get("/joueur/combat/carte", params={"fenetre": "0-0-16-12"}).status_code == 404
     make_user(db, "carl")
     login(other_client, "carl")
     assert "Aucun combat" in other_client.get("/joueur/combat").text
@@ -399,7 +399,7 @@ def test_player_view_works_in_passwordless_mode(
             "csrf_token": csrf_token(client, "/connexion/mj"),
         },
     )
-    assert "fenetre=0-0-7-7" in client.get("/joueur/combat").text
+    assert "fenetre=0-0-16-12" in client.get("/joueur/combat").text
     assert client.get("/mj/combat").status_code == 404
 
 
