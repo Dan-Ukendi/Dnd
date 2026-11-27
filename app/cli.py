@@ -10,7 +10,7 @@ from app.config import get_settings
 from app.db import get_engine, get_session_factory, wait_for_database
 from app.models import Role, SyncStatus
 from app.services.accounts import AccountError, create_user
-from app.services.battles import FIRST_BATTLE, BattleError, install_battle
+from app.services.battles import import_library, library_size
 from app.services.chronology import ChronologyError, load_seed
 from app.services.dossiers import (
     DossierError,
@@ -216,21 +216,25 @@ def cmd_load_timeline(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_import_battle_map(args: argparse.Namespace) -> int:
-    path = Path(args.image)
-    if not path.is_file():
-        logger.error("File not found: %s", path)
+def cmd_import_battle_maps(args: argparse.Namespace) -> int:
+    root = Path(args.folder)
+    if not root.is_dir():
+        logger.error("Folder not found: %s", root)
         return 1
+    status = 0
     with get_session_factory()() as db:
-        try:
-            battle, notes = install_battle(db, FIRST_BATTLE, path.read_bytes())
-        except BattleError as exc:
-            logger.error("Invalid battle map: %s", exc)
-            return 1
-        for note in notes:
-            print(note)
-        print(f"Battle '{battle.name}' ready")
-    return 0
+        for entry, battle_map, result in import_library(db, root):
+            if battle_map is None:
+                print(f"{entry.title}: {result} ({entry.path})")
+                status = status or int(result != "missing")
+                continue
+            size = len(battle_map.image) + len(battle_map.thumbnail or b"")
+            print(
+                f"{battle_map.name}: {result}, {battle_map.cols}x{battle_map.rows} cells, "
+                f"{size / 1024:.0f} KB"
+            )
+        print(f"Library size: {library_size(db) / 1024 / 1024:.1f} MB")
+    return status
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -300,11 +304,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     timeline.set_defaults(handler=cmd_load_timeline)
 
-    battle = commands.add_parser(
-        "import-battle-map", help="Create the first battle, its tokens and store its map image"
+    battle_maps = commands.add_parser(
+        "import-battle-maps", help="Import the battle map library from a folder of downloaded maps"
     )
-    battle.add_argument("image", help="Map image (WebP, PNG or JPEG) divided into a square grid")
-    battle.set_defaults(handler=cmd_import_battle_map)
+    battle_maps.add_argument("folder", help="Folder that holds the downloaded map packs")
+    battle_maps.set_defaults(handler=cmd_import_battle_maps)
     return parser
 
 

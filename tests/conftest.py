@@ -31,6 +31,7 @@ from app.services import linking  # noqa: E402
 TABLES = (
     "battle_tokens",
     "battles",
+    "battle_maps",
     "building_types",
     "world_categories",
     "npc_relations",

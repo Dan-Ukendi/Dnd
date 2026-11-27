@@ -4,13 +4,32 @@
 {% block content %}
 {% if battle is none %}
 {{ page_head("Combat", eyebrow="Plan de bataille") }}
-{{ empty_state("Aucun combat", "Aucune carte de combat n'est enregistrée.", "map") }}
+<div class="battle-actions">
+  <a class="btn btn--primary" href="/mj/combat/nouveau">Nouveau combat</a>
+</div>
+{{ empty_state("Aucun combat en cours", "Lancez un nouveau combat ou reprenez un combat terminé.", "map") }}
 {% else %}
 {{ page_head(battle.name, eyebrow="Plan de bataille", lead="Glissez chaque pion sur une case de la carte : la position est enregistrée aussitôt. Cliquez sur un pion posé pour le faire pivoter d'un huitième de tour (Maj + clic : dans l'autre sens).") }}
-<form method="post" action="/mj/combat/{{ battle.id }}/reinitialiser" class="inline-form">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <button type="submit" class="btn btn--danger">Réinitialiser la carte</button>
-</form>
+<div class="battle-actions">
+  {% if battle.map %}<span class="pill">{{ battle.map.name }}</span>{% endif %}
+  {% if battle.id == active_id %}<span class="pill pill--ok">Visible des joueurs</span>{% elif battle.ended_at %}<span class="pill pill--muted">Terminé</span>{% endif %}
+  <a class="btn btn--primary" href="/mj/combat/nouveau">Nouveau combat</a>
+  <form method="post" action="/mj/combat/{{ battle.id }}/reinitialiser" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn btn--danger">Réinitialiser la carte</button>
+  </form>
+  {% if battle.ended_at %}
+  <form method="post" action="/mj/combat/{{ battle.id }}/reprendre" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn">Reprendre ce combat</button>
+  </form>
+  {% else %}
+  <form method="post" action="/mj/combat/{{ battle.id }}/terminer" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn">Terminer le combat</button>
+  </form>
+  {% endif %}
+</div>
 <div class="battle-dm" data-battle-dm data-move-url="/mj/combat/{{ battle.id }}/pions/">
   <div class="battle-tray" data-battle-tray aria-label="Pions">
     {% for token in battle.tokens %}
@@ -22,9 +41,9 @@
     </div>
     {% endfor %}
   </div>
-  {% if battle.image_sha256 %}
+  {% if battle.map %}
   <div class="battle-map">
-    <img src="/mj/combat/{{ battle.id }}/carte?v={{ battle.image_sha256[:12] }}" alt="Carte du combat" draggable="false">
+    <img src="/mj/combat/{{ battle.id }}/carte?v={{ battle.map.image_sha256[:12] }}" alt="Carte du combat" draggable="false">
     <div class="battle-grid" data-battle-grid data-cols="{{ battle.cols }}" data-rows="{{ battle.rows }}">
       {% for token in battle.tokens if token.placed %}
       <button type="button" class="battle-token battle-token--{{ token.size }}" data-battle-token="{{ token.id }}" data-color="{{ token.color }}" data-col="{{ token.col }}" data-row="{{ token.row }}"{% if token.facing is not none %} data-facing="{{ token.facing }}"{% endif %} title="{{ token.label }}" aria-label="{{ token.label }}"></button>
@@ -32,8 +51,22 @@
     </div>
   </div>
   {% else %}
-  {{ empty_state("Carte absente", "La carte de ce combat n'est pas encore enregistrée.", "map") }}
+  {{ empty_state("Carte absente", "Aucune carte n'est associée à ce combat.", "map") }}
   {% endif %}
 </div>
+{% endif %}
+{% if battles %}
+<section class="panel battle-list" aria-labelledby="combats">
+  <h2 class="panel__title" id="combats">Combats</h2>
+  <ul>
+    {% for item in battles %}
+    <li>
+      <a href="/mj/combat/{{ item.id }}"{% if battle and item.id == battle.id %} aria-current="page"{% endif %}>{{ item.name }}</a>
+      {% if item.map %}<span class="muted">{{ item.map.name }}</span>{% endif %}
+      {% if item.id == active_id %}<span class="pill pill--ok">Visible des joueurs</span>{% elif item.ended_at %}<span class="pill pill--muted">Terminé</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
 {% endif %}
 {% endblock %}

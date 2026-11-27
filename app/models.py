@@ -1130,27 +1130,55 @@ class LinkExclusion(Base):
     )
 
 
-class Battle(Base):
-    __tablename__ = "battles"
-    __table_args__ = (CheckConstraint("cols > 0 AND rows > 0", name="ck_battles_grid"),)
+class BattleMap(Base):
+    __tablename__ = "battle_maps"
+    __table_args__ = (CheckConstraint("cols > 0 AND rows > 0", name="ck_battle_maps_grid"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
     cols: Mapped[int] = mapped_column(Integer)
     rows: Mapped[int] = mapped_column(Integer)
-    image: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
-    image_type: Mapped[str | None] = mapped_column(String(50))
-    image_sha256: Mapped[str | None] = mapped_column(String(64))
+    image: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    image_type: Mapped[str] = mapped_column(String(50))
+    image_sha256: Mapped[str] = mapped_column(String(64))
+    thumbnail: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
+    source_sha256: Mapped[str | None] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now()
     )
 
+
+class Battle(Base):
+    __tablename__ = "battles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    map_id: Mapped[int | None] = mapped_column(
+        ForeignKey("battle_maps.id", ondelete="RESTRICT"), index=True
+    )
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, server_default=func.now()
+    )
+
+    map: Mapped[BattleMap | None] = relationship()
     tokens: Mapped[list["BattleToken"]] = relationship(
         back_populates="battle",
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="BattleToken.position",
     )
+
+    @property
+    def cols(self) -> int:
+        return self.map.cols if self.map is not None else 0
+
+    @property
+    def rows(self) -> int:
+        return self.map.rows if self.map is not None else 0
 
 
 class BattleToken(Base):

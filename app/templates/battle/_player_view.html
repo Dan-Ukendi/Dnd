@@ -2,11 +2,11 @@
 <div id="battle-view" class="battle-view" hx-get="/joueur/combat/vue" hx-trigger="every 3s" hx-swap="outerHTML">
   {% if token is none %}
   {{ empty_state("Aucun combat", "Aucun combat n'est en cours pour votre personnage.", "map") }}
-  {% elif window is none or not battle.image_sha256 %}
+  {% elif window is none %}
   {{ empty_state("En attente", "Votre personnage n'est pas encore placé sur la carte.", "map") }}
   {% else %}
   <div class="battle-map battle-map--player">
-    <img src="/joueur/combat/carte?fenetre={{ window.key }}&amp;v={{ battle.image_sha256[:12] }}" alt="Les environs de votre personnage">
+    <img src="/joueur/combat/carte?fenetre={{ window.key }}&amp;v={{ battle.map.image_sha256[:12] }}" alt="Les environs de votre personnage">
     <div class="battle-grid" data-battle-grid data-cols="{{ window.cols }}" data-rows="{{ window.rows }}">
       {% for other in tokens %}
       {% set label = other.label if other.character_id else "Adversaire" %}

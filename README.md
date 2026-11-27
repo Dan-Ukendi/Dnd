@@ -633,6 +633,7 @@ with `hx-boost` (never forms); Back restores the previous fiche at the same scro
 | `python -m app.cli import-media FOLDER [--manifest PATH]` | Import the portraits, maps and PDFs listed in the manifest (see below). |
 | `python -m app.cli import-characters [--manifest PATH]` | Create the player accounts and characters listed in the manifest. |
 | `python -m app.cli import-structures PATH... [--dry-run] [--prune]` | Import the places, positions, NPCs, roles and stat blocks (TOML and JSON, see above). |
+| `python -m app.cli import-battle-maps FOLDER` | Import the battle map library listed in `app/services/battles.py` (`LIBRARY`): re-encoded to WebP, grid from the file name or detected (idempotent). |
 | `alembic upgrade head` | Apply migrations. |
 | `ruff format . && ruff check .` | Format and lint. |
 | `pytest` | Run the test suite (see below). |

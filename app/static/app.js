@@ -990,7 +990,7 @@ function placeBattleTokens(root = document) {
       }
     });
   });
-  root.querySelectorAll("[data-battle-token][data-color]").forEach((token) => {
+  root.querySelectorAll("[data-battle-token][data-color], [data-token-swatch][data-color]").forEach((token) => {
     if (TOKEN_COLOR.test(token.dataset.color)) {
       token.style.setProperty("--token-color", token.dataset.color);
     }

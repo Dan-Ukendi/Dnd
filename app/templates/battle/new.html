@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import page_head, empty_state %}
+{% block title %}Nouveau combat{% endblock %}
+{% block content %}
+{% set leads = {
+  1: "Étape 1 sur 3 : choisissez la carte du combat.",
+  2: "Étape 2 sur 3 : choisissez combien de pions de chaque couleur représentent les ennemis. Zilvra (gris) et Khaetar (rouge) sont toujours ajoutés.",
+  3: "Étape 3 sur 3 : nommez chaque pion ennemi (par exemple « Troll » ou « Dragon »).",
+} %}
+{{ page_head("Nouveau combat", eyebrow="Plan de bataille", lead=leads[step]) }}
+<p><a href="/mj/combat">Retour au combat</a>{% if step > 1 %} · <a href="/mj/combat/nouveau">Changer de carte</a>{% endif %}</p>
+
+{% if step == 1 %}
+{% if maps %}
+<ul class="battle-library">
+  {% for item in maps %}
+  <li>
+    <a class="battle-library__item" href="/mj/combat/nouveau?carte={{ item.id }}">
+      <img src="/mj/combat/cartes/{{ item.id }}/apercu?v={{ item.image_sha256[:12] }}" alt="" loading="lazy" decoding="async">
+      <span class="battle-library__name">{{ item.name }}</span>
+      <span class="muted">{{ item.cols }} × {{ item.rows }} cases</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+{{ empty_state("Aucune carte", "La bibliothèque de cartes est vide.", "map") }}
+{% endif %}
+
+{% else %}
+<div class="battle-chosen">
+  <img src="/mj/combat/cartes/{{ map.id }}/apercu?v={{ map.image_sha256[:12] }}" alt="">
+  <div>
+    <h2 class="panel__title">{{ map.name }}</h2>
+    <p class="muted">{{ map.cols }} × {{ map.rows }} cases</p>
+  </div>
+</div>
+
+{% if step == 2 %}
+<form method="get" action="/mj/combat/nouveau" class="form panel">
+  <input type="hidden" name="carte" value="{{ map.id }}">
+  <input type="hidden" name="etape" value="noms">
+  {% for color in colors %}
+  <div class="field battle-count">
+    <label for="nombre-{{ color.key }}"><span class="battle-token" data-token-swatch data-color="{{ color.color }}"></span>{{ color.label }}</label>
+    <input id="nombre-{{ color.key }}" type="number" name="{{ color.key }}" min="0" max="{{ max_per_color }}" step="1" inputmode="numeric" value="{{ counts[color.key] }}">
+  </div>
+  {% endfor %}
+  <button type="submit" class="btn btn--primary">Continuer</button>
+</form>
+
+{% else %}
+<form method="post" action="/mj/combat" class="form panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="carte" value="{{ map.id }}">
+  <div class="field">
+    <label for="nom-combat">Nom du combat</label>
+    <input id="nom-combat" type="text" name="nom_combat" value="{{ default_name }}" maxlength="100" autocomplete="off">
+  </div>
+  {% for color, label in enemies %}
+  <div class="field battle-count">
+    <label for="ennemi-{{ loop.index }}"><span class="battle-token" data-token-swatch data-color="{{ color.color }}"></span>{{ color.label }}</label>
+    <input type="hidden" name="couleur" value="{{ color.key }}">
+    <input id="ennemi-{{ loop.index }}" type="text" name="nom" value="{{ label }}" maxlength="60" autocomplete="off">
+  </div>
+  {% else %}
+  <p class="muted">Aucun ennemi : seuls Zilvra et Khaetar seront sur la carte.</p>
+  {% endfor %}
+  <div class="battle-actions">
+    <a class="btn" href="/mj/combat/nouveau?carte={{ map.id }}{% for color in colors %}&amp;{{ color.key }}={{ counts[color.key] }}{% endfor %}">Modifier les nombres</a>
+    <button type="submit" class="btn btn--primary">Créer le combat</button>
+  </div>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}
