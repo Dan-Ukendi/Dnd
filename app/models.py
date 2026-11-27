@@ -1159,6 +1159,9 @@ class BattleToken(Base):
         CheckConstraint("size IN ('small', 'medium', 'large')", name="ck_battle_tokens_size"),
         CheckConstraint("(col IS NULL) = (row IS NULL)", name="ck_battle_tokens_cell"),
         CheckConstraint("col IS NULL OR (col >= 0 AND row >= 0)", name="ck_battle_tokens_range"),
+        CheckConstraint(
+            "facing IS NULL OR (facing >= 0 AND facing < 8)", name="ck_battle_tokens_facing"
+        ),
         UniqueConstraint("battle_id", "label", name="uq_battle_tokens_label"),
     )
 
@@ -1172,6 +1175,7 @@ class BattleToken(Base):
     )
     col: Mapped[int | None] = mapped_column(Integer)
     row: Mapped[int | None] = mapped_column(Integer)
+    facing: Mapped[int | None] = mapped_column(Integer)
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     battle: Mapped[Battle] = relationship(back_populates="tokens")

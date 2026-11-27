@@ -5493,6 +5493,20 @@ a.autolink:focus-visible {
   width: calc(var(--cell-width) * 0.4);
 }
 
+.battle-token {
+  position: relative;
+}
+
+.battle-grid .battle-token[data-facing]::after {
+  content: "";
+  position: absolute;
+  inset: -55%;
+  background: var(--gold-bright);
+  clip-path: polygon(50% 0, 38% 18%, 62% 18%);
+  transform: rotate(var(--facing, 0deg));
+  pointer-events: none;
+}
+
 .battle-token--self {
   outline: 3px solid var(--gold-bright);
   outline-offset: 2px;

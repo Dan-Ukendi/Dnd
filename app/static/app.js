@@ -995,6 +995,27 @@ function placeBattleTokens(root = document) {
       token.style.setProperty("--token-color", token.dataset.color);
     }
   });
+  root.querySelectorAll("[data-battle-token][data-facing]").forEach((token) => {
+    const facing = Number.parseInt(token.dataset.facing, 10);
+    if (facing >= 0 && facing < 8) {
+      token.style.setProperty("--facing", `${facing * 45}deg`);
+    }
+  });
+}
+
+async function saveTokenFacing(board, token, facing) {
+  const body = new URLSearchParams({ facing: String(facing) });
+  try {
+    const response = await fetch(`${board.dataset.moveUrl}${token.dataset.battleToken}/orientation`, {
+      method: "POST",
+      headers: { "X-CSRF-Token": csrfToken(), "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      credentials: "same-origin",
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
 }
 
 function battleCell(grid, x, y) {
@@ -1038,6 +1059,7 @@ document.addEventListener("pointerdown", (event) => {
     return;
   }
   event.preventDefault();
+  const start = { x: event.clientX, y: event.clientY };
   const size = token.getBoundingClientRect();
   token.style.width = `${size.width}px`;
   token.style.height = `${size.height}px`;
@@ -1062,8 +1084,18 @@ document.addEventListener("pointerdown", (event) => {
     "pointerup",
     async (upEvent) => {
       token.removeEventListener("pointermove", follow);
-      const cell = battleCell(grid, upEvent.clientX, upEvent.clientY);
       resetDraggedToken(token);
+      const moved = Math.hypot(upEvent.clientX - start.x, upEvent.clientY - start.y) > 4;
+      if (!moved && token.parentElement === grid) {
+        const current = Number.parseInt(token.dataset.facing ?? "0", 10) || 0;
+        const facing = (current + (upEvent.shiftKey ? 7 : 1)) % 8;
+        if (await saveTokenFacing(board, token, facing)) {
+          token.dataset.facing = String(facing);
+        }
+        placeBattleTokens(board);
+        return;
+      }
+      const cell = battleCell(grid, upEvent.clientX, upEvent.clientY);
       if (cell && (await saveTokenCell(board, token, cell))) {
         if (token.parentElement !== grid) {
           token.parentElement.removeChild(token);

@@ -62,6 +62,24 @@ def dm_move_token(
     return Response(status_code=204)
 
 
+@dm_router.post("/{battle_id}/pions/{token_id}/orientation", status_code=204)
+def dm_turn_token(
+    battle_id: int,
+    token_id: int,
+    facing: Annotated[int, Form()],
+    db: DbSession,
+    dm: CurrentDm,
+) -> Response:
+    token = db.get(BattleToken, token_id)
+    if token is None or token.battle_id != battle_id:
+        raise HTTPException(status_code=404)
+    if not 0 <= facing < 8:
+        raise HTTPException(status_code=422)
+    token.facing = facing
+    db.commit()
+    return Response(status_code=204)
+
+
 @dm_router.post("/{battle_id}/reinitialiser")
 def dm_reset_battle(battle_id: int, db: DbSession, dm: CurrentDm) -> Response:
     battle = db.get(Battle, battle_id)
@@ -70,6 +88,7 @@ def dm_reset_battle(battle_id: int, db: DbSession, dm: CurrentDm) -> Response:
     for token in battle.tokens:
         token.col = None
         token.row = None
+        token.facing = None
     db.commit()
     return RedirectResponse("/mj/combat", status_code=303)
 

@@ -1,4 +1,4 @@
-const CACHE = "valhar-static-v21";
+const CACHE = "valhar-static-v24";
 const PRECACHE = [
   "/static/css/fonts.css?v=22",
   "/static/css/tokens.css?v=22",

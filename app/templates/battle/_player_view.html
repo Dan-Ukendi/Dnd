@@ -10,7 +10,7 @@
     <div class="battle-grid" data-battle-grid data-cols="{{ window.cols }}" data-rows="{{ window.rows }}">
       {% for other in tokens %}
       {% set label = other.label if other.character_id else "Adversaire" %}
-      <span class="battle-token battle-token--{{ other.size }}{% if other.id == token.id %} battle-token--self{% endif %}" data-battle-token="{{ other.id }}" data-color="{{ other.color }}" data-col="{{ other.col - window.col }}" data-row="{{ other.row - window.row }}" title="{{ label }}" role="img" aria-label="{{ label }}"></span>
+      <span class="battle-token battle-token--{{ other.size }}{% if other.id == token.id %} battle-token--self{% endif %}" data-battle-token="{{ other.id }}" data-color="{{ other.color }}" data-col="{{ other.col - window.col }}" data-row="{{ other.row - window.row }}"{% if other.facing is not none %} data-facing="{{ other.facing }}"{% endif %} title="{{ label }}" role="img" aria-label="{{ label }}"></span>
       {% endfor %}
     </div>
   </div>

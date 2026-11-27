@@ -86,6 +86,19 @@ def test_dm_places_and_moves_a_token(client: TestClient, db: Session, battle: Ba
     assert full.status_code == 200 and full.headers["content-type"] == "image/png"
 
 
+def test_dm_turns_a_token(client: TestClient, db: Session, battle: Battle) -> None:
+    login(client, "maitre")
+    troll = tokens(db)["Troll"]
+    move(client, battle, troll, 4, 5)
+    url = f"/mj/combat/{battle.id}/pions/{troll.id}/orientation"
+    headers = {"X-CSRF-Token": csrf_token(client, "/mj/combat")}
+    assert client.post(url, data={"facing": "3"}, headers=headers).status_code == 204
+    assert client.post(url, data={"facing": "8"}, headers=headers).status_code == 422
+    db.expire_all()
+    assert troll.facing == 3
+    assert 'data-facing="3"' in client.get("/mj/combat").text
+
+
 def test_dm_resets_the_map(client: TestClient, db: Session, battle: Battle) -> None:
     login(client, "maitre")
     troll = tokens(db)["Troll"]
