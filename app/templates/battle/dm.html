@@ -33,11 +33,21 @@
 <div class="battle-dm" data-battle-dm data-move-url="/mj/combat/{{ battle.id }}/pions/">
   <div class="battle-tray" data-battle-tray aria-label="Pions">
     {% for token in battle.tokens %}
-    <div class="battle-tray__item">
+    <div class="battle-tray__item{% if token.defeated %} is-defeated{% endif %}">
+      {% if token.defeated %}
+      <span>{{ token.label }} (mort)</span>
+      {% else %}
       {% if not token.placed %}
       <button type="button" class="battle-token battle-token--{{ token.size }}" data-battle-token="{{ token.id }}" data-color="{{ token.color }}" title="{{ token.label }}" aria-label="{{ token.label }}"></button>
       {% endif %}
       <span>{{ token.label }}</span>
+      {% if token.placed and token.character_id is none %}
+      <form method="post" action="/mj/combat/{{ battle.id }}/pions/{{ token.id }}/tuer" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn--danger btn--small">Tuer</button>
+      </form>
+      {% endif %}
+      {% endif %}
     </div>
     {% endfor %}
   </div>

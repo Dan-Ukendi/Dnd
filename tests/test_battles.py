@@ -287,6 +287,21 @@ def test_dm_turns_a_token(client: TestClient, db: Session, battle: Battle) -> No
     assert 'data-facing="3"' in client.get("/mj/combat").text
 
 
+def test_dm_kills_an_enemy(client: TestClient, db: Session, battle: Battle) -> None:
+    login(client, "maitre")
+    troll = tokens(db, battle)["Troll"]
+    move(client, battle, troll, 4, 5)
+    url = f"/mj/combat/{battle.id}/pions/{troll.id}/tuer"
+    data = {"csrf_token": csrf_token(client, "/mj/combat")}
+    assert client.post(url, data=data, follow_redirects=False).status_code == 303
+    db.expire_all()
+    assert troll.defeated and troll.col is None
+    assert move(client, battle, troll, 1, 1) == 404
+    pc = next(token for token in tokens(db, battle).values() if token.character_id is not None)
+    pc_url = f"/mj/combat/{battle.id}/pions/{pc.id}/tuer"
+    assert client.post(pc_url, data=data, follow_redirects=False).status_code == 404
+
+
 def test_dm_resets_the_map(client: TestClient, db: Session, battle: Battle) -> None:
     login(client, "maitre")
     troll = tokens(db, battle)["Troll"]

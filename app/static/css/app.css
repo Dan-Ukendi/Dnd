@@ -5429,6 +5429,11 @@ a.autolink:focus-visible {
   background: var(--ebony-2);
 }
 
+.battle-tray__item.is-defeated {
+  color: var(--parchment-faint);
+  text-decoration: line-through;
+}
+
 .battle-tray__item {
   display: flex;
   align-items: center;

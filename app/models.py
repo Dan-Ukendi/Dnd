@@ -1204,6 +1204,7 @@ class BattleToken(Base):
     col: Mapped[int | None] = mapped_column(Integer)
     row: Mapped[int | None] = mapped_column(Integer)
     facing: Mapped[int | None] = mapped_column(Integer)
+    defeated: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     position: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     battle: Mapped[Battle] = relationship(back_populates="tokens")

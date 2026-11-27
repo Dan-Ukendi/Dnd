@@ -146,7 +146,7 @@ def dm_move_token(
     dm: CurrentDm,
 ) -> Response:
     token = db.get(BattleToken, token_id)
-    if token is None or token.battle_id != battle_id:
+    if token is None or token.battle_id != battle_id or token.defeated:
         raise HTTPException(status_code=404)
     try:
         move_token(token, col, row)
@@ -174,6 +174,19 @@ def dm_turn_token(
     return Response(status_code=204)
 
 
+@dm_router.post("/{battle_id}/pions/{token_id}/tuer")
+def dm_kill_token(battle_id: int, token_id: int, db: DbSession, dm: CurrentDm) -> Response:
+    token = db.get(BattleToken, token_id)
+    if token is None or token.battle_id != battle_id or token.character_id is not None:
+        raise HTTPException(status_code=404)
+    token.col = None
+    token.row = None
+    token.facing = None
+    token.defeated = True
+    db.commit()
+    return RedirectResponse(f"/mj/combat/{battle_id}", status_code=303)
+
+
 @dm_router.post("/{battle_id}/reinitialiser")
 def dm_reset_battle(battle_id: int, db: DbSession, dm: CurrentDm) -> Response:
     battle = _battle(db, battle_id)
@@ -181,6 +194,7 @@ def dm_reset_battle(battle_id: int, db: DbSession, dm: CurrentDm) -> Response:
         token.col = None
         token.row = None
         token.facing = None
+        token.defeated = False
     db.commit()
     return RedirectResponse(f"/mj/combat/{battle_id}", status_code=303)
 
