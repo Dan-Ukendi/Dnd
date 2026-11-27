@@ -56,6 +56,7 @@ PARTY = (
 class LibraryEntry:
     title: str
     path: str
+    grid: tuple[int, int] | None = None
 
 
 LIBRARY = (
@@ -122,6 +123,34 @@ LIBRARY = (
     LibraryEntry(
         "Plage tropicale",
         "Battle Map Variety Pack #1 from Rune Foundry/Digital/Tropical Beach (digital, grid).jpg",
+    ),
+    LibraryEntry(
+        "Taverne et auberge (rez-de-chaussée)",
+        "Taverns and Inns Map Pack from Rune Foundry/Digital/"
+        "Tavern and Inn Combo (main floor, digital).jpg",
+        (23, 16),
+    ),
+    LibraryEntry(
+        "Taverne et auberge (étage)",
+        "Taverns and Inns Map Pack from Rune Foundry/Digital/"
+        "Tavern and Inn Combo (upstairs, digital).jpg",
+        (23, 16),
+    ),
+    LibraryEntry(
+        "Taverne et auberge (sous-sol)",
+        "Taverns and Inns Map Pack from Rune Foundry/Digital/"
+        "Tavern and Inn Combo (downstairs, covered, digital).jpg",
+        (23, 16),
+    ),
+    LibraryEntry(
+        "L'auberge du coin",
+        "Taverns and Inns Map Pack from Rune Foundry/Digital/The Local Inn (digital).jpg",
+        (23, 16),
+    ),
+    LibraryEntry(
+        "Taverne traditionnelle",
+        "Taverns and Inns Map Pack from Rune Foundry/Digital/Traditional Tavern (digital).jpg",
+        (23, 16),
     ),
 )
 
@@ -235,7 +264,9 @@ def encode_map(data: bytes, name: str, grid: tuple[int, int] | None = None) -> E
     return EncodedMap(_webp(image, MAP_QUALITY), _webp(thumbnail, THUMBNAIL_QUALITY), *grid)
 
 
-def import_map(db: Session, title: str, data: bytes, filename: str) -> tuple[BattleMap, str]:
+def import_map(
+    db: Session, title: str, data: bytes, filename: str, grid: tuple[int, int] | None = None
+) -> tuple[BattleMap, str]:
     source_sha = hashlib.sha256(data).hexdigest()
     battle_map = db.scalar(
         select(BattleMap).where(or_(BattleMap.source_sha256 == source_sha, BattleMap.name == title))
@@ -247,7 +278,7 @@ def import_map(db: Session, title: str, data: bytes, filename: str) -> tuple[Bat
         and battle_map.thumbnail is not None
     ):
         return battle_map, "unchanged"
-    known_grid = None
+    known_grid = grid
     if battle_map is not None and battle_map.source_sha256 == source_sha:
         known_grid = (battle_map.cols, battle_map.rows)
     encoded = encode_map(data, filename, known_grid)
@@ -278,7 +309,9 @@ def import_library(
             results.append((entry, None, "missing"))
             continue
         try:
-            battle_map, status = import_map(db, entry.title, path.read_bytes(), path.name)
+            battle_map, status = import_map(
+                db, entry.title, path.read_bytes(), path.name, entry.grid
+            )
         except BattleError as exc:
             db.rollback()
             results.append((entry, None, f"error: {exc}"))
